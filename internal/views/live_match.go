@@ -30,9 +30,9 @@ func NewLiveMatch(
 
 		for _, team := range stats.Teams {
 			switch team.GameTeam {
-			case nspb.GameTeam_GameTeamGoodguys:
+			case nspb.GameTeam_GAME_TEAM_GOODGUYS:
 				radiantTeam = team
-			case nspb.GameTeam_GameTeamBadguys:
+			case nspb.GameTeam_GAME_TEAM_BADGUYS:
 				direTeam = team
 			}
 		}

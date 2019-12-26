@@ -115,7 +115,7 @@ func (m *LiveMatch) GetLobbyType() LobbyType {
 	if m != nil {
 		return m.LobbyType
 	}
-	return LobbyType_LobbyTypeCasualMatch
+	return LobbyType_LOBBY_TYPE_CASUAL_MATCH
 }
 
 func (m *LiveMatch) GetLeagueId() uint64 {
@@ -136,14 +136,14 @@ func (m *LiveMatch) GetGameMode() GameMode {
 	if m != nil {
 		return m.GameMode
 	}
-	return GameMode_GameModeNone
+	return GameMode_GAME_MODE_NONE
 }
 
 func (m *LiveMatch) GetGameState() GameState {
 	if m != nil {
 		return m.GameState
 	}
-	return GameState_GameStateInit
+	return GameState_GAME_STATE_INIT
 }
 
 func (m *LiveMatch) GetGameTimestamp() uint32 {
@@ -472,7 +472,7 @@ func (m *LiveMatch_Player) GetTeam() GameTeam {
 	if m != nil {
 		return m.Team
 	}
-	return GameTeam_GameTeamUnknown
+	return GameTeam_GAME_TEAM_UNKNOWN
 }
 
 func (m *LiveMatch_Player) GetLevel() uint32 {
