@@ -3,7 +3,7 @@ syntax = "proto3";
 package protocol;
 
 import "google/protobuf/timestamp.proto";
-import "internal/protocol/enums.proto";
+import "enums.proto";
 
 message LiveMatch {
   message Player {

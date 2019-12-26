@@ -1,21 +1,34 @@
 FIND := $(shell command -v gfind)
 FIND ?= $(shell command -v find)
+PROTOC := $(shell command -v protoc)
 
 TOOLS_PATH := bin
-PROTOBUFS_PATH := internal/protocol
+PROTO_SRC := proto
+PROTO_GOOUT := internal/protocol
+PROTO_JSOUT := web_app/src/protocol
 
-protobufs := $(shell $(FIND) $(PROTOBUFS_PATH) -type f -name '*.proto' -printf '%P\n')
-goprotos := $(patsubst %.proto,%.pb.go,$(protobufs))
+protobufs := $(shell $(FIND) $(PROTO_SRC) -type f -name '*.proto' -printf '%P\n')
+protos_go := $(patsubst %.proto,$(PROTO_GOOUT)/%.pb.go,$(protobufs))
+protos_js := $(PROTO_JSOUT)/enums_pb.js
 
-%.pb.go: %.proto
-	protoc -I . --go_out=. $<
+$(PROTO_GOOUT)/%.pb.go: $(PROTO_SRC)/%.proto
+	$(PROTOC) -I "$(PROTO_SRC)" "--go_out=$(PROTO_GOOUT)" "$<"
+
+.PHONY: proto-go
+proto-go: $(protos_go)
+
+$(PROTO_JSOUT)/%_pb.js: $(PROTO_SRC)/%.proto
+	$(PROTOC) -I "$(PROTO_SRC)" "--js_out=import_style=commonjs,binary:$(PROTO_JSOUT)" "$<"
+
+.PHONY: proto-js
+proto-js: $(protos_js)
 
 .PHONY: proto
-proto: $(goprotos)
+proto: proto-go proto-js
 
 $(TOOLS_PATH): tools.go
 	bash hack/install-tools.bash
 	@touch $(TOOLS_PATH)
 
-.PHONY: tools
-tools: $(TOOLS_PATH)
+.PHONY: install-tools
+install-tools: $(TOOLS_PATH)
