@@ -1,0 +1,43 @@
+CREATE TABLE steam_logins (
+  id bigserial PRIMARY KEY,
+  username character varying(255) NOT NULL,
+  steam_id bigint,
+  account_flags bigint,
+  machine_hash character varying(255),
+  unique_id bigint,
+  login_key character varying(255),
+  web_auth_nonce character varying(255),
+  web_session_id character varying(255),
+  web_auth_token character varying(255),
+  web_auth_token_secure character varying(255),
+  suspended_until timestamp with time zone,
+  game_version bigint,
+  location_country character varying(255),
+  location_latitude numeric,
+  location_longitude numeric,
+  cell_id bigint,
+  cell_id_ping_threshold bigint,
+  email_domain character varying(255),
+  vanity_url text,
+  out_of_game_heartbeat_seconds integer,
+  in_game_heartbeat_seconds integer,
+  public_ip bigint,
+  server_time bigint,
+  steam_ticket bytea,
+  use_pics boolean,
+  country_code character varying(255),
+  parental_settings bytea,
+  parental_setting_signature bytea,
+  login_failures_to_migrate integer,
+  disconnects_to_migrate integer,
+  ogs_data_report_time_window integer,
+  client_instance_id bigint,
+  force_client_update_check boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  deleted_at timestamp with time zone
+);
+
+CREATE UNIQUE INDEX uix_steam_logins_username ON steam_logins USING btree (username);
+CREATE UNIQUE INDEX uix_steam_logins_steam_id ON steam_logins USING btree (steam_id);
+CREATE INDEX idx_steam_logins_deleted_at ON steam_logins USING btree (deleted_at);

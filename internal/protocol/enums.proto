@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package protocol;
+
+enum LobbyType {
+  LobbyTypeCasualMatch = 0;
+  LobbyTypePractice = 1;
+  LobbyTypeCoopBotMatch = 4;
+  LobbyTypeLegacyTeamMatch = 5;
+  LobbyTypeLegacySoloQueueMatch = 6;
+  LobbyTypeCompetitiveMatch = 7;
+  LobbyTypeCasual_1V1Match = 8;
+  LobbyTypeWeekendTourney = 9;
+  LobbyTypeLocalBotMatch = 10;
+  LobbyTypeSpectator = 11;
+  LobbyTypeEventMatch = 12;
+}
+
+enum GameMode {
+	GameModeNone = 0;
+	GameModeAP = 1;
+	GameModeCM = 2;
+	GameModeRD = 3;
+	GameModeSD = 4;
+	GameModeAR = 5;
+	GameModeIntro = 6;
+	GameModeHW = 7;
+	GameModeReverseCM = 8;
+	GameModeXmas = 9;
+	GameModeTutorial = 10;
+	GameModeMO = 11;
+	GameModeLP = 12;
+	GameModePool1 = 13;
+	GameModeFH = 14;
+	GameModeCustom = 15;
+	GameModeCD = 16;
+	GameModeBD = 17;
+	GameModeAbilityDraft = 18;
+	GameModeEvent = 19;
+	GameModeARDM = 20;
+	GameMode1V1Mid = 21;
+	GameModeAllDraft = 22;
+	GameModeTurbo = 23;
+	GameModeMutation = 24;
+	GameModeCoachesChallenge = 25;
+}
+
+enum GameState {
+	GameStateInit = 0;
+	GameStateWaitForPlayersToLoad = 1;
+	GameStateHeroSelection = 2;
+	GameStateStrategyTime = 3;
+	GameStatePreGame = 4;
+	GameStateGameInProgress = 5;
+	GameStatePostGame = 6;
+	GameStateDisconnect = 7;
+	GameStateTeamShowcase = 8;
+	GameStateCustomGameSetup = 9;
+	GameStateWaitForMapToLoad = 10;
+	GameStateLast = 11;
+}
+
+enum GameTeam {
+  GameTeamUnknown = 0;
+  GameTeamGoodguys = 2;
+  GameTeamBadguys = 3;
+  GameTeamNeutrals = 4;
+  GameTeamNoteam = 5;
+  GameTeamCustom1 = 6;
+  GameTeamCustom2 = 7;
+  GameTeamCustom3 = 8;
+  GameTeamCustom4 = 9;
+  GameTeamCustom5 = 10;
+  GameTeamCustom6 = 11;
+  GameTeamCustom7 = 12;
+  GameTeamCustom8 = 13;
+}
+
+enum BuildingType {
+  BuildingTypeTower = 0;
+  BuildingTypeBarracks = 1;
+  BuildingTypeAncient = 2;
+}
+
+enum FantasyRole {
+	FantasyRoleUndefined = 0;
+	FantasyRoleCore = 1;
+	FantasyRoleSupport = 2;
+	FantasyRoleOfflane = 3;
+	FantasyRoleMid = 4;
+}
+
+enum LaneType {
+	LaneTypeUnknown = 0;
+	LaneTypeSafe = 1;
+	LaneTypeOff = 2;
+	LaneTypeMid = 3;
+	LaneTypeJungle = 4;
+	LaneTypeRoam = 5;
+}
+
+enum MatchOutcome {
+	MatchOutcomeUnknown = 0;
+	MatchOutcomeRadVictory = 2;
+	MatchOutcomeDireVictory = 3;
+	MatchOutcomeNotScoredPoorNetworkConditions = 64;
+	MatchOutcomeNotScoredLeaver = 65;
+	MatchOutcomeNotScoredServerCrash = 66;
+	MatchOutcomeNotScoredNeverStarted = 67;
+	MatchOutcomeNotScoredCanceled = 68;
+}

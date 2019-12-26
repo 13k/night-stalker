@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package protocol;
+
+import "google/protobuf/timestamp.proto";
+import "internal/protocol/enums.proto";
+
+message LiveMatch {
+  message Player {
+    uint32 account_id = 1;
+    string name = 2;
+    string persona_name = 3;
+    string avatar_url = 4;
+    string avatar_medium_url = 5;
+    string avatar_full_url = 6;
+    bool is_pro = 7;
+    uint64 hero_id = 8;
+    uint32 player_slot = 9;
+    GameTeam team = 10;
+    uint32 level = 11;
+    uint32 kills = 12;
+    uint32 deaths = 13;
+    uint32 assists = 14;
+    uint32 denies = 15;
+    uint32 last_hits = 16;
+    uint32 gold = 17;
+    uint32 net_worth = 18;
+  }
+
+  uint64 match_id = 1;
+  uint64 server_steam_id = 2;
+  uint64 lobby_id = 3;
+  LobbyType lobby_type = 4;
+  uint64 league_id = 5;
+  uint64 series_id = 6;
+  GameMode game_mode = 7;
+  GameState game_state = 8;
+  uint32 game_timestamp = 9;
+  int32 game_time = 10;
+  uint32 average_mmr = 11;
+  uint32 delay = 12;
+  uint32 spectators = 13;
+  double sort_score = 14;
+  int32 radiant_lead = 15;
+  uint32 radiant_score = 16;
+  uint64 radiant_team_id = 17;
+  string radiant_team_name = 18;
+  string radiant_team_tag = 19;
+  uint64 radiant_team_logo = 20;
+  string radiant_team_logo_url = 21;
+  uint32 radiant_net_worth = 22;
+  uint32 dire_score = 23;
+  uint64 dire_team_id = 24;
+  string dire_team_name = 25;
+  string dire_team_tag = 26;
+  uint64 dire_team_logo = 27;
+  string dire_team_logo_url = 28;
+  uint32 dire_net_worth = 29;
+  uint32 building_state = 30;
+  uint32 weekend_tourney_tournament_id = 31;
+  uint32 weekend_tourney_division = 32;
+  uint32 weekend_tourney_skill_level = 33;
+  uint32 weekend_tourney_bracket_round = 34;
+  google.protobuf.Timestamp activate_time = 35;
+  google.protobuf.Timestamp deactivate_time = 36;
+  google.protobuf.Timestamp last_update_time = 37;
+
+  repeated Player players = 100;
+}
