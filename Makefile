@@ -18,7 +18,7 @@ $(PROTO_GOOUT)/%.pb.go: $(PROTO_SRC)/%.proto
 proto-go: $(protos_go)
 
 $(PROTO_JSOUT)/%_pb.js: $(PROTO_SRC)/%.proto
-	$(PROTOC) -I "$(PROTO_SRC)" "--js_out=import_style=commonjs,binary:$(PROTO_JSOUT)" "$<"
+	$(PROTOC) -I "$(PROTO_SRC)" "--js_out=import_style=commonjs_strict,binary:$(PROTO_JSOUT)" "$<"
 
 .PHONY: proto-js
 proto-js: $(protos_js)
