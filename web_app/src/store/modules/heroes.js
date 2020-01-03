@@ -6,7 +6,8 @@ import api from "@/api";
 const log = Vue.log({ context: { location: "store/heroes" } });
 
 const state = {
-  byId: {}
+  byId: {},
+  byName: {}
 };
 
 const getters = {};
@@ -25,6 +26,7 @@ const actions = {
 const mutations = {
   setHeroes(state, heroes) {
     state.byId = keyBy(heroes, "id");
+    state.byName = keyBy(heroes, "name");
   }
 };
 
