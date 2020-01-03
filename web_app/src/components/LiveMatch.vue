@@ -1,148 +1,131 @@
 <template>
-  <div class="live-match">
-    <h3 class="header">
-      {{ match.match_id }}<br />
-      <span class="watch-command monospace">
-        watch_server {{ match.server_steam_id }}
-      </span>
-    </h3>
+  <v-card hover :color="cardColor" @click="toggle">
+    <v-card-title>
+      {{ match.match_id }}
 
-    <div class="info" v-if="hasInfo">
-      <p v-if="hasMMR">MMR: {{ match.average_mmr }}</p>
+      <div v-if="hasMMR" class="grey--text ml-3 subtitle-2">
+        {{ match.average_mmr }} MMR
+      </div>
+    </v-card-title>
 
-      <p class="teams" v-if="hasTeamTags">
-        <img
-          class="team-logo"
-          v-if="match.radiant_team_logo_url"
-          :src="match.radiant_team_logo_url"
-          :title="match.radiant_team_name"
-        />
+    <v-card-subtitle>
+      <kbd>watch_server {{ match.server_steam_id }}</kbd>
+    </v-card-subtitle>
 
-        <span class="tags">
-          {{ match.radiant_team_tag }} vs {{ match.dire_team_tag }}
-        </span>
+    <v-divider class="mx-4"></v-divider>
 
-        <img
-          class="team-logo"
-          v-if="match.dire_team_logo_url"
-          :src="match.dire_team_logo_url"
-          :title="match.dire_team_name"
-        />
-      </p>
-    </div>
+    <v-container>
+      <v-row v-for="team in match.teams" :key="team.number">
+        <v-col
+          order="1"
+          class="players-col"
+          :cols="team | playersColWidth"
+          :class="team | playersColClasses"
+        >
+          <v-list dense link>
+            <v-list-item
+              dense
+              class="player"
+              v-for="player in team.players"
+              :key="player.account_id"
+              :to="{
+                name: 'players.show',
+                params: { accountId: player.account_id }
+              }"
+            >
+              <live-match-player :team="team" :player="player" />
+            </v-list-item>
+          </v-list>
+        </v-col>
 
-    <div class="players">
-      <live-match-player
-        v-for="player in match.players"
-        :key="player.account_id"
-        :player="player"
-        :side="teamSides[player.team]"
-      />
-    </div>
-  </div>
+        <v-col
+          v-if="team.tag || team.name"
+          cols="3"
+          align-self="center"
+          class="d-flex flex-column justify-center align-center"
+          :order="team.number % 2 === 0 ? 1 : 0"
+        >
+          <img
+            class="team-logo"
+            v-if="team.logo_url"
+            :src="team.logo_url"
+            :title="team.name"
+          />
+
+          <span class="team-name caption">
+            {{ team.tag || team.name }}
+          </span>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-card>
 </template>
 
 <script>
-import _ from "lodash";
-
 import filters from "@/components/filters";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
 
 export default {
   name: "live-match",
-  filters,
+  filters: {
+    ...filters,
+    playersColWidth(team) {
+      return team.tag || team.name ? 9 : 12;
+    },
+    playersColClasses(team) {
+      if (!(team.tag || team.name)) {
+        return {};
+      }
+
+      return {
+        left: team.number % 2 === 0,
+        right: team.number % 2 !== 0
+      };
+    }
+  },
   components: {
     LiveMatchPlayer
   },
   props: {
-    match: Object
+    match: Object,
+    active: Boolean,
+    toggle: Function
   },
   computed: {
-    hasInfo() {
-      return this.hasTeamTags || this.hasMMR;
+    cardColor() {
+      return this.active ? "primary" : "";
     },
     hasMMR() {
       return this.match.average_mmr > 0;
-    },
-    hasTeamTags() {
-      return this.match.radiant_team_tag && this.match.dire_team_tag;
-    },
-    teamSides() {
-      return _.chain(this.match.players)
-        .map("team")
-        .sortBy()
-        .sortedUniq()
-        .take(2)
-        .zipObject(["left", "right"])
-        .value();
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.live-match {
-  margin: 20px;
-  width: 300px;
-  border: 1px solid #000;
-  border-radius: 4px;
-  box-shadow: 1px 1px #444;
-  background-color: #000d;
-  color: #ddd;
+.player {
+  padding: 0;
 }
 
-.header {
-  font-size: 18px;
-  margin: 6px 0;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #bbb;
+.players-col {
+  &.left {
+    border-right: 1px solid #333;
+  }
+
+  &.right {
+    border-left: 1px solid #333;
+  }
+}
+
+.team-logo {
+  max-width: 48px;
+  max-height: 48px;
+}
+
+.team-name {
+  color: black;
   text-align: center;
-
-  .watch-command {
-    font-size: small;
-    font-weight: normal;
-    font-style: italic;
-    text-align: center;
-  }
-}
-
-.info {
-  font-size: 14px;
-  text-align: center;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #bbb;
-
-  > p {
-    margin: 4px 0;
-  }
-
-  .teams {
-    display: flex;
-    align-items: center;
-
-    .tags {
-      flex-grow: 2;
-    }
-
-    .team-logo {
-      max-height: 48px;
-      margin-left: 4px;
-      margin-right: 4px;
-    }
-  }
-}
-
-.players {
-  padding: 8px;
-
-  ul {
-    padding-left: 0;
-  }
-
-  li {
-    margin: 2px 0 2px 0;
-    list-style-type: none;
-  }
+  line-height: 1em;
+  margin-top: 8px;
 }
 </style>

@@ -1,50 +1,78 @@
 <template>
-  <div class="live-match-player" :class="sideClass">
-    <img
-      class="player-hero-image"
-      :src="player.hero | heroImageURL({ version: 'small' })"
-      :title="player.hero | heroName('Picking hero')"
-    />
-
-    <router-link
-      class="player-name"
-      :class="slotColorClass"
-      :to="{ name: 'players.show', params: { accountId: player.account_id } }"
-    >
+  <div class="live-match-player d-flex align-center" :class="containerClasses">
+    <span :class="nameClasses">
       {{ player.name }}
-    </router-link>
+    </span>
+
+    <div class="icon d-flex" :class="iconClasses">
+      <hero-image
+        :hero="player.hero"
+        version="portrait"
+        width="64"
+        height="36"
+        placeholder
+        alt
+        alt-placeholder="Picking hero"
+      />
+
+      <div class="slot-bar" :class="slotBarClasses"></div>
+    </div>
   </div>
 </template>
 
 <script>
-import filters from "@/components/filters";
+import HeroImage from "@/components/HeroImage.vue";
 
 export default {
   name: "live-match-player",
-  filters,
+  components: {
+    HeroImage
+  },
   props: {
-    player: Object,
-    side: String
+    team: Object,
+    player: Object
   },
   computed: {
-    sideClass() {
+    isLeft() {
+      return this.team.number % 2 === 0;
+    },
+    isRight() {
+      return !this.isLeft;
+    },
+    containerClasses() {
       return {
-        radiant: this.side !== "right",
-        dire: this.side === "right"
+        "justify-end": this.isRight
       };
     },
-    slotColorClass() {
+    nameClasses() {
       return {
-        blue: this.player.player_slot === 0,
-        teal: this.player.player_slot === 1,
-        purple: this.player.player_slot === 2,
-        yellow: this.player.player_slot === 3,
-        orange: this.player.player_slot === 4,
-        pink: this.player.player_slot === 5,
-        olive: this.player.player_slot === 6,
-        "light-blue": this.player.player_slot === 7,
-        green: this.player.player_slot === 8,
-        brown: this.player.player_slot === 9
+        "text-right": this.isRight
+      };
+    },
+    iconClasses() {
+      return {
+        "order-first": this.isLeft,
+        "mr-2": this.isLeft,
+        "ml-1": this.isLeft,
+        "ml-2": this.isRight,
+        "mr-1": this.isRight
+      };
+    },
+    slotBarClasses() {
+      return {
+        "order-first": this.isLeft,
+        "slot-blue": this.player.player_slot === 0,
+        "slot-teal": this.player.player_slot === 1,
+        "slot-purple": this.player.player_slot === 2,
+        "slot-yellow": this.player.player_slot === 3,
+        "slot-orange": this.player.player_slot === 4,
+        "slot-pink": this.player.player_slot === 5,
+        "slot-olive": this.player.player_slot === 6,
+        "slot-light-blue": this.player.player_slot === 7,
+        "slot-green": this.player.player_slot === 8,
+        "slot-brown": this.player.player_slot === 9,
+        left: this.isLeft,
+        right: this.isRight
       };
     }
   }
@@ -53,75 +81,63 @@ export default {
 
 <style lang="scss" scoped>
 .live-match-player {
-  display: flex;
-  align-items: center;
-  margin: 3px 0 3px 0;
+  width: 100%;
 }
 
-.live-match-player.radiant {
-  flex-direction: row;
-}
-
-.live-match-player.dire {
-  flex-direction: row-reverse;
-}
-
-.live-match-player.dire .player-name {
-  text-align: right;
-}
-
-.player-name {
-  flex-grow: 2;
-  text-align: left;
-  text-shadow: 1px 1px 1px #000;
-  text-decoration: none;
-}
-
-.player-name.blue {
-  color: #3074f9;
-}
-
-.player-name.teal {
-  color: #66ffc0;
-}
-
-.player-name.purple {
-  color: #bd00b7;
-}
-
-.player-name.yellow {
-  color: #f8f50a;
-}
-
-.player-name.orange {
-  color: #ff6901;
-}
-
-.player-name.pink {
-  color: #ff88c5;
-}
-
-.player-name.olive {
-  color: #a2b349;
-}
-
-.player-name.light-blue {
-  color: #63dafa;
-}
-
-.player-name.green {
-  color: #01831f;
-}
-
-.player-name.brown {
-  color: #9f6b00;
-}
-
-.player-hero-image {
-  width: 59px;
-  height: 33px;
-  margin-right: 8px;
-  margin-left: 8px;
+.icon {
   box-shadow: 2px 2px 4px #000, -1px -1px 2px #333;
+}
+
+.slot-bar {
+  width: 6px;
+  height: 36px;
+
+  &.left {
+    border-right: 1px solid #444;
+  }
+
+  &.right {
+    border-left: 1px solid #444;
+  }
+}
+
+.slot-blue {
+  background-color: #3074f9;
+}
+
+.slot-teal {
+  background-color: #66ffc0;
+}
+
+.slot-purple {
+  background-color: #bd00b7;
+}
+
+.slot-yellow {
+  background-color: #f8f50a;
+}
+
+.slot-orange {
+  background-color: #ff6901;
+}
+
+.slot-pink {
+  background-color: #ff88c5;
+}
+
+.slot-olive {
+  background-color: #a2b349;
+}
+
+.slot-light-blue {
+  background-color: #63dafa;
+}
+
+.slot-green {
+  background-color: #01831f;
+}
+
+.slot-brown {
+  background-color: #9f6b00;
 }
 </style>

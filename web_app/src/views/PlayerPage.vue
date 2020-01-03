@@ -1,68 +1,97 @@
 <template>
   <div class="player-page">
-    <router-link :to="{ name: 'home' }">Home</router-link>
+    <router-link :to="{ name: 'home' }">
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <v-icon v-on="on">mdi-arrow-left-bold-circle-outline</v-icon>
+        </template>
+        <span>Home</span>
+      </v-tooltip>
+    </router-link>
 
-    <div v-if="loading" class="loading">Loading...</div>
+    <v-skeleton-loader v-if="loading" type="list-item-avatar-three-line" />
 
-    <div v-if="error" class="error">
+    <v-alert v-if="error" type="error">
       {{ error }}
-    </div>
+    </v-alert>
 
     <transition name="slide">
-      <section v-if="player" class="content" :key="player.account_id">
-        <header class="profile">
-          <div class="persona">
-            <img
-              v-if="player.avatar_medium_url"
-              class="player-avatar"
-              :src="player.avatar_medium_url"
-            />
-            <span class="player-name">{{ player.name }}</span>
-            <a
-              class="player-opendota"
-              :href="odPlayerURL"
-              :title="`View ${player.name} on OpenDota`"
-              target="_blank"
-            >
-              [opendota]
-            </a>
-          </div>
+      <v-container v-if="player" class="content" :key="player.account_id">
+        <v-row>
+          <v-col cols="12">
+            <section class="profile">
+              <v-row>
+                <v-col>
+                  <v-img
+                    v-if="player.avatar_medium_url"
+                    :src="player.avatar_medium_url"
+                    class="player-avatar mr-4"
+                    max-width="64"
+                  />
+                </v-col>
 
-          <div v-if="player.team" class="team">
-            <img
-              v-if="player.team.logo_url"
-              class="team-logo"
-              :src="player.team.logo_url"
-              :title="player.team.name"
-            />
-            <a
-              v-if="odTeamURL"
-              class="team-name"
-              :href="odTeamURL"
-              :title="`View ${player.team.name} on OpenDota`"
-              target="_blank"
-            >
-              {{ player.team.tag }}
-            </a>
-          </div>
-        </header>
+                <v-col>
+                  <span class="player-name display-3">{{ player.name }}</span>
+                </v-col>
 
-        <player-matches class="history" :matches="player.matches" />
-      </section>
+                <v-col>
+                  <a
+                    class="player-opendota"
+                    :href="odPlayerURL"
+                    :title="`View ${player.name} on OpenDota`"
+                    target="_blank"
+                  >
+                    [opendota]
+                  </a>
+                </v-col>
+              </v-row>
+
+              <v-row v-if="player.team" class="team">
+                <v-col>
+                  <v-img
+                    v-if="player.team.logo_url"
+                    class="team-logo"
+                    max-width="64"
+                    :src="player.team.logo_url"
+                    :alt="player.team.name"
+                  />
+
+                  <a
+                    v-if="odTeamURL"
+                    class="team-name"
+                    :href="odTeamURL"
+                    :title="`View ${player.team.name} on OpenDota`"
+                    target="_blank"
+                  >
+                    {{ player.team.tag }}
+                  </a>
+                </v-col>
+              </v-row>
+            </section>
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="12">
+            <section class="history">
+              <player-matches :matches="player.matches" />
+            </section>
+          </v-col>
+        </v-row>
+      </v-container>
     </transition>
   </div>
 </template>
 
 <script>
+import { each } from "lodash/collection";
 import { get } from "lodash/object";
 
 import api from "@/api";
 import PlayerMatches from "@/components/PlayerMatches.vue";
 
 const transformPlayer = (player, { heroes }) => {
-  player.matches = player.matches || [];
-
-  player.matches.forEach(match => {
+  player.matches = each(player.matches || [], match => {
     match.hero = get(heroes, ["byId", match.hero_id]);
   });
 
@@ -107,11 +136,13 @@ export default {
       api
         .getPlayer(this.$route.params.accountId)
         .then(player => {
-          this.loading = false;
           this.player = transformPlayer(player, this.$store.state);
         })
         .catch(err => {
           this.error = err.toString();
+        })
+        .finally(() => {
+          this.loading = false;
         });
     }
   }
@@ -119,19 +150,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.loading {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.error {
-  color: red;
-}
-
 .content {
   transition: all 0.35s ease;
-  position: absolute;
 }
 
 .slide-enter {
@@ -144,34 +164,12 @@ export default {
   transform: translate(-30px, 0);
 }
 
-.content {
-  width: 800px;
-  margin: 2em;
-}
-
 .profile {
-  display: flex;
-  flex-direction: row;
-  padding: 0 16px;
-  border-bottom: 1px solid #444;
-
-  .persona {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    flex-grow: 2;
-  }
-
   .player-avatar {
-    max-width: 64px;
-    margin-right: 8px;
     box-shadow: 2px 2px 4px #000;
   }
 
   .player-name {
-    align-self: flex-end;
-    font-weight: 700;
-    font-size: 42px;
     text-shadow: 1px 1px 1px #000;
   }
 
@@ -179,17 +177,6 @@ export default {
     align-self: flex-end;
     margin-left: 1em;
     margin-bottom: 4px;
-  }
-
-  .team {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-right: 8px;
-  }
-
-  .team-logo {
-    max-width: 64px;
   }
 
   .team-name {

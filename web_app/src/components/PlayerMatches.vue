@@ -1,69 +1,36 @@
 <template>
-  <div class="player-matches">
-    <ul class="matches">
-      <li
-        class="match"
-        v-for="match in matches"
-        :key="match.match_id"
-        :match="match"
-      >
-        <img
-          class="hero-image"
-          :src="
-            match.hero | heroImageURL({ version: 'small', placeholder: true })
-          "
-          :title="match.hero | heroName"
-        />
+  <v-list dense>
+    <v-list-item
+      v-for="match in matches"
+      :key="match.match_id"
+      link
+      ripple
+      :href="`https://www.opendota.com/matches/${match.match_id}`"
+      target="_blank"
+    >
+      <v-list-item-icon>
+        <hero-image :hero="match.hero" version="icon" />
+      </v-list-item-icon>
 
-        <a
-          class="match-id"
-          :href="`https://www.opendota.com/matches/${match.match_id}`"
-          :title="`View match ${match.match_id} on OpenDota`"
-          target="_blank"
-        >
-          {{ match.match_id }}
-        </a>
-      </li>
-    </ul>
-  </div>
+      <v-list-item-content>
+        <!-- <span>{{ `View match ${match.match_id} on OpenDota` }}</span> -->
+        <v-list-item-title v-text="match.match_id" v-on="on">
+        </v-list-item-title>
+      </v-list-item-content>
+    </v-list-item>
+  </v-list>
 </template>
 
 <script>
-import filters from "@/components/filters";
+import HeroImage from "@/components/HeroImage.vue";
 
 export default {
   name: "player-matches",
-  filters,
+  components: {
+    HeroImage
+  },
   props: {
     matches: Array
   }
 };
 </script>
-
-<style lang="scss" scoped>
-.matches {
-  padding: 0;
-  margin: 2em 0 0 2em;
-}
-
-.match {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  margin: 10px 0;
-  list-style: none;
-}
-
-.hero-image {
-  width: 59px;
-  height: 33px;
-  margin-right: 8px;
-  margin-left: 8px;
-  box-shadow: 2px 2px 4px #000, -1px -1px 2px #333;
-}
-
-.match-id {
-  margin-left: 16px;
-  font-weight: bold;
-}
-</style>
