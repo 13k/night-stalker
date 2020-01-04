@@ -1,5 +1,8 @@
 FIND := $(shell command -v gfind)
-FIND ?= $(shell command -v find)
+ifeq ($(strip $(FIND)),)
+FIND := $(shell command -v find)
+endif
+
 PROTOC := $(shell command -v protoc)
 
 TOOLS_PATH := bin
@@ -7,7 +10,7 @@ PROTO_SRC := proto
 PROTO_GOOUT := internal/protocol
 PROTO_JSOUT := web_app/src/protocol
 
-protobufs := $(shell $(FIND) $(PROTO_SRC) -type f -name '*.proto' -printf '%P\n')
+protobufs := $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto' -printf '%P\n')
 protos_go := $(patsubst %.proto,$(PROTO_GOOUT)/%.pb.go,$(protobufs))
 protos_js := $(PROTO_JSOUT)/enums_pb.js
 
