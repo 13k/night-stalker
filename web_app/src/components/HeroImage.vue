@@ -4,6 +4,7 @@
     :src="source"
     :lazy-src="lazySource"
     :alt="altText"
+    :title="altText"
     :width="width"
     :height="height"
     :max-width="maxWidth"

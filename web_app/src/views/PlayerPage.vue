@@ -20,51 +20,135 @@
         <v-row>
           <v-col cols="12">
             <section class="profile">
-              <v-row>
-                <v-col>
+              <v-row justify="start">
+                <v-col
+                  cols="8"
+                  sm="9"
+                  md="10"
+                  lg="10"
+                  xl="10"
+                  class="d-flex align-end"
+                >
                   <v-img
                     v-if="player.avatar_medium_url"
                     :src="player.avatar_medium_url"
-                    class="player-avatar mr-4"
+                    class="player-avatar"
                     max-width="64"
-                  />
-                </v-col>
-
-                <v-col>
-                  <span class="player-name display-3">{{ player.name }}</span>
-                </v-col>
-
-                <v-col>
-                  <a
-                    class="player-opendota"
-                    :href="odPlayerURL"
-                    :title="`View ${player.name} on OpenDota`"
-                    target="_blank"
-                  >
-                    [opendota]
-                  </a>
-                </v-col>
-              </v-row>
-
-              <v-row v-if="player.team" class="team">
-                <v-col>
-                  <v-img
-                    v-if="player.team.logo_url"
-                    class="team-logo"
-                    max-width="64"
-                    :src="player.team.logo_url"
-                    :alt="player.team.name"
+                    max-height="64"
+                    contain
                   />
 
-                  <a
-                    v-if="odTeamURL"
-                    class="team-name"
-                    :href="odTeamURL"
-                    :title="`View ${player.team.name} on OpenDota`"
-                    target="_blank"
+                  <span class="display-1 mx-4 d-flex d-sm-none">
+                    {{ player.name }}
+                  </span>
+
+                  <span class="display-2 mx-4 d-none d-sm-flex d-lg-none">
+                    {{ player.name }}
+                  </span>
+
+                  <span class="display-3 mx-4 d-none d-lg-flex">
+                    {{ player.name }}
+                  </span>
+
+                  <span
+                    class="order-first order-sm-last mr-2 mr-sm-0 d-inline-flex flex-column flex-sm-row flex-md-row flex-lg-row flex-xl-row"
                   >
-                    {{ player.team.tag }}
-                  </a>
+                    <community-site-btn
+                      site="opendota"
+                      :href="player | opendotaPlayerURL"
+                      :alt="`View ${player.name} on OpenDota`"
+                      target="_blank"
+                      width="20"
+                      height="20"
+                    />
+
+                    <community-site-btn
+                      site="dotabuff"
+                      :href="player | dotabuffPlayerURL"
+                      :alt="`View ${player.name} on Dotabuff`"
+                      target="_blank"
+                      width="20"
+                      height="20"
+                    />
+
+                    <community-site-btn
+                      site="stratz"
+                      :href="player | stratzPlayerURL"
+                      :alt="`View ${player.name} on Stratz`"
+                      target="_blank"
+                      width="20"
+                      height="20"
+                    />
+
+                    <community-site-btn
+                      v-if="player.is_pro"
+                      site="datdota"
+                      :href="player | datdotaPlayerURL"
+                      :alt="`View ${player.name} on DatDota`"
+                      target="_blank"
+                      width="20"
+                      height="20"
+                    />
+                  </span>
+                </v-col>
+
+                <v-spacer />
+
+                <v-col
+                  v-if="player.team"
+                  cols="4"
+                  sm="3"
+                  md="2"
+                  lg="2"
+                  xl="2"
+                  align-self="end"
+                  class="d-flex justify-end"
+                >
+                  <div class="d-flex">
+                    <div
+                      class="d-inline-flex flex-column justify-center align-center"
+                    >
+                      <v-img
+                        v-if="player.team.logo_url"
+                        :src="player.team.logo_url"
+                        :title="player.team.name"
+                        max-width="64"
+                        max-height="64"
+                        contain
+                      />
+
+                      <span class="text-center">{{ player.team.name }}</span>
+                    </div>
+
+                    <div class="d-flex flex-column ml-3 justify-center">
+                      <community-site-btn
+                        site="opendota"
+                        :href="player.team | opendotaTeamURL"
+                        :alt="`View ${player.team.name} on OpenDota`"
+                        target="_blank"
+                        width="20"
+                        height="20"
+                      />
+
+                      <community-site-btn
+                        site="dotabuff"
+                        :href="player.team | dotabuffTeamURL"
+                        :alt="`View ${player.team.name} on Dotabuff`"
+                        target="_blank"
+                        width="20"
+                        height="20"
+                      />
+
+                      <community-site-btn
+                        site="datdota"
+                        :href="player.team | datdotaTeamURL"
+                        :alt="`View ${player.team.name} on DatDota`"
+                        target="_blank"
+                        width="20"
+                        height="20"
+                      />
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
             </section>
@@ -88,6 +172,8 @@ import { each } from "lodash/collection";
 import { get } from "lodash/object";
 
 import api from "@/api";
+import filters from "@/components/filters";
+import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import PlayerMatches from "@/components/PlayerMatches.vue";
 
 const transformPlayer = (player, { heroes }) => {
@@ -101,8 +187,10 @@ const transformPlayer = (player, { heroes }) => {
 export default {
   name: "player-page",
   components: {
+    CommunitySiteBtn,
     PlayerMatches
   },
+  filters,
   data() {
     return {
       loading: false,
@@ -115,18 +203,6 @@ export default {
   },
   watch: {
     $route: "fetchData"
-  },
-  computed: {
-    odPlayerURL() {
-      return `https://www.opendota.com/players/${this.player.account_id}`;
-    },
-    odTeamURL() {
-      if (!this.player.team) {
-        return null;
-      }
-
-      return `https://www.opendota.com/teams/${this.player.team.id}`;
-    }
   },
   methods: {
     fetchData() {
@@ -167,22 +243,6 @@ export default {
 .profile {
   .player-avatar {
     box-shadow: 2px 2px 4px #000;
-  }
-
-  .player-name {
-    text-shadow: 1px 1px 1px #000;
-  }
-
-  .player-opendota {
-    align-self: flex-end;
-    margin-left: 1em;
-    margin-bottom: 4px;
-  }
-
-  .team-name {
-    font-size: 16px;
-    font-weight: bold;
-    text-decoration: none;
   }
 }
 </style>
