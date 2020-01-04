@@ -1,7 +1,7 @@
 <template>
   <v-item-group>
     <v-container>
-      <v-row>
+      <v-row align="stretch">
         <v-col
           v-for="match in matches"
           :key="match.match_id"

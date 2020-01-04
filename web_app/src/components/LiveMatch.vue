@@ -1,5 +1,5 @@
 <template>
-  <v-card hover :color="cardColor" @click="toggle">
+  <v-card hover :color="cardColor" @click="toggle" height="100%">
     <v-card-title>
       {{ match.match_id }}
 
