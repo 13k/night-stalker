@@ -2,10 +2,28 @@ syntax = "proto3";
 
 package protocol;
 
+import "enums.proto";
+
 message Player {
   message Match {
     uint64 match_id = 1;
     uint64 hero_id = 2;
+    uint64 lobby_id = 3;
+    LobbyType lobby_type = 4;
+    uint64 league_id = 5;
+    uint64 series_id = 6;
+    GameMode game_mode = 7;
+    uint32 average_mmr = 8;
+    uint64 radiant_team_id = 9;
+    string radiant_team_name = 10;
+    string radiant_team_tag = 11;
+    uint64 radiant_team_logo = 12;
+    string radiant_team_logo_url = 13;
+    uint64 dire_team_id = 14;
+    string dire_team_name = 15;
+    string dire_team_tag = 16;
+    uint64 dire_team_logo = 17;
+    string dire_team_logo_url = 18;
   }
 
   message Team {
