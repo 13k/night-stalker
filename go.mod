@@ -6,8 +6,8 @@ require (
 	cirello.io/oversight v1.0.3
 	github.com/13k/geyser v0.2.0
 	github.com/cskr/pubsub v1.0.2
+	github.com/davecgh/go-spew v1.1.1
 	github.com/faceit/go-steam v0.0.0-20190206021251-2be7df6980e1
-	github.com/gin-gonic/gin v1.5.0
 	github.com/go-redis/redis/v7 v7.0.0-beta.4
 	github.com/go-resty/resty/v2 v2.1.0
 	github.com/golang-migrate/migrate/v4 v4.7.0
