@@ -61,19 +61,12 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 		proPlayer = nil
 	}
 
-	type livePlayerResult struct {
-		*models.LiveMatchPlayer
-		MatchID nspb.MatchID
-	}
-
-	livePlayerResults := []*livePlayerResult{}
+	var livePlayers []*models.LiveMatchPlayer
 
 	err = app.db.
-		Table(models.LiveMatchPlayerModel.TableName()).
-		Select("live_match_players.*, live_matches.match_id").
-		Joins("INNER JOIN live_matches ON (live_match_players.live_match_id = live_matches.id)").
 		Where(&models.LiveMatchPlayer{AccountID: accountID}).
-		Scan(&livePlayerResults).
+		Preload("LiveMatch").
+		Find(&livePlayers).
 		Error
 
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
@@ -81,25 +74,12 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 		return nil, err
 	}
 
-	livePlayers := make(map[nspb.MatchID]*models.LiveMatchPlayer)
-
-	for _, result := range livePlayerResults {
-		livePlayers[result.MatchID] = result.LiveMatchPlayer
-	}
-
-	type statsPlayerResult struct {
-		*models.LiveMatchStatsPlayer
-		MatchID nspb.MatchID
-	}
-
-	statsPlayerResults := []*statsPlayerResult{}
+	var statsPlayers []*models.LiveMatchStatsPlayer
 
 	err = app.db.
-		Table(models.LiveMatchStatsPlayerModel.TableName()).
-		Select("live_match_stats_players.*, live_match_stats.match_id").
-		Joins("INNER JOIN live_match_stats ON (live_match_stats_players.live_match_stats_id = live_match_stats.id)").
 		Where(&models.LiveMatchStatsPlayer{AccountID: accountID}).
-		Scan(&statsPlayerResults).
+		Preload("LiveMatchStats").
+		Find(&statsPlayers).
 		Error
 
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
@@ -107,10 +87,15 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 		return nil, err
 	}
 
-	statsPlayers := make(map[nspb.MatchID]*models.LiveMatchStatsPlayer)
+	statsPlayersByMatchID := make(map[nspb.MatchID][]*models.LiveMatchStatsPlayer)
 
-	for _, result := range statsPlayerResults {
-		statsPlayers[result.MatchID] = result.LiveMatchStatsPlayer
+	for _, statsPlayer := range statsPlayers {
+		if statsPlayer.LiveMatchStats == nil {
+			continue
+		}
+
+		statsPlayersByMatchID[statsPlayer.LiveMatchStats.MatchID] =
+			append(statsPlayersByMatchID[statsPlayer.LiveMatchStats.MatchID], statsPlayer)
 	}
 
 	view := nsviews.NewPlayer(
@@ -118,7 +103,7 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 		player,
 		proPlayer,
 		livePlayers,
-		statsPlayers,
+		statsPlayersByMatchID,
 	)
 
 	return view, nil

@@ -39,22 +39,52 @@ func NewLiveMatch(
 
 		if radiantTeam != nil {
 			pb.RadiantScore = radiantTeam.Score
-			pb.RadiantTeamName = radiantTeam.Name
-			pb.RadiantTeamLogo = uint64(radiantTeam.LogoID)
-			pb.RadiantTeamId = uint64(radiantTeam.TeamID)
-			pb.RadiantTeamTag = radiantTeam.Tag
-			pb.RadiantTeamLogoUrl = radiantTeam.LogoURL
 			pb.RadiantNetWorth = radiantTeam.NetWorth
+
+			if pb.RadiantTeamId == 0 {
+				pb.RadiantTeamId = uint64(radiantTeam.TeamID)
+			}
+
+			if pb.RadiantTeamName == "" {
+				pb.RadiantTeamName = radiantTeam.Name
+			}
+
+			if pb.RadiantTeamTag == "" {
+				pb.RadiantTeamTag = radiantTeam.Tag
+			}
+
+			if pb.RadiantTeamLogo == 0 {
+				pb.RadiantTeamLogo = uint64(radiantTeam.LogoID)
+			}
+
+			if pb.RadiantTeamLogoUrl == "" {
+				pb.RadiantTeamLogoUrl = radiantTeam.LogoURL
+			}
 		}
 
 		if direTeam != nil {
 			pb.DireScore = direTeam.Score
-			pb.DireTeamName = direTeam.Name
-			pb.DireTeamLogo = uint64(direTeam.LogoID)
-			pb.DireTeamId = uint64(direTeam.TeamID)
-			pb.DireTeamTag = direTeam.Tag
-			pb.DireTeamLogoUrl = direTeam.LogoURL
 			pb.DireNetWorth = direTeam.NetWorth
+
+			if pb.DireTeamId == 0 {
+				pb.DireTeamId = uint64(direTeam.TeamID)
+			}
+
+			if pb.DireTeamName == "" {
+				pb.DireTeamName = direTeam.Name
+			}
+
+			if pb.DireTeamTag == "" {
+				pb.DireTeamTag = direTeam.Tag
+			}
+
+			if pb.DireTeamLogo == 0 {
+				pb.DireTeamLogo = uint64(direTeam.LogoID)
+			}
+
+			if pb.DireTeamLogoUrl == "" {
+				pb.DireTeamLogoUrl = direTeam.LogoURL
+			}
 		}
 
 		if radiantTeam != nil && direTeam != nil {

@@ -11,8 +11,8 @@ func NewPlayer(
 	followed *models.FollowedPlayer,
 	player *models.Player,
 	proPlayer *models.ProPlayer,
-	livePlayers map[nspb.MatchID]*models.LiveMatchPlayer,
-	statsPlayers map[nspb.MatchID]*models.LiveMatchStatsPlayer,
+	livePlayers []*models.LiveMatchPlayer,
+	statsPlayersByMatchID map[nspb.MatchID][]*models.LiveMatchStatsPlayer,
 ) *nspb.Player {
 	pb := &nspb.Player{}
 
@@ -32,10 +32,13 @@ func NewPlayer(
 	}
 
 	if pb.Name == "" {
-		for _, statsPlayer := range statsPlayers {
-			if statsPlayer.Name != "" {
-				pb.Name = statsPlayer.Name
-				break
+	statsPlayersLoop:
+		for _, matchStatsPlayers := range statsPlayersByMatchID {
+			for _, statsPlayer := range matchStatsPlayers {
+				if statsPlayer.Name != "" {
+					pb.Name = statsPlayer.Name
+					break statsPlayersLoop
+				}
 			}
 		}
 	}
@@ -45,11 +48,14 @@ func NewPlayer(
 		pb.Team = NewPlayerTeam(proPlayer.Team)
 	}
 
-	for matchID := range livePlayers {
+	for _, livePlayer := range livePlayers {
+		if livePlayer.LiveMatch == nil {
+			continue
+		}
+
 		pb.Matches = append(pb.Matches, NewPlayerMatch(
-			matchID,
-			livePlayers[matchID],
-			statsPlayers[matchID],
+			livePlayer,
+			statsPlayersByMatchID[livePlayer.LiveMatch.MatchID],
 		))
 	}
 
@@ -74,18 +80,101 @@ func NewPlayerTeam(team *models.Team) *nspb.Player_Team {
 }
 
 func NewPlayerMatch(
-	matchID nspb.MatchID,
 	livePlayer *models.LiveMatchPlayer,
-	statsPlayer *models.LiveMatchStatsPlayer,
+	statsPlayers []*models.LiveMatchStatsPlayer,
 ) *nspb.Player_Match {
-	match := &nspb.Player_Match{
-		MatchId: matchID,
-		HeroId:  uint64(livePlayer.HeroID),
+	liveMatch := livePlayer.LiveMatch
+
+	pb := &nspb.Player_Match{
+		MatchId:         liveMatch.MatchID,
+		HeroId:          uint64(livePlayer.HeroID),
+		LobbyId:         liveMatch.LobbyID,
+		LobbyType:       liveMatch.LobbyType,
+		LeagueId:        liveMatch.LeagueID,
+		SeriesId:        liveMatch.SeriesID,
+		GameMode:        liveMatch.GameMode,
+		AverageMmr:      liveMatch.AverageMMR,
+		RadiantTeamId:   uint64(liveMatch.RadiantTeamID),
+		RadiantTeamName: liveMatch.RadiantTeamName,
+		RadiantTeamLogo: uint64(liveMatch.RadiantTeamLogo),
+		DireTeamId:      uint64(liveMatch.DireTeamID),
+		DireTeamName:    liveMatch.DireTeamName,
+		DireTeamLogo:    uint64(liveMatch.DireTeamLogo),
 	}
 
-	if match.HeroId == 0 && statsPlayer != nil {
-		match.HeroId = uint64(statsPlayer.HeroID)
+	for _, statsPlayer := range statsPlayers {
+		if pb.HeroId == 0 {
+			if statsPlayer.HeroID != 0 {
+				pb.HeroId = uint64(statsPlayer.HeroID)
+			}
+		}
+
+		if stats := statsPlayer.LiveMatchStats; stats != nil {
+			if pb.LeagueId == 0 {
+				pb.LeagueId = stats.LeagueID
+			}
+
+			if pb.GameMode == 0 {
+				pb.GameMode = stats.GameMode
+			}
+
+			var radiantTeam *models.LiveMatchStatsTeam
+			var direTeam *models.LiveMatchStatsTeam
+
+			for _, team := range stats.Teams {
+				switch team.GameTeam {
+				case nspb.GameTeam_GAME_TEAM_GOODGUYS:
+					radiantTeam = team
+				case nspb.GameTeam_GAME_TEAM_BADGUYS:
+					direTeam = team
+				}
+			}
+
+			if radiantTeam != nil {
+				if pb.RadiantTeamId == 0 {
+					pb.RadiantTeamId = uint64(radiantTeam.TeamID)
+				}
+
+				if pb.RadiantTeamName == "" {
+					pb.RadiantTeamName = radiantTeam.Name
+				}
+
+				if pb.RadiantTeamTag == "" {
+					pb.RadiantTeamTag = radiantTeam.Tag
+				}
+
+				if pb.RadiantTeamLogo == 0 {
+					pb.RadiantTeamLogo = uint64(radiantTeam.LogoID)
+				}
+
+				if pb.RadiantTeamLogoUrl == "" {
+					pb.RadiantTeamLogoUrl = radiantTeam.LogoURL
+				}
+			}
+
+			if direTeam != nil {
+				if pb.DireTeamId == 0 {
+					pb.DireTeamId = uint64(direTeam.TeamID)
+				}
+
+				if pb.DireTeamName == "" {
+					pb.DireTeamName = direTeam.Name
+				}
+
+				if pb.DireTeamTag == "" {
+					pb.DireTeamTag = direTeam.Tag
+				}
+
+				if pb.DireTeamLogo == 0 {
+					pb.DireTeamLogo = uint64(direTeam.LogoID)
+				}
+
+				if pb.DireTeamLogoUrl == "" {
+					pb.DireTeamLogoUrl = direTeam.LogoURL
+				}
+			}
+		}
 	}
 
-	return match
+	return pb
 }
