@@ -11,10 +11,6 @@
   "reportUnusedDisableDirectives": true,
   "overrides": [
     {
-      "files": ["*.vue"],
-      "extends": ["vuetify"]
-    },
-    {
       "files": ["*.json", "*.js", "*.html", "*.css"],
       "extends": ["prettier"]
     }
