@@ -17,6 +17,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
+    "format": "prettier --write '{public,src,scripts}/**/*.{css,html,js,json,vue}'",
+    "gen:proto": "make proto",
     "gen:hero-aliases": "node scripts/gen_hero_aliases.js"
   },
   "dependencies": {
