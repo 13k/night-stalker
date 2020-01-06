@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package protocol;
+
+import "live_match.proto";
+
+message LiveMatches {
+  repeated LiveMatch matches = 1;
+}
+
+message LiveMatchesChange {
+  enum Op {
+    REPLACE = 0;
+    ADD = 1;
+    UPDATE = 2;
+    REMOVE = 3;
+  }
+
+  Op op = 1;
+  LiveMatches change = 2;
+}

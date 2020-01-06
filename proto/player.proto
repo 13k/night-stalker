@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package protocol;
 
+import "google/protobuf/timestamp.proto";
 import "enums.proto";
 
 message Player {
@@ -24,6 +25,9 @@ message Player {
     string dire_team_tag = 16;
     uint64 dire_team_logo = 17;
     string dire_team_logo_url = 18;
+    google.protobuf.Timestamp activate_time = 19;
+    google.protobuf.Timestamp deactivate_time = 20;
+    google.protobuf.Timestamp last_update_time = 21;
   }
 
   message Team {
