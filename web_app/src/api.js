@@ -20,16 +20,17 @@ const ROUTES = {
   }
 };
 
-const debugRequest = request => {
-  log.debug(request.method, request.url);
-};
-
 const debugResponse = (request, _options, response) => {
-  log.debug(request.method, request.url);
-  log.debug(response.status, response.statusText);
+  log.debug(
+    request.method,
+    request.url,
+    "->",
+    response.status,
+    response.statusText
+  );
 };
 
-const beforeRequest = DEBUG ? [debugRequest] : [];
+const beforeRequest = [];
 const afterResponse = DEBUG ? [debugResponse] : [];
 
 class API {
@@ -46,7 +47,6 @@ class API {
   request(method, route, options) {
     const routeParams = get(route, "params", {});
     const toPath = get(ROUTES, route.name);
-    log.debug({ toPath });
     const path = toPath(routeParams);
 
     return this.client[method].call(this.client, path, options).json();
