@@ -12,6 +12,7 @@ import (
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
 	"github.com/cskr/pubsub"
+	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
 	"github.com/paralin/go-dota2/protocol"
@@ -22,6 +23,7 @@ import (
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protocol"
+	nsrds "github.com/13k/night-stalker/internal/redis"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -35,6 +37,7 @@ type Monitor struct {
 	ctx               context.Context
 	log               *nslog.Logger
 	db                *gorm.DB
+	redis             *redis.Client
 	workerPool        *ants.Pool
 	poolSize          int
 	api               *geyserd2.Client
@@ -68,6 +71,10 @@ func (p *Monitor) Start(ctx context.Context) error {
 
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
+	}
+
+	if p.redis = nsctx.GetRedis(ctx); p.db == nil {
+		return nsproc.ErrProcessorContextRedis
 	}
 
 	if p.bus = nsctx.GetPubSub(ctx); p.bus == nil {
@@ -184,8 +191,15 @@ func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
 		return
 	}
 
-	if err := p.createMatchStats(apiStats); err != nil {
+	stats, err := p.createMatchStats(apiStats)
+
+	if err != nil {
 		l.WithError(err).Error("error saving stats to database")
+		return
+	}
+
+	if err := p.publishChange(stats); err != nil {
+		l.WithError(err).Error("error publishing stats change")
 		return
 	}
 
@@ -280,7 +294,7 @@ func (p *Monitor) requestMatchStats(
 	return result, nil
 }
 
-func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsTerse) error {
+func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsTerse) (*models.LiveMatchStats, error) {
 	stats := models.LiveMatchStatsDotaProto(apiStats)
 
 	for _, team := range apiStats.GetTeams() {
@@ -303,5 +317,14 @@ func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsT
 		stats.Buildings = append(stats.Buildings, models.LiveMatchStatsBuildingDotaProto(building))
 	}
 
-	return p.db.Save(stats).Error
+	if err := p.db.Save(stats).Error; err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+func (p *Monitor) publishChange(stats *models.LiveMatchStats) error {
+	p.log.WithField("match_id", stats.MatchID).Debug("publishing match stats update")
+	return p.redis.Publish(nsrds.TopicMatchStatsUpdate, stats.MatchID).Err()
 }
