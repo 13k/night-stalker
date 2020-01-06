@@ -1,3 +1,6 @@
+process.env.VUE_APP_NAME = "Balanar";
+process.env.VUE_APP_VERSION = require("./package.json").version;
+
 module.exports = {
   devServer: {
     host: "localhost",

@@ -116,5 +116,5 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func assetsFS() (http.FileSystem, error) {
-	return pkger.Open("/web_app/dist")
+	return pkger.Open("/balanar/dist")
 }

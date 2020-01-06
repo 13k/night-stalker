@@ -5,7 +5,7 @@ endif
 
 PROTOC := $(shell command -v protoc)
 
-SUBDIRS = web_app
+SUBDIRS = balanar
 PROTO_SRC = proto
 PROTO_GOOUT = internal/protocol
 PROTOS = $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto' -printf '%P\n')
@@ -23,7 +23,7 @@ $(PROTO_GOOUT)/%.pb.go: $(PROTO_SRC)/%.proto
 proto-go: $(PROTOS_GO)
 
 .PHONY: proto-js
-proto-js: web_app
+proto-js: balanar
 
 .PHONY: proto
 proto: proto-go proto-js
