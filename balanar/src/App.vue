@@ -54,7 +54,7 @@
           :to="{ name: 'home' }"
           class="title app-title grey--text text--darken-4"
         >
-          Balanar
+          {{ appName }}
         </router-link>
       </v-toolbar-title>
 
@@ -114,6 +114,7 @@ export default {
   },
 
   data: () => ({
+    appName: process.env.VUE_APP_NAME,
     drawer: null,
     focusSearch: false,
     query: null,

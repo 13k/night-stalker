@@ -1,5 +1,7 @@
-process.env.VUE_APP_NAME = "Balanar";
-process.env.VUE_APP_VERSION = require("./package.json").version;
+const pkg = require("./package.json");
+
+process.env.VUE_APP_NAME = pkg.displayName;
+process.env.VUE_APP_VERSION = pkg.version;
 
 module.exports = {
   devServer: {
@@ -8,9 +10,9 @@ module.exports = {
       "^(/api|/ws)": {
         target: "http://localhost:3000",
         ws: true,
-        changeOrigin: false
-      }
-    }
+        changeOrigin: false,
+      },
+    },
   },
-  transpileDependencies: ["vuetify"]
+  transpileDependencies: ["vuetify"],
 };
