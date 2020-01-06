@@ -1,10 +1,11 @@
-import "./logger";
+import "@/logger";
+import "@/protocol/configure";
 
 import Vue from "vue";
-import vuetify from "./plugins/vuetify";
-import store from "./store";
-import router from "./router";
-import App from "./App.vue";
+import vuetify from "@/plugins/vuetify";
+import store from "@/store";
+import router from "@/router";
+import App from "@/App.vue";
 
 import "@mdi/font/css/materialdesignicons.css";
 import "typeface-roboto";

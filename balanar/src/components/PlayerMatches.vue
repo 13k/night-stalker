@@ -32,7 +32,10 @@
     </v-toolbar>
 
     <v-list two-line dense>
-      <v-list-item v-for="match in filteredMatches" :key="match.match_id">
+      <v-list-item
+        v-for="match in filteredMatches"
+        :key="match.match_id.toString()"
+      >
         <v-list-item-icon>
           <hero-image
             :hero="match.hero"

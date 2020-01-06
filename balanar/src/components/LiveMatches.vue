@@ -4,7 +4,7 @@
       <v-row align="stretch">
         <v-col
           v-for="match in matches"
-          :key="match.match_id"
+          :key="match.match_id.toString()"
           cols="12"
           sm="6"
           md="4"

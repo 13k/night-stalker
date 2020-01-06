@@ -2,9 +2,9 @@ import Vue from "vue";
 import Vuex from "vuex";
 import createLogger from "vuex/dist/logger";
 
-import WS from "../ws";
-import heroes from "./modules/heroes";
-import liveMatches from "./modules/live_matches";
+import WS from "@/ws";
+import heroes from "@/store/modules/heroes";
+import liveMatches from "@/store/modules/live_matches";
 
 Vue.use(Vuex);
 
