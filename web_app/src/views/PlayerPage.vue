@@ -168,21 +168,10 @@
 </template>
 
 <script>
-import { each } from "lodash/collection";
-import { get } from "lodash/object";
-
-import api from "@/api";
+import { getPlayer } from "@/protocol/api";
 import filters from "@/components/filters";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import PlayerMatches from "@/components/PlayerMatches.vue";
-
-const transformPlayer = (player, { heroes }) => {
-  player.matches = each(player.matches || [], match => {
-    match.hero = get(heroes, ["byId", match.hero_id]);
-  });
-
-  return player;
-};
 
 export default {
   name: "player-page",
@@ -209,10 +198,9 @@ export default {
       this.error = this.player = null;
       this.loading = true;
 
-      api
-        .getPlayer(this.$route.params.accountId)
+      getPlayer(this.$store.state, this.$route.params.accountId)
         .then(player => {
-          this.player = transformPlayer(player, this.$store.state);
+          this.player = player;
         })
         .catch(err => {
           this.error = err.toString();
