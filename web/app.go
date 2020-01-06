@@ -46,6 +46,7 @@ type App struct {
 	stimeout                time.Duration
 	rds                     *redis.Client
 	rdsSubLiveMatchesUpdate *redis.PubSub
+	rdsSubMatchStatsUpdate  *redis.PubSub
 }
 
 func New(options *AppOptions) (*App, error) {
@@ -134,6 +135,10 @@ func (app *App) Start() error {
 	app.ctx, app.cancel = context.WithCancel(context.Background())
 
 	if err := app.subscribeLiveMatchesUpdate(); err != nil {
+		return err
+	}
+
+	if err := app.subscribeMatchStatsUpdate(); err != nil {
 		return err
 	}
 

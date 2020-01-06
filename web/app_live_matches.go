@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
@@ -88,6 +89,88 @@ func (app *App) handleLiveMatchesUpdate(rmsg *redis.Message) {
 	busmsg := &nsbus.LiveMatchesChangeMessage{
 		Change: &nspb.LiveMatchesChange{
 			Op:     nspb.LiveMatchesChange_REPLACE,
+			Change: view,
+		},
+	}
+
+	app.bus.Pub(busmsg, nsbus.TopicLiveMatches)
+}
+
+func (app *App) subscribeMatchStatsUpdate() error {
+	app.rdsSubMatchStatsUpdate = app.rds.Subscribe(nsrds.TopicMatchStatsUpdate)
+
+	msg, err := app.rdsSubMatchStatsUpdate.Receive()
+
+	if err != nil {
+		return err
+	}
+
+	if _, ok := msg.(*redis.Subscription); !ok {
+		return errRedisPubSubSubscription
+	}
+
+	go app.watchMatchStatsUpdate()
+
+	return nil
+}
+
+func (app *App) watchMatchStatsUpdate() {
+	defer func() {
+		app.rdsSubMatchStatsUpdate.Close()
+		app.log.Warn("stopped watching match stats updates")
+	}()
+
+	for {
+		select {
+		case <-app.ctx.Done():
+			return
+		case msg, ok := <-app.rdsSubMatchStatsUpdate.Channel():
+			if !ok {
+				return
+			}
+
+			go app.handleMatchStatsUpdate(msg)
+		}
+	}
+}
+
+func (app *App) handleMatchStatsUpdate(rmsg *redis.Message) {
+	l := app.log.WithFields(logrus.Fields{
+		"channel": rmsg.Channel,
+		"pattern": rmsg.Pattern,
+		"payload": rmsg.Payload,
+	})
+
+	l.Debug("received match stats update")
+
+	matchID, err := strconv.ParseUint(rmsg.Payload, 10, 64)
+
+	if err != nil {
+		l.WithError(err).
+			WithField("payload", rmsg.Payload).
+			Error("error parsing match stats redis payload")
+
+		return
+	}
+
+	view, err := app.loadLiveMatchesView(matchID)
+
+	if err != nil {
+		l.WithError(err).
+			WithField("match_id", matchID).
+			Error("error loading live matches view")
+
+		return
+	}
+
+	if len(view.Matches) == 0 {
+		l.Debug("ignoring empty live matches update")
+		return
+	}
+
+	busmsg := &nsbus.LiveMatchesChangeMessage{
+		Change: &nspb.LiveMatchesChange{
+			Op:     nspb.LiveMatchesChange_UPDATE,
 			Change: view,
 		},
 	}
