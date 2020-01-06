@@ -3,9 +3,7 @@
     <v-card-title>
       {{ match.match_id }}
 
-      <div v-if="hasMMR" class="grey--text ml-3 subtitle-2">
-        {{ match.average_mmr }} MMR
-      </div>
+      <div v-if="hasMMR" class="grey--text ml-3 subtitle-2">{{ match.average_mmr }} MMR</div>
     </v-card-title>
 
     <v-card-subtitle>
@@ -30,7 +28,7 @@
               :key="player.account_id"
               :to="{
                 name: 'players.show',
-                params: { accountId: player.account_id }
+                params: { accountId: player.account_id },
               }"
             >
               <live-match-player :team="team" :player="player" />
@@ -45,12 +43,7 @@
           class="d-flex flex-column justify-center align-center"
           :order="team.number % 2 === 0 ? 1 : 0"
         >
-          <img
-            class="team-logo"
-            v-if="team.logo_url"
-            :src="team.logo_url"
-            :title="team.name"
-          />
+          <img class="team-logo" v-if="team.logo_url" :src="team.logo_url" :title="team.name" />
 
           <span class="team-name caption">
             {{ team.tag || team.name }}
@@ -79,17 +72,17 @@ export default {
 
       return {
         left: team.number % 2 === 0,
-        right: team.number % 2 !== 0
+        right: team.number % 2 !== 0,
       };
-    }
+    },
   },
   components: {
-    LiveMatchPlayer
+    LiveMatchPlayer,
   },
   props: {
     match: Object,
     active: Boolean,
-    toggle: Function
+    toggle: Function,
   },
   computed: {
     cardColor() {
@@ -97,8 +90,8 @@ export default {
     },
     hasMMR() {
       return this.match.average_mmr > 0;
-    }
-  }
+    },
+  },
 };
 </script>
 

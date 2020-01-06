@@ -7,7 +7,7 @@ const log = Vue.log({ context: { location: "store/heroes" } });
 
 const state = {
   byId: {},
-  byName: {}
+  byName: {},
 };
 
 const getters = {};
@@ -20,14 +20,14 @@ const actions = {
       log.debug("<fetch> received response", heroes);
       commit("setHeroes", heroes || []);
     });
-  }
+  },
 };
 
 const mutations = {
   setHeroes(state, heroes) {
     state.byId = keyBy(heroes, "id");
     state.byName = keyBy(heroes, "name");
-  }
+  },
 };
 
 export default {
@@ -35,5 +35,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

@@ -7,7 +7,7 @@ const TEAM_ATTRIBUTE_NAME_TPL = _.template("<%= side %>_team_<%= attr %>");
 const TEAM_ATTRIBUTES = ["id", "name", "tag", "logo", "logo_url"];
 const TEAM_SIDES = {
   [pb.protocol.GameTeam.GAME_TEAM_GOODGUYS]: "radiant",
-  [pb.protocol.GameTeam.GAME_TEAM_BADGUYS]: "dire"
+  [pb.protocol.GameTeam.GAME_TEAM_BADGUYS]: "dire",
 };
 
 function getTeamAttributes(match, side) {
@@ -31,9 +31,7 @@ export function transformMatchTimestamps(match) {
     const ts = match[field];
 
     if (ts instanceof pb.google.protobuf.Timestamp) {
-      match[field] = new Date(
-        Math.floor(ts.seconds * 1000 + ts.nanos / 1000000)
-      );
+      match[field] = new Date(Math.floor(ts.seconds * 1000 + ts.nanos / 1000000));
     }
   });
 }

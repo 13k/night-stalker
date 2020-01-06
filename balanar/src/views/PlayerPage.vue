@@ -21,14 +21,7 @@
           <v-col cols="12">
             <section class="profile">
               <v-row justify="start">
-                <v-col
-                  cols="8"
-                  sm="9"
-                  md="10"
-                  lg="10"
-                  xl="10"
-                  class="d-flex align-end"
-                >
+                <v-col cols="8" sm="9" md="10" lg="10" xl="10" class="d-flex align-end">
                   <v-img
                     v-if="player.avatar_medium_url"
                     :src="player.avatar_medium_url"
@@ -105,9 +98,7 @@
                   class="d-flex justify-end"
                 >
                   <div class="d-flex">
-                    <div
-                      class="d-inline-flex flex-column justify-center align-center"
-                    >
+                    <div class="d-inline-flex flex-column justify-center align-center">
                       <v-img
                         v-if="player.team.logo_url"
                         :src="player.team.logo_url"
@@ -177,21 +168,21 @@ export default {
   name: "player-page",
   components: {
     CommunitySiteBtn,
-    PlayerMatches
+    PlayerMatches,
   },
   filters,
   data() {
     return {
       loading: false,
       player: null,
-      error: null
+      error: null,
     };
   },
   created() {
     this.fetchData();
   },
   watch: {
-    $route: "fetchData"
+    $route: "fetchData",
   },
   methods: {
     fetchData() {
@@ -208,8 +199,8 @@ export default {
         .finally(() => {
           this.loading = false;
         });
-    }
-  }
+    },
+  },
 };
 </script>
 

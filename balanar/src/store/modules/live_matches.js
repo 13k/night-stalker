@@ -8,7 +8,7 @@ import { handleLiveMatchesChange } from "@/protocol/ws";
 const log = Vue.log({ context: { location: "store/liveMatches" } });
 
 const state = {
-  all: []
+  all: [],
 };
 
 const getters = {};
@@ -32,10 +32,7 @@ const actions = {
           mutation = "updateLiveMatches";
           break;
         default:
-          log.error(
-            "<watch:message> unknown LiveMatchesChange.op:",
-            liveMatchesChange.op
-          );
+          log.error("<watch:message> unknown LiveMatchesChange.op:", liveMatchesChange.op);
           break;
       }
 
@@ -50,7 +47,7 @@ const actions = {
       log.debug("<fetch:response>", liveMatches);
       commit("setLiveMatches", liveMatches);
     });
-  }
+  },
 };
 
 const mutations = {
@@ -69,7 +66,7 @@ const mutations = {
 
       state.all.splice(idx, delCount, match);
     });
-  }
+  },
 };
 
 export default {
@@ -77,5 +74,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

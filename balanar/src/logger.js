@@ -9,7 +9,7 @@ const options = {
   filter({ config, level }) {
     const logIndex = config.levels.findIndex(l => l.name === level.name);
     return logIndex >= LEVEL_INDEX;
-  }
+  },
 };
 
 Vue.use(VueLog, options);

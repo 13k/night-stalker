@@ -10,24 +10,18 @@ const API_URL = "/api/v1";
 
 const ROUTES = {
   heroes: {
-    index: compile("heroes")
+    index: compile("heroes"),
   },
   live_matches: {
-    index: compile("live_matches")
+    index: compile("live_matches"),
   },
   players: {
-    show: compile("players/:accountId")
-  }
+    show: compile("players/:accountId"),
+  },
 };
 
 const debugResponse = (request, _options, response) => {
-  log.debug(
-    request.method,
-    request.url,
-    "->",
-    response.status,
-    response.statusText
-  );
+  log.debug(request.method, request.url, "->", response.status, response.statusText);
 };
 
 const beforeRequest = [];
@@ -39,8 +33,8 @@ class API {
       prefixUrl: baseURL,
       hooks: {
         beforeRequest,
-        afterResponse
-      }
+        afterResponse,
+      },
     });
   }
 

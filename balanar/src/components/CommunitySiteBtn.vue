@@ -1,11 +1,5 @@
 <template>
-  <v-btn
-    :icon="icon"
-    :small="small"
-    :href="href"
-    :title="altText"
-    :target="target"
-  >
+  <v-btn :icon="icon" :small="small" :href="href" :title="altText" :target="target">
     <v-img
       contain
       :src="source"
@@ -29,11 +23,11 @@ export default {
     alt: String,
     icon: {
       type: Boolean,
-      default: true
+      default: true,
     },
     small: {
       type: Boolean,
-      default: true
+      default: true,
     },
     href: String,
     target: String,
@@ -42,7 +36,7 @@ export default {
     maxWidth: [Number, String],
     maxHeight: [Number, String],
     minWidth: [Number, String],
-    minHeight: [Number, String]
+    minHeight: [Number, String],
   },
   computed: {
     source() {
@@ -54,7 +48,7 @@ export default {
       }
 
       return `View on ${this.site}`;
-    }
-  }
+    },
+  },
 };
 </script>

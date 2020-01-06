@@ -18,16 +18,9 @@
         </v-subheader>
 
         <v-list>
-          <v-list-item
-            v-for="(player, i) in followed"
-            :key="player.account_id"
-            link
-          >
+          <v-list-item v-for="(player, i) in followed" :key="player.account_id" link>
             <v-list-item-avatar>
-              <img
-                :src="`https://randomuser.me/api/portraits/men/${i}.jpg`"
-                alt=""
-              />
+              <img :src="`https://randomuser.me/api/portraits/men/${i}.jpg`" alt="" />
             </v-list-item-avatar>
             <v-list-item-title v-text="player.name" />
           </v-list-item>
@@ -50,10 +43,7 @@
       </v-btn>
 
       <v-toolbar-title class="mr-4 align-center">
-        <router-link
-          :to="{ name: 'home' }"
-          class="title app-title grey--text text--darken-4"
-        >
+        <router-link :to="{ name: 'home' }" class="title app-title grey--text text--darken-4">
           {{ appName }}
         </router-link>
       </v-toolbar-title>
@@ -110,7 +100,7 @@ export default {
   name: "App",
 
   components: {
-    HeroImage
+    HeroImage,
   },
 
   data: () => ({
@@ -119,7 +109,7 @@ export default {
     focusSearch: false,
     query: null,
     followed: [{ name: "13k", account_id: 13, picture: 28 }],
-    searchPlaceholderText: 'Search ("/" to focus)'
+    searchPlaceholderText: 'Search ("/" to focus)',
   }),
 
   created() {
@@ -131,14 +121,14 @@ export default {
 
   computed: {
     ...mapState({
-      balanar: state => state.heroes.byName["npc_dota_hero_night_stalker"]
+      balanar: state => state.heroes.byName["npc_dota_hero_night_stalker"],
     }),
     isXSmall() {
       return this.$vuetify.breakpoint.name === "xs";
     },
     expandedSearch() {
       return this.isXSmall && this.focusSearch;
-    }
+    },
   },
 
   methods: {
@@ -160,8 +150,8 @@ export default {
         this.$refs.expandableSearch.blur();
         this.toggleSearch();
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

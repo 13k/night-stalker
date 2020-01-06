@@ -27,10 +27,10 @@ import LiveMatch from "@/components/LiveMatch.vue";
 export default {
   name: "live-matches",
   components: {
-    LiveMatch
+    LiveMatch,
   },
   computed: mapState({
-    matches: state => state.liveMatches.all
-  })
+    matches: state => state.liveMatches.all,
+  }),
 };
 </script>

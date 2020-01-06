@@ -10,7 +10,7 @@ import LiveMatches from "@/components/LiveMatches.vue";
 export default {
   name: "home",
   components: {
-    LiveMatches
-  }
+    LiveMatches,
+  },
 };
 </script>

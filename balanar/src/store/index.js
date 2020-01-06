@@ -23,7 +23,7 @@ export default new Vuex.Store({
   actions: {},
   modules: {
     heroes,
-    liveMatches
+    liveMatches,
   },
-  plugins
+  plugins,
 });

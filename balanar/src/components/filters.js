@@ -84,5 +84,5 @@ export default {
 
   datdotaTeamURL(team) {
     return `https://www.datdota.com/teams/${team.id}`;
-  }
+  },
 };

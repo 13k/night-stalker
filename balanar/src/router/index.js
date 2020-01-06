@@ -10,20 +10,20 @@ const routes = [
   {
     path: "/",
     name: "home",
-    component: Home
+    component: Home,
   },
   {
     path: "/about",
     name: "about",
-    component: () => import(/* webpackChunkName: "about" */ "@/views/About.vue")
+    component: () => import(/* webpackChunkName: "about" */ "@/views/About.vue"),
   },
   {
     path: "/players/:accountId",
     name: "players.show",
-    component: PlayerPage
-  }
+    component: PlayerPage,
+  },
 ];
 
 export default new VueRouter({
-  routes
+  routes,
 });

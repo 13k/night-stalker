@@ -32,17 +32,9 @@
     </v-toolbar>
 
     <v-list two-line dense>
-      <v-list-item
-        v-for="match in filteredMatches"
-        :key="match.match_id.toString()"
-      >
+      <v-list-item v-for="match in filteredMatches" :key="match.match_id.toString()">
         <v-list-item-icon>
-          <hero-image
-            :hero="match.hero"
-            version="icon"
-            width="32"
-            height="32"
-          />
+          <hero-image :hero="match.hero" version="icon" width="32" height="32" />
         </v-list-item-icon>
 
         <v-list-item-content>
@@ -114,10 +106,10 @@ export default {
   name: "player-matches",
   components: {
     CommunitySiteBtn,
-    HeroImage
+    HeroImage,
   },
   props: {
-    matches: Array
+    matches: Array,
   },
   filters,
   data: () => ({
@@ -127,9 +119,9 @@ export default {
       { text: "Newest", value: "time:desc" },
       { text: "Oldest", value: "time:asc" },
       { text: "Hero", value: "hero:asc" },
-      { text: "Hero (desc)", value: "hero:desc" }
+      { text: "Hero (desc)", value: "hero:desc" },
     ],
-    filteredMatches: []
+    filteredMatches: [],
   }),
   created() {
     this.filterMatches();
@@ -140,7 +132,7 @@ export default {
     },
     sortBy() {
       this.filterMatches();
-    }
+    },
   },
   computed: {
     tokenizedHeroNames() {
@@ -163,7 +155,7 @@ export default {
             .value();
         }, {})
         .value();
-    }
+    },
   },
   methods: {
     filterMatches: _.throttle(function() {
@@ -212,7 +204,7 @@ export default {
       }
 
       this.filteredMatches = matches;
-    }, 500)
-  }
+    }, 500),
+  },
 };
 </script>

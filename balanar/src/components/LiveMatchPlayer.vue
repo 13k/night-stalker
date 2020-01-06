@@ -26,11 +26,11 @@ import HeroImage from "@/components/HeroImage.vue";
 export default {
   name: "live-match-player",
   components: {
-    HeroImage
+    HeroImage,
   },
   props: {
     team: Object,
-    player: Object
+    player: Object,
   },
   computed: {
     isLeft() {
@@ -41,12 +41,12 @@ export default {
     },
     containerClasses() {
       return {
-        "justify-end": this.isRight
+        "justify-end": this.isRight,
       };
     },
     nameClasses() {
       return {
-        "text-right": this.isRight
+        "text-right": this.isRight,
       };
     },
     iconClasses() {
@@ -55,7 +55,7 @@ export default {
         "mr-2": this.isLeft,
         "ml-1": this.isLeft,
         "ml-2": this.isRight,
-        "mr-1": this.isRight
+        "mr-1": this.isRight,
       };
     },
     slotBarClasses() {
@@ -71,11 +71,11 @@ export default {
         "slot-light-blue": this.player.player_slot === 7,
         "slot-green": this.player.player_slot === 8,
         "slot-brown": this.player.player_slot === 9,
-        left: this.isLeft,
-        right: this.isRight
+        "left": this.isLeft,
+        "right": this.isRight,
       };
-    }
-  }
+    },
+  },
 };
 </script>
 

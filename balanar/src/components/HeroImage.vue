@@ -24,15 +24,15 @@ export default {
     hero: Object,
     version: {
       type: String,
-      default: "portrait"
+      default: "portrait",
     },
     placeholder: {
       type: Boolean,
-      default: true
+      default: true,
     },
     alt: {
       type: [Boolean, String],
-      default: true
+      default: true,
     },
     altPlaceholder: String,
     width: [Number, String],
@@ -40,7 +40,7 @@ export default {
     maxWidth: [Number, String],
     maxHeight: [Number, String],
     minWidth: [Number, String],
-    minHeight: [Number, String]
+    minHeight: [Number, String],
   },
   computed: {
     source() {
@@ -77,7 +77,7 @@ export default {
       }
 
       return "";
-    }
-  }
+    },
+  },
 };
 </script>
