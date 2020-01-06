@@ -98,15 +98,13 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 			append(statsPlayersByMatchID[statsPlayer.LiveMatchStats.MatchID], statsPlayer)
 	}
 
-	view := nsviews.NewPlayer(
+	return nsviews.NewPlayer(
 		followed,
 		player,
 		proPlayer,
 		livePlayers,
 		statsPlayersByMatchID,
 	)
-
-	return view, nil
 }
 
 func (app *App) servePlayer(c echo.Context) error {

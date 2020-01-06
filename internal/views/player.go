@@ -13,7 +13,7 @@ func NewPlayer(
 	proPlayer *models.ProPlayer,
 	livePlayers []*models.LiveMatchPlayer,
 	statsPlayersByMatchID map[nspb.MatchID][]*models.LiveMatchStatsPlayer,
-) *nspb.Player {
+) (*nspb.Player, error) {
 	pb := &nspb.Player{}
 
 	pb.AccountId = followed.AccountID
@@ -53,17 +53,23 @@ func NewPlayer(
 			continue
 		}
 
-		pb.Matches = append(pb.Matches, NewPlayerMatch(
+		pbMatch, err := NewPlayerMatch(
 			livePlayer,
 			statsPlayersByMatchID[livePlayer.LiveMatch.MatchID],
-		))
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		pb.Matches = append(pb.Matches, pbMatch)
 	}
 
 	sort.Slice(pb.Matches, func(i, j int) bool {
 		return pb.Matches[i].MatchId < pb.Matches[j].MatchId
 	})
 
-	return pb
+	return pb, nil
 }
 
 func NewPlayerTeam(team *models.Team) *nspb.Player_Team {
@@ -82,7 +88,7 @@ func NewPlayerTeam(team *models.Team) *nspb.Player_Team {
 func NewPlayerMatch(
 	livePlayer *models.LiveMatchPlayer,
 	statsPlayers []*models.LiveMatchStatsPlayer,
-) *nspb.Player_Match {
+) (*nspb.Player_Match, error) {
 	liveMatch := livePlayer.LiveMatch
 
 	pb := &nspb.Player_Match{
@@ -100,6 +106,20 @@ func NewPlayerMatch(
 		DireTeamId:      uint64(liveMatch.DireTeamID),
 		DireTeamName:    liveMatch.DireTeamName,
 		DireTeamLogo:    uint64(liveMatch.DireTeamLogo),
+	}
+
+	var err error
+
+	if pb.ActivateTime, err = models.NullTimestampProto(liveMatch.ActivateTime); err != nil {
+		return nil, err
+	}
+
+	if pb.DeactivateTime, err = models.NullTimestampProto(liveMatch.DeactivateTime); err != nil {
+		return nil, err
+	}
+
+	if pb.LastUpdateTime, err = models.NullTimestampProto(liveMatch.LastUpdateTime); err != nil {
+		return nil, err
 	}
 
 	for _, statsPlayer := range statsPlayers {
@@ -176,5 +196,5 @@ func NewPlayerMatch(
 		}
 	}
 
-	return pb
+	return pb, nil
 }

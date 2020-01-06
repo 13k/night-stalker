@@ -68,8 +68,8 @@ func (app *App) serveWSConn(conn *ws.Conn) {
 				return
 			}
 
-			if msg, ok := busmsg.(*nsbus.LiveMatchesProtoMessage); ok {
-				wsmsg, err := json.Marshal(msg.Matches)
+			if msg, ok := busmsg.(*nsbus.LiveMatchesChangeMessage); ok {
+				wsmsg, err := json.Marshal(msg.Change)
 
 				if err != nil {
 					l.WithError(err).Error("error serializing message")

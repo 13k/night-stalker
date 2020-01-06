@@ -19,6 +19,82 @@ var (
 	errRedisPubSubSubscription = errors.New("Redis pubsub subscription failed")
 )
 
+func (app *App) subscribeLiveMatchesUpdate() error {
+	app.rdsSubLiveMatchesUpdate = app.rds.Subscribe(nsrds.TopicLiveMatchesUpdate)
+
+	msg, err := app.rdsSubLiveMatchesUpdate.Receive()
+
+	if err != nil {
+		return err
+	}
+
+	if _, ok := msg.(*redis.Subscription); !ok {
+		return errRedisPubSubSubscription
+	}
+
+	go app.watchLiveMatchesUpdate()
+
+	return nil
+}
+
+func (app *App) watchLiveMatchesUpdate() {
+	defer func() {
+		app.rdsSubLiveMatchesUpdate.Close()
+		app.log.Warn("stopped watching live matches")
+	}()
+
+	for {
+		select {
+		case <-app.ctx.Done():
+			return
+		case msg, ok := <-app.rdsSubLiveMatchesUpdate.Channel():
+			if !ok {
+				return
+			}
+
+			go app.handleLiveMatchesUpdate(msg)
+		}
+	}
+}
+
+func (app *App) handleLiveMatchesUpdate(rmsg *redis.Message) {
+	l := app.log.WithFields(logrus.Fields{
+		"channel": rmsg.Channel,
+		"pattern": rmsg.Pattern,
+		"payload": rmsg.Payload,
+	})
+
+	l.Debug("received live matches update")
+
+	matchIDs, err := app.liveMatchIDs()
+
+	if err != nil {
+		l.WithError(err).Error("error loading live matches ids")
+		return
+	}
+
+	view, err := app.loadLiveMatchesView(matchIDs...)
+
+	if err != nil {
+		l.WithError(err).Error("error loading live matches view")
+		return
+	}
+
+	if len(view.Matches) == 0 {
+		l.Debug("ignoring empty live matches update")
+		return
+	}
+
+	busmsg := &nsbus.LiveMatchesChangeMessage{
+		Change: &nspb.LiveMatchesChange{
+			Op:     nspb.LiveMatchesChange_REPLACE,
+			Change: view,
+		},
+	}
+
+	app.bus.Pub(busmsg, nsbus.TopicLiveMatches)
+}
+
 func (app *App) liveMatchIDs() ([]nspb.MatchID, error) {
 	idx, err := app.rds.Get(nsrds.KeyLiveMatchesIndex).Int()
 
@@ -56,17 +132,19 @@ func (app *App) liveMatchIDs() ([]nspb.MatchID, error) {
 	return matchIDs, nil
 }
 
-func (app *App) loadLiveMatchesView() ([]*nspb.LiveMatch, error) {
-	matchIDs, err := app.liveMatchIDs()
-
-	if err != nil {
-		return nil, err
+func (app *App) loadLiveMatchesView(matchIDs ...nspb.MatchID) (*nspb.LiveMatches, error) {
+	if len(matchIDs) == 0 {
+		return &nspb.LiveMatches{}, nil
 	}
 
 	matches, err := app.loadLiveMatches(matchIDs)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if len(matches) == 0 {
+		return &nspb.LiveMatches{}, nil
 	}
 
 	matchIDs = make([]nspb.MatchID, len(matches))
@@ -131,63 +209,6 @@ func (app *App) loadLiveMatchesView() ([]*nspb.LiveMatch, error) {
 	return view, nil
 }
 
-func (app *App) subscribeLiveMatches() error {
-	app.rdsSubLiveMatches = app.rds.Subscribe(nsrds.TopicLiveMatchesUpdate)
-
-	msg, err := app.rdsSubLiveMatches.Receive()
-
-	if err != nil {
-		return err
-	}
-
-	if _, ok := msg.(*redis.Subscription); !ok {
-		return errRedisPubSubSubscription
-	}
-
-	go app.watchLiveMatches()
-
-	return nil
-}
-
-func (app *App) watchLiveMatches() {
-	defer func() {
-		app.rdsSubLiveMatches.Close()
-		app.log.Warn("stopped watching live matches")
-	}()
-
-	for {
-		select {
-		case <-app.ctx.Done():
-			return
-		case msg, ok := <-app.rdsSubLiveMatches.Channel():
-			if !ok {
-				return
-			}
-
-			go app.handleLiveMatches(msg)
-		}
-	}
-}
-
-func (app *App) handleLiveMatches(rmsg *redis.Message) {
-	app.log.WithFields(logrus.Fields{
-		"channel": rmsg.Channel,
-		"pattern": rmsg.Pattern,
-		"payload": rmsg.Payload,
-	}).Debug("received live matches")
-
-	matches, err := app.loadLiveMatchesView()
-
-	if err != nil {
-		app.log.WithError(err).Error("error loading live matches")
-		return
-	}
-
-	busmsg := &nsbus.LiveMatchesProtoMessage{Matches: matches}
-
-	app.bus.Pub(busmsg, nsbus.TopicLiveMatches)
-}
-
 func (app *App) loadLiveMatches(matchIDs []nspb.MatchID) ([]*models.LiveMatch, error) {
 	var matches []*models.LiveMatch
 
@@ -209,15 +230,6 @@ func (app *App) loadLiveMatches(matchIDs []nspb.MatchID) ([]*models.LiveMatch, e
 	return matches, nil
 }
 
-/*
-	select s.*
-	from live_match_stats s
-	inner join (
-		select id, row_number() over(partition by match_id order by created_at desc) as row_id
-		from live_match_stats
-		where match_id in (5159282511, 5159280849)
-	) latest on (s.id = latest.id and latest.row_id = 1);
-*/
 func (app *App) loadLiveMatchStats(matchIDs []nspb.MatchID) ([]*models.LiveMatchStats, error) {
 	var stats []*models.LiveMatchStats
 
@@ -309,9 +321,17 @@ func (app *App) loadProPlayers(accountIDs []nspb.AccountID) (map[nspb.AccountID]
 }
 
 func (app *App) serveLiveMatches(c echo.Context) error {
-	matches, err := app.loadLiveMatchesView()
+	matchIDs, err := app.liveMatchIDs()
 
 	if err != nil {
+		return err
+	}
+
+	view, err := app.loadLiveMatchesView(matchIDs...)
+
+	if err != nil {
+		app.log.WithError(err).Error("error loading live matches view")
+
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
 			Message:  err.Error(),
@@ -319,5 +339,5 @@ func (app *App) serveLiveMatches(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, matches)
+	return c.JSON(http.StatusOK, view)
 }

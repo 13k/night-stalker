@@ -34,18 +34,18 @@ type AppOptions struct {
 }
 
 type App struct {
-	options           *AppOptions
-	log               *nslog.Logger
-	wslog             *nslog.Logger
-	db                *gorm.DB
-	bus               *pubsub.PubSub
-	engine            *echo.Echo
-	sv                *http.Server
-	ctx               context.Context
-	cancel            context.CancelFunc
-	stimeout          time.Duration
-	rds               *redis.Client
-	rdsSubLiveMatches *redis.PubSub
+	options                 *AppOptions
+	log                     *nslog.Logger
+	wslog                   *nslog.Logger
+	db                      *gorm.DB
+	bus                     *pubsub.PubSub
+	engine                  *echo.Echo
+	sv                      *http.Server
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	stimeout                time.Duration
+	rds                     *redis.Client
+	rdsSubLiveMatchesUpdate *redis.PubSub
 }
 
 func New(options *AppOptions) (*App, error) {
@@ -133,7 +133,7 @@ func (app *App) configureServer() error {
 func (app *App) Start() error {
 	app.ctx, app.cancel = context.WithCancel(context.Background())
 
-	if err := app.subscribeLiveMatches(); err != nil {
+	if err := app.subscribeLiveMatchesUpdate(); err != nil {
 		return err
 	}
 

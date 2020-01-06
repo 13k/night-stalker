@@ -11,8 +11,8 @@ func NewLiveMatches(
 	followed map[nspb.AccountID]*models.FollowedPlayer,
 	players map[nspb.AccountID]*models.Player,
 	proPlayers map[nspb.AccountID]*models.ProPlayer,
-) ([]*nspb.LiveMatch, error) {
-	view := make([]*nspb.LiveMatch, len(matches))
+) (*nspb.LiveMatches, error) {
+	pbMatches := make([]*nspb.LiveMatch, len(matches))
 
 	for i, match := range matches {
 		pbMatch, err := NewLiveMatch(
@@ -27,7 +27,11 @@ func NewLiveMatches(
 			return nil, err
 		}
 
-		view[i] = pbMatch
+		pbMatches[i] = pbMatch
+	}
+
+	view := &nspb.LiveMatches{
+		Matches: pbMatches,
 	}
 
 	return view, nil

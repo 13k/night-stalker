@@ -345,7 +345,15 @@ func (p *Watcher) flush() {
 	}
 
 	rKey := nsrds.KeyLiveMatches(int(index))
-	p.redis.Publish(nsrds.TopicLiveMatchesUpdate, rKey)
+
+	if err := p.redis.Publish(nsrds.TopicLiveMatchesUpdate, rKey).Err(); err != nil {
+		p.log.
+			WithError(err).
+			WithField("index", index).
+			Error("error publishing live matches update")
+
+		return
+	}
 }
 
 func (p *Watcher) saveResponse(resp *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) error {
