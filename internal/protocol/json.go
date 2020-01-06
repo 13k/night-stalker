@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/jsonpb"
-	proto "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -30,10 +30,30 @@ func MarshalBytes(message proto.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (m *LiveMatchesChange) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *LiveMatches) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
 func (m *LiveMatch) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
 func (m *Hero) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *Player) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *Player_Match) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *Player_Team) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
