@@ -5,26 +5,25 @@ endif
 
 PROTOC := $(shell command -v protoc)
 
-TOOLS_PATH := bin
-PROTO_SRC := proto
-PROTO_GOOUT := internal/protocol
-PROTO_JSOUT := web_app/src/protocol
+SUBDIRS = web_app
+PROTO_SRC = proto
+PROTO_GOOUT = internal/protocol
+PROTOS = $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto' -printf '%P\n')
+PROTOS_GO = $(patsubst %.proto,$(PROTO_GOOUT)/%.pb.go,$(PROTOS))
+TOOLS_PATH = bin
 
-protobufs := $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto' -printf '%P\n')
-protos_go := $(patsubst %.proto,$(PROTO_GOOUT)/%.pb.go,$(protobufs))
-protos_js := $(PROTO_JSOUT)/enums_pb.js
+.PHONY: $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS) FIND=$(FIND)
 
 $(PROTO_GOOUT)/%.pb.go: $(PROTO_SRC)/%.proto
 	$(PROTOC) -I "$(PROTO_SRC)" "--go_out=$(PROTO_GOOUT)" "$<"
 
 .PHONY: proto-go
-proto-go: $(protos_go)
-
-$(PROTO_JSOUT)/%_pb.js: $(PROTO_SRC)/%.proto
-	$(PROTOC) -I "$(PROTO_SRC)" "--js_out=import_style=commonjs_strict,binary:$(PROTO_JSOUT)" "$<"
+proto-go: $(PROTOS_GO)
 
 .PHONY: proto-js
-proto-js: $(protos_js)
+proto-js: web_app
 
 .PHONY: proto
 proto: proto-go proto-js
