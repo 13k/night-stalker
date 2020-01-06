@@ -66,10 +66,10 @@
           hide-details
           v-model="query"
           color="white"
-          placeholder="Search..."
           append-icon="mdi-magnify"
           ref="search"
           v-on:keyup.esc="clearSearch"
+          :placeholder="searchPlaceholderText"
         />
       </v-col>
 
@@ -85,10 +85,10 @@
             hide-details
             v-model="query"
             color="white"
-            placeholder="Search..."
             ref="expandableSearch"
             v-show="expandedSearch"
             @click:clear="toggleSearch"
+            :placeholder="searchPlaceholderText"
           />
         </v-expand-transition>
       </template>
@@ -117,7 +117,8 @@ export default {
     drawer: null,
     focusSearch: false,
     query: null,
-    followed: [{ name: "13k", account_id: 13, picture: 28 }]
+    followed: [{ name: "13k", account_id: 13, picture: 28 }],
+    searchPlaceholderText: 'Search ("/" to focus)'
   }),
 
   created() {
@@ -140,13 +141,12 @@ export default {
   },
 
   methods: {
-    toggleSearch() {
+    async toggleSearch() {
       this.focusSearch = !this.focusSearch;
 
       if (this.$refs.expandableSearch && this.focusSearch) {
-        setTimeout(() => {
-          this.$refs.expandableSearch.focus();
-        }, 1);
+        await this.$nextTick();
+        this.$refs.expandableSearch.focus();
       }
     },
     clearSearch() {
