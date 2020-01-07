@@ -11,8 +11,15 @@
           lg="4"
           xl="3"
         >
-          <v-item v-slot:default="{ active, toggle }" :value="match.match_id">
-            <live-match :match="match" :active="active" :toggle="toggle" />
+          <v-item
+            v-slot:default="{ active, toggle }"
+            :value="match.match_id"
+          >
+            <LiveMatch
+              :match="match"
+              :active="active"
+              :toggle="toggle"
+            />
           </v-item>
         </v-col>
       </v-row>
@@ -25,10 +32,12 @@ import { mapState } from "vuex";
 import LiveMatch from "@/components/LiveMatch.vue";
 
 export default {
-  name: "live-matches",
+  name: "LiveMatches",
+
   components: {
     LiveMatch,
   },
+
   computed: mapState({
     matches: state => state.liveMatches.all,
   }),

@@ -1,37 +1,56 @@
 <template>
-  <v-card hover :color="cardColor" @click="toggle" height="100%">
+  <v-card
+    hover
+    :color="cardColor"
+    height="100%"
+    @click="toggle"
+  >
     <v-card-title>
       {{ match.match_id }}
 
-      <div v-if="hasMMR" class="grey--text ml-3 subtitle-2">{{ match.average_mmr }} MMR</div>
+      <div
+        v-if="hasMMR"
+        class="grey--text ml-3 subtitle-2"
+      >
+        {{ match.average_mmr }} MMR
+      </div>
     </v-card-title>
 
     <v-card-subtitle>
       <kbd>watch_server {{ match.server_steam_id }}</kbd>
     </v-card-subtitle>
 
-    <v-divider class="mx-4"></v-divider>
+    <v-divider class="mx-4" />
 
     <v-container>
-      <v-row v-for="team in match.teams" :key="team.number">
+      <v-row
+        v-for="team in match.teams"
+        :key="team.number"
+      >
         <v-col
           order="1"
           class="players-col"
           :cols="team | playersColWidth"
           :class="team | playersColClasses"
         >
-          <v-list dense link>
+          <v-list
+            dense
+            link
+          >
             <v-list-item
-              dense
-              class="player"
               v-for="player in team.players"
               :key="player.account_id"
+              dense
+              class="player"
               :to="{
                 name: 'players.show',
                 params: { accountId: player.account_id },
               }"
             >
-              <live-match-player :team="team" :player="player" />
+              <live-match-player
+                :team="team"
+                :player="player"
+              />
             </v-list-item>
           </v-list>
         </v-col>
@@ -43,7 +62,12 @@
           class="d-flex flex-column justify-center align-center"
           :order="team.number % 2 === 0 ? 1 : 0"
         >
-          <img class="team-logo" v-if="team.logo_url" :src="team.logo_url" :title="team.name" />
+          <img
+            v-if="team.logo_url"
+            class="team-logo"
+            :src="team.logo_url"
+            :title="team.name"
+          >
 
           <span class="team-name caption">
             {{ team.tag || team.name }}
@@ -59,7 +83,12 @@ import filters from "@/components/filters";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
 
 export default {
-  name: "live-match",
+  name: "LiveMatch",
+
+  components: {
+    LiveMatchPlayer,
+  },
+
   filters: {
     ...filters,
     playersColWidth(team) {
@@ -76,14 +105,22 @@ export default {
       };
     },
   },
-  components: {
-    LiveMatchPlayer,
-  },
+
   props: {
-    match: Object,
-    active: Boolean,
-    toggle: Function,
+    match: {
+      type: Object,
+      required: true,
+    },
+    active: {
+      type: Boolean,
+      default: false,
+    },
+    toggle: {
+      type: Function,
+      default: () => () => {},
+    },
   },
+
   computed: {
     cardColor() {
       return this.active ? "primary" : "";

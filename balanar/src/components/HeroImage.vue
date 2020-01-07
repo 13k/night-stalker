@@ -19,9 +19,13 @@ import { get } from "lodash/object";
 import { isString } from "lodash/lang";
 
 export default {
-  name: "hero-image",
+  name: "HeroImage",
+
   props: {
-    hero: Object,
+    hero: {
+      type: Object,
+      default: null,
+    },
     version: {
       type: String,
       default: "portrait",
@@ -34,14 +38,36 @@ export default {
       type: [Boolean, String],
       default: true,
     },
-    altPlaceholder: String,
-    width: [Number, String],
-    height: [Number, String],
-    maxWidth: [Number, String],
-    maxHeight: [Number, String],
-    minWidth: [Number, String],
-    minHeight: [Number, String],
+    altPlaceholder: {
+      type: String,
+      default: null,
+    },
+    width: {
+      type: [Number, String],
+      default: null,
+    },
+    height: {
+      type: [Number, String],
+      default: null,
+    },
+    maxWidth: {
+      type: [Number, String],
+      default: null,
+    },
+    maxHeight: {
+      type: [Number, String],
+      default: null,
+    },
+    minWidth: {
+      type: [Number, String],
+      default: null,
+    },
+    minHeight: {
+      type: [Number, String],
+      default: null,
+    },
   },
+
   computed: {
     source() {
       if (!this.hero) {

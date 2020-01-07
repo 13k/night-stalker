@@ -1,10 +1,16 @@
 <template>
-  <v-btn :icon="icon" :small="small" :href="href" :title="altText" :target="target">
+  <v-btn
+    :icon="icon"
+    :small="small"
+    :href="href"
+    :title="alt"
+    :target="target"
+  >
     <v-img
       contain
       :src="source"
-      :alt="altText"
-      :title="altText"
+      :alt="alt"
+      :title="alt"
       :width="width"
       :height="height"
       :max-width="maxWidth"
@@ -17,10 +23,17 @@
 
 <script>
 export default {
-  name: "community-site-btn",
+  name: "CommunitySiteBtn",
+
   props: {
-    site: String,
-    alt: String,
+    site: {
+      type: String,
+      required: true,
+    },
+    alt: {
+      type: String,
+      default: () => `View on ${this.site}`,
+    },
     icon: {
       type: Boolean,
       default: true,
@@ -29,25 +42,43 @@ export default {
       type: Boolean,
       default: true,
     },
-    href: String,
-    target: String,
-    width: [Number, String],
-    height: [Number, String],
-    maxWidth: [Number, String],
-    maxHeight: [Number, String],
-    minWidth: [Number, String],
-    minHeight: [Number, String],
+    href: {
+      type: String,
+      default: null,
+    },
+    target: {
+      type: String,
+      default: null,
+    },
+    width: {
+      type: [Number, String],
+      default: null,
+    },
+    height: {
+      type: [Number, String],
+      default: null,
+    },
+    maxWidth: {
+      type: [Number, String],
+      default: null,
+    },
+    maxHeight: {
+      type: [Number, String],
+      default: null,
+    },
+    minWidth: {
+      type: [Number, String],
+      default: null,
+    },
+    minHeight: {
+      type: [Number, String],
+      default: null,
+    },
   },
+
   computed: {
     source() {
       return require(`@/assets/sites/${this.site}.png`);
-    },
-    altText() {
-      if (this.alt) {
-        return this.alt;
-      }
-
-      return `View on ${this.site}`;
     },
   },
 };

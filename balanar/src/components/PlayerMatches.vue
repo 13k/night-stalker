@@ -1,21 +1,34 @@
 <template>
-  <v-card class="mx-auto" outlined>
-    <v-toolbar flat dark color="secondary">
+  <v-card
+    class="mx-auto"
+    outlined
+  >
+    <v-toolbar
+      flat
+      dark
+      color="secondary"
+    >
       <v-container>
         <v-row>
           <v-spacer />
 
-          <v-col cols="12" md="2">
+          <v-col
+            cols="12"
+            md="2"
+          >
             <v-select
-              :items="sortValues"
               v-model="sortBy"
+              :items="sortValues"
               dense
               hide-details
               :class="$vuetify.breakpoint.mdAndUp ? '' : 'mb-6'"
             />
           </v-col>
 
-          <v-col cols="12" md="2">
+          <v-col
+            cols="12"
+            md="2"
+          >
             <v-text-field
               v-model="searchQuery"
               append-icon="mdi-magnify"
@@ -31,10 +44,21 @@
       </v-container>
     </v-toolbar>
 
-    <v-list two-line dense>
-      <v-list-item v-for="match in filteredMatches" :key="match.match_id.toString()">
+    <v-list
+      two-line
+      dense
+    >
+      <v-list-item
+        v-for="match in filteredMatches"
+        :key="match.match_id.toString()"
+      >
         <v-list-item-icon>
-          <hero-image :hero="match.hero" version="icon" width="32" height="32" />
+          <HeroImage
+            :hero="match.hero"
+            version="icon"
+            width="32"
+            height="32"
+          />
         </v-list-item-icon>
 
         <v-list-item-content>
@@ -43,7 +67,7 @@
         </v-list-item-content>
 
         <v-list-item-icon>
-          <community-site-btn
+          <CommunitySiteBtn
             site="opendota"
             :href="match | opendotaMatchURL"
             :alt="`View match ${match.match_id} on OpenDota`"
@@ -54,7 +78,7 @@
         </v-list-item-icon>
 
         <v-list-item-icon class="ml-1">
-          <community-site-btn
+          <CommunitySiteBtn
             site="dotabuff"
             :href="match | dotabuffMatchURL"
             :alt="`View match ${match.match_id} on Dotabuff`"
@@ -65,7 +89,7 @@
         </v-list-item-icon>
 
         <v-list-item-icon class="ml-1">
-          <community-site-btn
+          <CommunitySiteBtn
             site="stratz"
             :href="match | stratzMatchURL"
             :alt="`View match ${match.match_id} on Stratz`"
@@ -75,8 +99,11 @@
           />
         </v-list-item-icon>
 
-        <v-list-item-icon v-if="match.league_id" class="ml-1">
-          <community-site-btn
+        <v-list-item-icon
+          v-if="match.league_id"
+          class="ml-1"
+        >
+          <CommunitySiteBtn
             site="datdota"
             :href="match | datdotaMatchURL"
             :alt="`View match ${match.match_id} on DatDota`"
@@ -103,15 +130,22 @@ import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import HeroImage from "@/components/HeroImage.vue";
 
 export default {
-  name: "player-matches",
+  name: "PlayerMatches",
+
   components: {
     CommunitySiteBtn,
     HeroImage,
   },
-  props: {
-    matches: Array,
-  },
+
   filters,
+
+  props: {
+    matches: {
+      type: Array,
+      default: () => [],
+    },
+  },
+
   data: () => ({
     searchQuery: null,
     sortBy: "time:desc",
@@ -123,17 +157,7 @@ export default {
     ],
     filteredMatches: [],
   }),
-  created() {
-    this.filterMatches();
-  },
-  watch: {
-    searchQuery() {
-      this.filterMatches();
-    },
-    sortBy() {
-      this.filterMatches();
-    },
-  },
+
   computed: {
     tokenizedHeroNames() {
       return _.chain(this.matches)
@@ -157,6 +181,20 @@ export default {
         .value();
     },
   },
+
+  watch: {
+    searchQuery() {
+      this.filterMatches();
+    },
+    sortBy() {
+      this.filterMatches();
+    },
+  },
+
+  created() {
+    this.filterMatches();
+  },
+
   methods: {
     filterMatches: _.throttle(function() {
       const query = _.toLower(this.searchQuery);

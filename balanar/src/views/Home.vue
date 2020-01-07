@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <live-matches />
+    <LiveMatches />
   </div>
 </template>
 
@@ -8,7 +8,8 @@
 import LiveMatches from "@/components/LiveMatches.vue";
 
 export default {
-  name: "home",
+  name: "Home",
+
   components: {
     LiveMatches,
   },

@@ -1,26 +1,72 @@
 <template>
   <v-app id="night-stalker">
-    <v-navigation-drawer v-model="drawer" app clipped>
+    <v-navigation-drawer
+      app
+      clipped
+      :mini-variant.sync="miniDrawer"
+    >
       <v-list dense>
+        <v-list-item>
+          <v-list-item-action v-if="miniDrawer">
+            <v-btn
+              icon
+              title="Expand"
+              @click.stop="miniDrawer = !miniDrawer"
+            >
+              <v-icon>mdi-chevron-right</v-icon>
+            </v-btn>
+          </v-list-item-action>
+
+          <v-spacer />
+
+          <v-list-item-action>
+            <v-btn
+              icon
+              title="Collapse"
+              @click.stop="miniDrawer = !miniDrawer"
+            >
+              <v-icon>mdi-chevron-left</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
+
+        <v-divider />
+
+        <v-list-item
+          :to="{ name: 'home' }"
+          exact
+        >
+          <v-list-item-action>
+            <v-icon>mdi-home</v-icon>
+          </v-list-item-action>
+
+          <v-list-item-content>
+            <v-list-item-title>Home</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
         <v-list-item link>
           <v-list-item-action>
             <v-icon>mdi-history</v-icon>
           </v-list-item-action>
+
           <v-list-item-content>
-            <v-list-item-title>
-              History
-            </v-list-item-title>
+            <v-list-item-title>History</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
 
-        <v-subheader class="mt-4 grey--text text--darken-1">
+        <v-subheader class="mt-4 grey--text text--darken-1 text-center">
           LIVE STALKED
         </v-subheader>
 
         <v-list>
-          <v-list-item v-for="(player, i) in followed" :key="player.account_id" link>
+          <v-list-item
+            v-for="(player, i) in followed"
+            :key="player.account_id"
+            link
+          >
             <v-list-item-avatar>
-              <img :src="`https://randomuser.me/api/portraits/men/${i}.jpg`" alt="" />
+              <img :src="`https://randomuser.me/api/portraits/men/${i}.jpg`">
             </v-list-item-avatar>
             <v-list-item-title v-text="player.name" />
           </v-list-item>
@@ -31,54 +77,68 @@
     <v-app-bar
       app
       clipped-left
-      dark
       dense
+      dark
       color="primary"
       :extension-height="expandedSearch ? 80 : 0"
     >
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+      <v-toolbar-title>
+        <div class="d-flex justify-left">
+          <HeroImage
+            :hero="balanar"
+            version="icon"
+            width="28"
+            height="28"
+            class="mx-4"
+            :alt="appName"
+          />
 
-      <v-btn icon class="mx-2">
-        <hero-image :hero="balanar" version="icon" width="28" height="28" />
-      </v-btn>
-
-      <v-toolbar-title class="mr-4 align-center">
-        <router-link :to="{ name: 'home' }" class="title app-title grey--text text--darken-4">
-          {{ appName }}
-        </router-link>
+          <span class="title app-title grey--text text--darken-4">
+            {{ appName }}
+          </span>
+        </div>
       </v-toolbar-title>
 
       <v-spacer />
 
-      <v-col cols="6" lg="4" xl="4" v-if="!isXSmall">
+      <v-col
+        v-if="!this.$vuetify.breakpoint.xsOnly"
+        cols="6"
+        lg="4"
+        xl="4"
+      >
         <v-text-field
+          ref="search"
+          v-model="searchQuery"
           single-line
           hide-details
-          v-model="query"
           color="white"
           append-icon="mdi-magnify"
-          ref="search"
-          v-on:keyup.esc="clearSearch"
           :placeholder="searchPlaceholderText"
+          @keyup.esc="clearSearch"
         />
       </v-col>
 
-      <v-btn icon v-if="isXSmall" @click.stop="toggleSearch">
+      <v-btn
+        v-if="this.$vuetify.breakpoint.xsOnly"
+        icon
+        @click.stop="toggleSearch"
+      >
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
 
       <template v-slot:extension>
         <v-expand-transition>
           <v-text-field
+            v-show="expandedSearch"
+            ref="expandableSearch"
+            v-model="searchQuery"
             clearable
             single-line
             hide-details
-            v-model="query"
             color="white"
-            ref="expandableSearch"
-            v-show="expandedSearch"
-            @click:clear="toggleSearch"
             :placeholder="searchPlaceholderText"
+            @click:clear="toggleSearch"
           />
         </v-expand-transition>
       </template>
@@ -105,30 +165,27 @@ export default {
 
   data: () => ({
     appName: process.env.VUE_APP_NAME,
-    drawer: null,
+    miniDrawer: false,
     focusSearch: false,
-    query: null,
+    searchQuery: null,
     followed: [{ name: "13k", account_id: 13, picture: 28 }],
     searchPlaceholderText: 'Search ("/" to focus)',
   }),
+
+  computed: {
+    ...mapState({
+      balanar: state => state.heroes.byName.npc_dota_hero_night_stalker,
+    }),
+    expandedSearch() {
+      return this.$vuetify.breakpoint.xsOnly && this.focusSearch;
+    },
+  },
 
   created() {
     this.$vuetify.theme.dark = true;
     this.$store.dispatch("heroes/fetch");
     this.$store.dispatch("liveMatches/watch");
     this.$store.dispatch("liveMatches/fetch");
-  },
-
-  computed: {
-    ...mapState({
-      balanar: state => state.heroes.byName["npc_dota_hero_night_stalker"],
-    }),
-    isXSmall() {
-      return this.$vuetify.breakpoint.name === "xs";
-    },
-    expandedSearch() {
-      return this.isXSmall && this.focusSearch;
-    },
   },
 
   methods: {

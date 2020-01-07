@@ -1,11 +1,17 @@
 <template>
-  <div class="live-match-player d-flex align-center" :class="containerClasses">
+  <div
+    class="live-match-player d-flex align-center"
+    :class="containerClasses"
+  >
     <span :class="nameClasses">
       {{ player.name }}
     </span>
 
-    <div class="icon d-flex" :class="iconClasses">
-      <hero-image
+    <div
+      class="icon d-flex"
+      :class="iconClasses"
+    >
+      <HeroImage
         :hero="player.hero"
         version="portrait"
         width="64"
@@ -15,7 +21,10 @@
         alt-placeholder="Picking hero"
       />
 
-      <div class="slot-bar" :class="slotBarClasses"></div>
+      <div
+        class="slot-bar"
+        :class="slotBarClasses"
+      />
     </div>
   </div>
 </template>
@@ -24,14 +33,23 @@
 import HeroImage from "@/components/HeroImage.vue";
 
 export default {
-  name: "live-match-player",
+  name: "LiveMatchPlayer",
+
   components: {
     HeroImage,
   },
+
   props: {
-    team: Object,
-    player: Object,
+    team: {
+      type: Object,
+      required: true,
+    },
+    player: {
+      type: Object,
+      required: true,
+    },
   },
+
   computed: {
     isLeft() {
       return this.team.number % 2 === 0;

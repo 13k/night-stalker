@@ -3,25 +3,44 @@
     <router-link :to="{ name: 'home' }">
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
-          <v-icon v-on="on">mdi-arrow-left-bold-circle-outline</v-icon>
+          <v-icon v-on="on">
+            mdi-arrow-left-bold-circle-outline
+          </v-icon>
         </template>
         <span>Home</span>
       </v-tooltip>
     </router-link>
 
-    <v-skeleton-loader v-if="loading" type="list-item-avatar-three-line" />
+    <v-skeleton-loader
+      v-if="loading"
+      type="list-item-avatar-three-line"
+    />
 
-    <v-alert v-if="error" type="error">
+    <v-alert
+      v-if="error"
+      type="error"
+    >
       {{ error }}
     </v-alert>
 
     <transition name="slide">
-      <v-container v-if="player" class="content" :key="player.account_id">
+      <v-container
+        v-if="player"
+        :key="player.account_id"
+        class="content"
+      >
         <v-row>
           <v-col cols="12">
             <section class="profile">
               <v-row justify="start">
-                <v-col cols="8" sm="9" md="10" lg="10" xl="10" class="d-flex align-end">
+                <v-col
+                  cols="8"
+                  sm="9"
+                  md="10"
+                  lg="10"
+                  xl="10"
+                  class="d-flex align-end"
+                >
                   <v-img
                     v-if="player.avatar_medium_url"
                     :src="player.avatar_medium_url"
@@ -31,22 +50,14 @@
                     contain
                   />
 
-                  <span class="display-1 mx-4 d-flex d-sm-none">
-                    {{ player.name }}
-                  </span>
+                  <span class="display-1 mx-4 d-flex d-sm-none">{{ player.name }}</span>
 
-                  <span class="display-2 mx-4 d-none d-sm-flex d-lg-none">
-                    {{ player.name }}
-                  </span>
+                  <span class="display-2 mx-4 d-none d-sm-flex d-lg-none">{{ player.name }}</span>
 
-                  <span class="display-3 mx-4 d-none d-lg-flex">
-                    {{ player.name }}
-                  </span>
+                  <span class="display-3 mx-4 d-none d-lg-flex">{{ player.name }}</span>
 
-                  <span
-                    class="order-first order-sm-last mr-2 mr-sm-0 d-inline-flex flex-column flex-sm-row flex-md-row flex-lg-row flex-xl-row"
-                  >
-                    <community-site-btn
+                  <span class="order-first order-sm-last mr-2 mr-sm-0 d-inline-flex flex-column flex-sm-row flex-md-row flex-lg-row flex-xl-row">
+                    <CommunitySiteBtn
                       site="opendota"
                       :href="player | opendotaPlayerURL"
                       :alt="`View ${player.name} on OpenDota`"
@@ -55,7 +66,7 @@
                       height="20"
                     />
 
-                    <community-site-btn
+                    <CommunitySiteBtn
                       site="dotabuff"
                       :href="player | dotabuffPlayerURL"
                       :alt="`View ${player.name} on Dotabuff`"
@@ -64,7 +75,7 @@
                       height="20"
                     />
 
-                    <community-site-btn
+                    <CommunitySiteBtn
                       site="stratz"
                       :href="player | stratzPlayerURL"
                       :alt="`View ${player.name} on Stratz`"
@@ -73,7 +84,7 @@
                       height="20"
                     />
 
-                    <community-site-btn
+                    <CommunitySiteBtn
                       v-if="player.is_pro"
                       site="datdota"
                       :href="player | datdotaPlayerURL"
@@ -112,7 +123,7 @@
                     </div>
 
                     <div class="d-flex flex-column ml-3 justify-center">
-                      <community-site-btn
+                      <CommunitySiteBtn
                         site="opendota"
                         :href="player.team | opendotaTeamURL"
                         :alt="`View ${player.team.name} on OpenDota`"
@@ -121,7 +132,7 @@
                         height="20"
                       />
 
-                      <community-site-btn
+                      <CommunitySiteBtn
                         site="dotabuff"
                         :href="player.team | dotabuffTeamURL"
                         :alt="`View ${player.team.name} on Dotabuff`"
@@ -130,7 +141,7 @@
                         height="20"
                       />
 
-                      <community-site-btn
+                      <CommunitySiteBtn
                         site="datdota"
                         :href="player.team | datdotaTeamURL"
                         :alt="`View ${player.team.name} on DatDota`"
@@ -149,7 +160,7 @@
         <v-row>
           <v-col cols="12">
             <section class="history">
-              <player-matches :matches="player.matches" />
+              <PlayerMatches :matches="player.matches" />
             </section>
           </v-col>
         </v-row>
@@ -165,12 +176,15 @@ import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import PlayerMatches from "@/components/PlayerMatches.vue";
 
 export default {
-  name: "player-page",
+  name: "PlayerPage",
+
   components: {
     CommunitySiteBtn,
     PlayerMatches,
   },
+
   filters,
+
   data() {
     return {
       loading: false,
@@ -178,12 +192,15 @@ export default {
       error: null,
     };
   },
-  created() {
-    this.fetchData();
-  },
+
   watch: {
     $route: "fetchData",
   },
+
+  created() {
+    this.fetchData();
+  },
+
   methods: {
     fetchData() {
       this.error = this.player = null;
