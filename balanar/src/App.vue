@@ -3,15 +3,18 @@
     <v-navigation-drawer
       app
       clipped
-      :mini-variant.sync="miniDrawer"
+      :mini-variant="miniDrawer"
     >
-      <v-list dense>
+      <v-list
+        dense
+        nav
+      >
         <v-list-item>
           <v-list-item-action v-if="miniDrawer">
             <v-btn
               icon
               title="Expand"
-              @click.stop="miniDrawer = !miniDrawer"
+              @click.stop="toggleMiniDrawer"
             >
               <v-icon>mdi-chevron-right</v-icon>
             </v-btn>
@@ -23,7 +26,7 @@
             <v-btn
               icon
               title="Collapse"
-              @click.stop="miniDrawer = !miniDrawer"
+              @click.stop="toggleMiniDrawer"
             >
               <v-icon>mdi-chevron-left</v-icon>
             </v-btn>
@@ -34,6 +37,7 @@
 
         <v-list-item
           :to="{ name: 'home' }"
+          title="Home"
           exact
         >
           <v-list-item-action>
@@ -45,7 +49,10 @@
           </v-list-item-content>
         </v-list-item>
 
-        <v-list-item link>
+        <v-list-item
+          link
+          title="Match history"
+        >
           <v-list-item-action>
             <v-icon>mdi-history</v-icon>
           </v-list-item-action>
@@ -72,6 +79,18 @@
           </v-list-item>
         </v-list>
       </v-list>
+
+      <template v-slot:append>
+        <v-divider />
+
+        <v-list>
+          <v-list-item>
+            <v-list-item-action>
+              <ThemeToggle />
+            </v-list-item-action>
+          </v-list-item>
+        </v-list>
+      </template>
     </v-navigation-drawer>
 
     <v-app-bar
@@ -154,13 +173,16 @@
 
 <script>
 import { mapState } from "vuex";
+
 import HeroImage from "@/components/HeroImage.vue";
+import ThemeToggle from "@/components/ThemeToggle.vue";
 
 export default {
   name: "App",
 
   components: {
     HeroImage,
+    ThemeToggle,
   },
 
   data: () => ({
@@ -181,14 +203,25 @@ export default {
     },
   },
 
+  watch: {
+    miniDrawer(val) {
+      localStorage.setItem("balanar.drawer.mini", val);
+    },
+  },
+
   created() {
-    this.$vuetify.theme.dark = true;
+    this.$vuetify.theme.dark = localStorage.getItem("balanar.theme.dark") === "true";
+    this.miniDrawer = localStorage.getItem("balanar.drawer.mini") === "true";
+
     this.$store.dispatch("heroes/fetch");
     this.$store.dispatch("liveMatches/watch");
     this.$store.dispatch("liveMatches/fetch");
   },
 
   methods: {
+    toggleMiniDrawer() {
+      this.miniDrawer = !this.miniDrawer;
+    },
     async toggleSearch() {
       this.focusSearch = !this.focusSearch;
 
