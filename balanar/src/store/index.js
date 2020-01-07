@@ -3,8 +3,7 @@ import Vuex from "vuex";
 import createLogger from "vuex/dist/logger";
 
 import WS from "@/ws";
-import heroes from "@/store/modules/heroes";
-import liveMatches from "@/store/modules/live_matches";
+import * as modules from "./modules";
 
 Vue.use(Vuex);
 
@@ -21,9 +20,6 @@ export default new Vuex.Store({
   state: { ws },
   mutations: {},
   actions: {},
-  modules: {
-    heroes,
-    liveMatches,
-  },
+  modules,
   plugins,
 });

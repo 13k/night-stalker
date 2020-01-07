@@ -2,6 +2,7 @@ import "@/logger";
 import "@/protocol/configure";
 
 import Vue from "vue";
+
 import vuetify from "@/plugins/vuetify";
 import store from "@/store";
 import router from "@/router";
@@ -12,6 +13,7 @@ import "typeface-roboto";
 import "typeface-roboto-mono";
 
 Vue.config.productionTip = false;
+Vue.config.performance = process.env.NODE_ENV === "development";
 
 new Vue({
   store,
