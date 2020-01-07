@@ -1,6 +1,7 @@
 <template>
   <v-app id="night-stalker">
     <v-navigation-drawer
+      v-model="drawer"
       app
       clipped
       :mini-variant="miniDrawer"
@@ -99,8 +100,12 @@
       dense
       dark
       color="primary"
-      :extension-height="expandedSearch ? 80 : 0"
     >
+      <v-app-bar-nav-icon
+        class="hidden-lg-and-up"
+        @click="drawer = !drawer"
+      />
+
       <v-toolbar-title>
         <div class="d-flex justify-left">
           <HeroImage
@@ -129,35 +134,40 @@
         <v-text-field
           ref="search"
           v-model="searchQuery"
+          clearable
           single-line
           hide-details
           color="white"
           append-icon="mdi-magnify"
           :placeholder="searchPlaceholderText"
           @keyup.esc="clearSearch"
+          @click:clear="clearSearch"
         />
       </v-col>
 
       <v-btn
         v-if="this.$vuetify.breakpoint.xsOnly"
         icon
-        @click.stop="toggleSearch"
+        @click.stop="toggleExtensionSearch"
       >
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
 
-      <template v-slot:extension>
+      <template
+        v-if="extensionSearch"
+        v-slot:extension
+      >
         <v-expand-transition>
           <v-text-field
-            v-show="expandedSearch"
-            ref="expandableSearch"
+            ref="search"
             v-model="searchQuery"
             clearable
             single-line
             hide-details
             color="white"
             :placeholder="searchPlaceholderText"
-            @click:clear="toggleSearch"
+            @click:clear="toggleExtensionSearch"
+            @keyup.esc="toggleExtensionSearch"
           />
         </v-expand-transition>
       </template>
@@ -187,19 +197,22 @@ export default {
 
   data: () => ({
     appName: process.env.VUE_APP_NAME,
+    drawer: null,
     miniDrawer: false,
-    focusSearch: false,
+    extensionSearchOpen: false,
     searchQuery: null,
     followed: [{ name: "13k", account_id: 13, picture: 28 }],
-    searchPlaceholderText: 'Search ("/" to focus)',
   }),
 
   computed: {
     ...mapState({
       balanar: state => state.heroes.byName.npc_dota_hero_night_stalker,
     }),
-    expandedSearch() {
-      return this.$vuetify.breakpoint.xsOnly && this.focusSearch;
+    searchPlaceholderText() {
+      return this.$vuetify.breakpoint.xsOnly ? "Search..." : 'Search ("Ctrl+Enter" to focus)';
+    },
+    extensionSearch() {
+      return this.$vuetify.breakpoint.xsOnly && this.extensionSearchOpen;
     },
   },
 
@@ -218,27 +231,44 @@ export default {
     this.$store.dispatch("liveMatches/fetch");
   },
 
+  mounted() {
+    document.addEventListener("keyup", ev => {
+      ev = ev || window.event;
+
+      if (
+        this.$refs.search &&
+        ev.target !== this.$refs.search.$refs.input &&
+        ev.key === "Enter" &&
+        ev.ctrlKey
+      ) {
+        ev.preventDefault();
+        this.focusSearch();
+      }
+    });
+  },
+
   methods: {
     toggleMiniDrawer() {
       this.miniDrawer = !this.miniDrawer;
     },
-    async toggleSearch() {
-      this.focusSearch = !this.focusSearch;
-
-      if (this.$refs.expandableSearch && this.focusSearch) {
-        await this.$nextTick();
-        this.$refs.expandableSearch.focus();
+    focusSearch() {
+      if (this.$refs.search) {
+        this.$refs.search.focus();
       }
     },
     clearSearch() {
       if (this.$refs.search) {
         this.$refs.search.reset();
+        this.$refs.search.blur();
       }
+    },
+    toggleExtensionSearch() {
+      this.extensionSearchOpen = !this.extensionSearchOpen;
 
-      if (this.$refs.expandableSearch) {
-        this.$refs.expandableSearch.reset();
-        this.$refs.expandableSearch.blur();
-        this.toggleSearch();
+      if (this.extensionSearchOpen) {
+        this.$nextTick(() => this.focusSearch());
+      } else {
+        this.clearSearch();
       }
     },
   },
