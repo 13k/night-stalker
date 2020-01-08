@@ -11,7 +11,10 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+/.direnv
+/.env
+/.env.*
 /bin
 /tmp
-config.yml
+/config.yml
 node_modules
