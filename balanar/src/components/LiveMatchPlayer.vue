@@ -11,7 +11,9 @@
       <span
         v-if="label"
         class="ml-2"
-      >({{ label }})</span>
+      >
+        ({{ label }})
+      </span>
     </div>
 
     <div
@@ -107,16 +109,17 @@ export default {
     slotBarClasses() {
       return {
         "order-first": this.isLeft,
-        "slot-blue": this.player.player_slot === 0,
-        "slot-teal": this.player.player_slot === 1,
-        "slot-purple": this.player.player_slot === 2,
-        "slot-yellow": this.player.player_slot === 3,
-        "slot-orange": this.player.player_slot === 4,
-        "slot-pink": this.player.player_slot === 5,
-        "slot-olive": this.player.player_slot === 6,
-        "slot-light-blue": this.player.player_slot === 7,
-        "slot-green": this.player.player_slot === 8,
-        "slot-brown": this.player.player_slot === 9,
+        "slot-unknown": !this.player.hero,
+        "slot-blue": this.player.hero && this.player.player_slot === 0,
+        "slot-teal": this.player.hero && this.player.player_slot === 1,
+        "slot-purple": this.player.hero && this.player.player_slot === 2,
+        "slot-yellow": this.player.hero && this.player.player_slot === 3,
+        "slot-orange": this.player.hero && this.player.player_slot === 4,
+        "slot-pink": this.player.hero && this.player.player_slot === 5,
+        "slot-olive": this.player.hero && this.player.player_slot === 6,
+        "slot-light-blue": this.player.hero && this.player.player_slot === 7,
+        "slot-green": this.player.hero && this.player.player_slot === 8,
+        "slot-brown": this.player.hero && this.player.player_slot === 9,
         "left": this.isLeft,
         "right": this.isRight,
       };
@@ -145,6 +148,10 @@ export default {
   &.right {
     border-left: 1px solid #444;
   }
+}
+
+.slot-unknown {
+  background-color: #333;
 }
 
 .slot-blue {
