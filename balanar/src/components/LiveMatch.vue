@@ -47,7 +47,7 @@
                 params: { accountId: player.account_id },
               }"
             >
-              <live-match-player
+              <LiveMatchPlayer
                 :team="team"
                 :player="player"
               />

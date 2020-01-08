@@ -3,9 +3,16 @@
     class="live-match-player d-flex align-center"
     :class="containerClasses"
   >
-    <span :class="nameClasses">
-      {{ player.name }}
-    </span>
+    <div
+      class="d-flex"
+      :class="nameClasses"
+    >
+      <span>{{ player.name }}</span>
+      <span
+        v-if="label"
+        class="ml-2"
+      >({{ label }})</span>
+    </div>
 
     <div
       class="icon d-flex"
@@ -30,7 +37,18 @@
 </template>
 
 <script>
+import _ from "lodash";
+
 import HeroImage from "@/components/HeroImage.vue";
+
+const cleanName = name =>
+  _.chain((name || "").normalize())
+    .deburr()
+    .toLower()
+    .replace(/\W/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/(^-|-$)/, "")
+    .value();
 
 export default {
   name: "LiveMatchPlayer",
@@ -51,6 +69,16 @@ export default {
   },
 
   computed: {
+    label() {
+      const label = cleanName(this.player.label);
+      const name = cleanName(this.player.name);
+
+      if (name !== label) {
+        return this.player.label;
+      }
+
+      return null;
+    },
     isLeft() {
       return this.team.number % 2 === 0;
     },
