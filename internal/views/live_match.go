@@ -8,9 +8,9 @@ import (
 func NewLiveMatch(
 	match *models.LiveMatch,
 	stats *models.LiveMatchStats,
-	followed map[uint32]*models.FollowedPlayer,
-	players map[uint32]*models.Player,
-	proPlayers map[uint32]*models.ProPlayer,
+	followed map[nspb.AccountID]*models.FollowedPlayer,
+	players map[nspb.AccountID]*models.Player,
+	proPlayers map[nspb.AccountID]*models.ProPlayer,
 ) (*nspb.LiveMatch, error) {
 	pb, err := LiveMatchProto(match)
 
@@ -18,7 +18,7 @@ func NewLiveMatch(
 		return nil, err
 	}
 
-	statsPlayers := make(map[uint32]*models.LiveMatchStatsPlayer)
+	statsPlayers := make(map[nspb.AccountID]*models.LiveMatchStatsPlayer)
 
 	if stats != nil {
 		pb.GameState = stats.GameState
@@ -169,11 +169,12 @@ func NewLiveMatchPlayer(
 	livePlayer *models.LiveMatchPlayer,
 	statsPlayer *models.LiveMatchStatsPlayer,
 ) *nspb.LiveMatch_Player {
-	pb := &nspb.LiveMatch_Player{}
-
-	pb.AccountId = followed.AccountID
-	pb.Name = followed.Label
-	pb.HeroId = uint64(livePlayer.HeroID)
+	pb := &nspb.LiveMatch_Player{
+		AccountId: followed.AccountID,
+		Name:      followed.Label,
+		Label:     followed.Label,
+		HeroId:    uint64(livePlayer.HeroID),
+	}
 
 	if player != nil {
 		if pb.AccountId == 0 {
