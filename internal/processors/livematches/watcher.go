@@ -287,8 +287,6 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		return
 	}
 
-	// p.requestMatchesMinimal(matchIDs)
-
 	if p.seq.index == 0 {
 		p.seq.Init(page)
 
@@ -309,7 +307,6 @@ func (p *Watcher) handleResponse(page *queryPage) {
 	}
 }
 
-// TODO: remove old redis zsets
 func (p *Watcher) flush() {
 	defer p.seq.Reset()
 
@@ -330,25 +327,9 @@ func (p *Watcher) flush() {
 		"count": len(matches),
 	}).Debug("flushing matches")
 
-	busmsg := &nsbus.LiveMatchesDotaMessage{
-		Index:   index,
-		Matches: matches,
-	}
+	p.publishBusMatches(index, matches)
 
-	p.bus.Pub(busmsg, nsbus.TopicLiveMatches)
-
-	if err := p.redis.Set(nsrds.KeyLiveMatchesIndex, index, 0).Err(); err != nil {
-		p.log.
-			WithError(err).
-			WithField("index", index).
-			Error("error caching live matches index")
-
-		return
-	}
-
-	rKey := nsrds.KeyLiveMatches(int(index))
-
-	if err := p.redis.Publish(nsrds.TopicLiveMatchesUpdate, rKey).Err(); err != nil {
+	if err := p.publishRedisIndex(index); err != nil {
 		p.log.
 			WithError(err).
 			WithField("index", index).
@@ -356,6 +337,65 @@ func (p *Watcher) flush() {
 
 		return
 	}
+
+	if err := p.clearRedisIndices(index); err != nil {
+		p.log.
+			WithError(err).
+			WithField("index", index).
+			Error("error caching live matches index")
+
+		return
+	}
+}
+
+func (p *Watcher) publishBusMatches(index uint32, matches []*protocol.CSourceTVGameSmall) {
+	busmsg := &nsbus.LiveMatchesDotaMessage{
+		Index:   index,
+		Matches: matches,
+	}
+
+	p.bus.Pub(busmsg, nsbus.TopicLiveMatches)
+}
+
+func (p *Watcher) publishRedisIndex(index uint32) error {
+	if err := p.redis.Set(nsrds.KeyLiveMatchesIndex, index, 0).Err(); err != nil {
+		return err
+	}
+
+	rKey := nsrds.KeyLiveMatches(int(index))
+
+	if err := p.redis.Publish(nsrds.TopicLiveMatchesUpdate, rKey).Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Watcher) clearRedisIndices(currentIndex uint32) error {
+	skipKey := nsrds.KeyLiveMatches(int(currentIndex))
+	iter := p.redis.Scan(0, nsrds.KeysLiveMatchesPattern, 0).Iterator()
+
+	var keys []string
+
+	for iter.Next() {
+		key := iter.Val()
+
+		if key == skipKey {
+			continue
+		}
+
+		keys = append(keys, key)
+	}
+
+	if err := iter.Err(); err != nil {
+		return err
+	}
+
+	if len(keys) == 0 {
+		return nil
+	}
+
+	return p.redis.Del(keys...).Err()
 }
 
 func (p *Watcher) saveResponse(resp *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) error {

@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	KeyLiveMatchesIndex = "live_matches.idx"
-
-	fmtKeyLiveMatches = "live_matches:%d"
+	KeyLiveMatchesIndex    = "live_matches_index"
+	KeysLiveMatchesPattern = "live_matches:*"
+	fmtKeyLiveMatches      = "live_matches:%d"
 )
 
 func KeyLiveMatches(index int) string {
