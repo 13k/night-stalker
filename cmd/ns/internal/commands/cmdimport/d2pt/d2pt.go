@@ -1,23 +1,25 @@
 package d2pt
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"regexp"
 	"strconv"
+	"sync"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/panjf2000/ants/v2"
+	"github.com/spf13/cobra"
 
 	"github.com/13k/night-stalker/cmd/ns/internal/db"
 	"github.com/13k/night-stalker/cmd/ns/internal/logger"
 	"github.com/13k/night-stalker/cmd/ns/internal/util"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 )
 
 const (
-	dataURL      = "http://www.dota2protracker.com/static/search.json"
-	playerURLFmt = "http://www.dota2protracker.com/player/%s"
+	baseURL       = "http://www.dota2protracker.com"
+	dataPath      = "/static/search.json"
+	playerPathFmt = "/player/%s"
 )
 
 var (
@@ -30,46 +32,28 @@ var Cmd = &cobra.Command{
 	Run:   run,
 }
 
-type response struct {
-	Heroes  map[string]responseEntry `json:"heroes"`
-	Players map[string]responseEntry `json:"players"`
+type dataResponse struct {
+	Heroes  map[string]dataResponseEntry `json:"heroes"`
+	Players map[string]dataResponseEntry `json:"players"`
 }
 
-type responseEntry struct {
+type dataResponseEntry struct {
 	Aliases []string `json:"valid"`
 }
 
-func fetchAccountID(playerLabel string) (uint32, error) {
-	url := fmt.Sprintf(playerURLFmt, playerLabel)
+type fetchError struct {
+	label   string
+	err     error
+	message string
+}
 
-	resp, err := http.Get(url)
+func (err *fetchError) Error() string {
+	return err.message
+}
 
-	if err != nil {
-		return 0, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return 0, err
-	}
-
-	matches := accountIDRegex.FindSubmatch(body)
-
-	if matches == nil {
-		return 0, fmt.Errorf("could not find account_id in %q", url)
-	}
-
-	accountIDStr := string(matches[1])
-	accountID64, err := strconv.ParseUint(accountIDStr, 10, 32)
-
-	if err != nil {
-		return 0, fmt.Errorf("invalid account_id value %q found in %q", accountIDStr, url)
-	}
-
-	return uint32(accountID64), nil
+type player struct {
+	label     string
+	accountID uint32
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -89,46 +73,129 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	resp, err := http.Get(dataURL)
+	client := resty.New().
+		SetHostURL(baseURL)
+
+	result := &dataResponse{}
+
+	_, err = client.R().
+		SetResult(result).
+		Get(dataPath)
 
 	if err != nil {
 		log.WithError(err).Fatal("error requesting d2pt data")
 	}
 
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	workerPool, err := ants.NewPool(10)
 
 	if err != nil {
-		log.WithError(err).Fatal("error requesting d2pt data")
+		log.WithError(err).Fatal("error starting worker pool")
 	}
 
-	data := &response{}
+	defer workerPool.Release()
 
-	if err := json.Unmarshal(body, data); err != nil {
-		log.WithError(err).Fatal("error parsing d2pt data")
-	}
+	var wg sync.WaitGroup
 
-	for label := range data.Players {
-		l := log.WithField("label", label)
+	for label := range result.Players {
+		err := workerPool.Submit(func() {
+			defer wg.Done()
+			wg.Add(1)
 
-		accountID, err := fetchAccountID(label)
+			l := log.WithField("label", label)
+			p, ferr := fetchAccountID(client, label)
+
+			if ferr != nil {
+				l.WithError(ferr.err).Error(ferr.message)
+				return
+			}
+
+			followed, err := util.FollowPlayer(db, p.accountID, p.label, false)
+
+			if err != nil {
+				if err == util.ErrFollowedPlayerAlreadyExists {
+					l.Warn(err.Error())
+					return
+				}
+
+				l.WithError(err).Error("failed to follow player")
+				return
+			}
+
+			l.WithField("account_id", followed.AccountID).Info("following player")
+		})
 
 		if err != nil {
-			l.WithError(err).Error("failed to fetch account_id")
-			continue
+			log.
+				WithError(err).
+				WithField("label", label).
+				Error("error queueing task")
 		}
-
-		followed, err := util.FollowPlayer(db, accountID, label, false)
-
-		if err != nil {
-			l.WithError(err).Error("failed to follow player")
-			continue
-		}
-
-		log.WithFields(logrus.Fields{
-			"account_id": followed.AccountID,
-			"label":      followed.Label,
-		}).Info("following player")
 	}
+
+	wg.Wait()
+	log.Info("done")
+}
+
+func fetchAccountID(client *resty.Client, label string) (*player, *fetchError) {
+	path := fmt.Sprintf(playerPathFmt, label)
+
+	resp, err := client.R().
+		SetDoNotParseResponse(true).
+		Get(path)
+
+	if err != nil {
+		ferr := &fetchError{
+			label:   label,
+			err:     err,
+			message: fmt.Sprintf("error requesting %s: %s", path, err.Error()),
+		}
+
+		return nil, ferr
+	}
+
+	defer resp.RawBody().Close()
+
+	body, err := ioutil.ReadAll(resp.RawBody())
+
+	if err != nil {
+		ferr := &fetchError{
+			label:   label,
+			err:     err,
+			message: fmt.Sprintf("error reading response body: %s", err.Error()),
+		}
+
+		return nil, ferr
+	}
+
+	matches := accountIDRegex.FindSubmatch(body)
+
+	if matches == nil {
+		ferr := &fetchError{
+			label:   label,
+			err:     err,
+			message: fmt.Sprintf("could not find account_id in %s", path),
+		}
+
+		return nil, ferr
+	}
+
+	accountIDStr := string(matches[1])
+	accountID64, err := strconv.ParseUint(accountIDStr, 10, 32)
+
+	if err != nil {
+		ferr := &fetchError{
+			label:   label,
+			err:     err,
+			message: fmt.Sprintf("invalid account_id value %q found in %s", accountIDStr, path),
+		}
+
+		return nil, ferr
+	}
+
+	p := &player{
+		label:     label,
+		accountID: uint32(accountID64),
+	}
+
+	return p, nil
 }

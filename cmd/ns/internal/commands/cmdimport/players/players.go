@@ -139,14 +139,21 @@ func run(cmd *cobra.Command, args []string) {
 			l.WithError(err).Fatal()
 		}
 
-		_, err = util.FollowPlayer(db, entry.AccountID, entry.Name, false)
+		var followed *models.FollowedPlayer
 
-		if err != nil && err != util.ErrFollowedPlayerAlreadyExists {
-			tx.Rollback()
-			l.WithError(err).Fatal()
+		followed, err = util.FollowPlayer(db, entry.AccountID, entry.Name, false)
+
+		if err != nil {
+			if err != util.ErrFollowedPlayerAlreadyExists {
+				tx.Rollback()
+				l.WithError(err).Fatal()
+			}
+
+			l.Warn(err.Error())
+			continue
 		}
 
-		l.Info("imported")
+		l.WithField("label", followed.Label).Info("imported")
 	}
 
 	if err = tx.Commit().Error; err != nil {
