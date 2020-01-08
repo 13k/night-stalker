@@ -1456,6 +1456,7 @@ export const protocol = $root.protocol = (() => {
              * @property {number|null} [last_hits] Player last_hits
              * @property {number|null} [gold] Player gold
              * @property {number|null} [net_worth] Player net_worth
+             * @property {string|null} [label] Player label
              */
 
             /**
@@ -1618,6 +1619,14 @@ export const protocol = $root.protocol = (() => {
             Player.prototype.net_worth = 0;
 
             /**
+             * Player label.
+             * @member {string} label
+             * @memberof protocol.LiveMatch.Player
+             * @instance
+             */
+            Player.prototype.label = "";
+
+            /**
              * Creates a new Player instance using the specified properties.
              * @function create
              * @memberof protocol.LiveMatch.Player
@@ -1677,6 +1686,8 @@ export const protocol = $root.protocol = (() => {
                     writer.uint32(/* id 17, wireType 0 =*/136).uint32(message.gold);
                 if (message.net_worth != null && message.hasOwnProperty("net_worth"))
                     writer.uint32(/* id 18, wireType 0 =*/144).uint32(message.net_worth);
+                if (message.label != null && message.hasOwnProperty("label"))
+                    writer.uint32(/* id 19, wireType 2 =*/154).string(message.label);
                 return writer;
             };
 
@@ -1764,6 +1775,9 @@ export const protocol = $root.protocol = (() => {
                         break;
                     case 18:
                         message.net_worth = reader.uint32();
+                        break;
+                    case 19:
+                        message.label = reader.string();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -1870,6 +1884,9 @@ export const protocol = $root.protocol = (() => {
                 if (message.net_worth != null && message.hasOwnProperty("net_worth"))
                     if (!$util.isInteger(message.net_worth))
                         return "net_worth: integer expected";
+                if (message.label != null && message.hasOwnProperty("label"))
+                    if (!$util.isString(message.label))
+                        return "label: string expected";
                 return null;
             };
 
@@ -1980,6 +1997,8 @@ export const protocol = $root.protocol = (() => {
                     message.gold = object.gold >>> 0;
                 if (object.net_worth != null)
                     message.net_worth = object.net_worth >>> 0;
+                if (object.label != null)
+                    message.label = String(object.label);
                 return message;
             };
 
@@ -2019,6 +2038,7 @@ export const protocol = $root.protocol = (() => {
                     object.last_hits = 0;
                     object.gold = 0;
                     object.net_worth = 0;
+                    object.label = "";
                 }
                 if (message.account_id != null && message.hasOwnProperty("account_id"))
                     object.account_id = message.account_id;
@@ -2059,6 +2079,8 @@ export const protocol = $root.protocol = (() => {
                     object.gold = message.gold;
                 if (message.net_worth != null && message.hasOwnProperty("net_worth"))
                     object.net_worth = message.net_worth;
+                if (message.label != null && message.hasOwnProperty("label"))
+                    object.label = message.label;
                 return object;
             };
 
