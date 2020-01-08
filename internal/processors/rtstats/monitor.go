@@ -31,15 +31,21 @@ const (
 	processorName = "rtstats"
 )
 
+type MonitorOptions struct {
+	Logger          *nslog.Logger
+	PoolSize        int
+	ShutdownTimeout time.Duration
+}
+
 var _ nsproc.Processor = (*Monitor)(nil)
 
 type Monitor struct {
+	options           *MonitorOptions
 	ctx               context.Context
 	log               *nslog.Logger
 	db                *gorm.DB
 	redis             *redis.Client
 	workerPool        *ants.Pool
-	poolSize          int
 	api               *geyserd2.Client
 	apiMatchStats     *geyserd2.DOTA2MatchStats
 	bus               *pubsub.PubSub
@@ -48,27 +54,24 @@ type Monitor struct {
 	activeReqs        map[nspb.MatchID]bool
 }
 
-func NewMonitor(poolSize int) *Monitor {
+func NewMonitor(options *MonitorOptions) *Monitor {
 	return &Monitor{
-		poolSize:   poolSize,
+		options:    options,
+		log:        options.Logger.WithPackage(processorName),
 		activeReqs: make(map[nspb.MatchID]bool),
 	}
 }
 
-func (p *Monitor) ChildSpec(stimeout time.Duration) oversight.ChildProcessSpecification {
+func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Restart:  oversight.Transient(),
 		Start:    p.Start,
-		Shutdown: oversight.Timeout(stimeout),
+		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
 	}
 }
 
 func (p *Monitor) Start(ctx context.Context) error {
-	if p.log = nsctx.GetLogger(ctx); p.log == nil {
-		return nsproc.ErrProcessorContextLogger
-	}
-
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
 	}
@@ -86,7 +89,6 @@ func (p *Monitor) Start(ctx context.Context) error {
 	}
 
 	p.ctx = ctx
-	p.log = p.log.WithPackage(processorName)
 	p.busSubLiveMatches = p.bus.Sub(nsbus.TopicLiveMatches)
 
 	var err error
@@ -96,7 +98,7 @@ func (p *Monitor) Start(ctx context.Context) error {
 		return err
 	}
 
-	if p.workerPool, err = ants.NewPool(p.poolSize); err != nil {
+	if p.workerPool, err = ants.NewPool(p.options.PoolSize); err != nil {
 		p.log.WithError(err).Error("error starting worker pool")
 		return err
 	}
@@ -107,6 +109,7 @@ func (p *Monitor) Start(ctx context.Context) error {
 func (p *Monitor) loop() error {
 	defer func() {
 		p.workerPool.Release()
+		p.log.Warn("stop")
 	}()
 
 	for {

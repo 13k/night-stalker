@@ -15,9 +15,6 @@ import (
 
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
-	nsgc "github.com/13k/night-stalker/internal/processors/gc"
-	nslm "github.com/13k/night-stalker/internal/processors/livematches"
-	nsrts "github.com/13k/night-stalker/internal/processors/rtstats"
 	nssess "github.com/13k/night-stalker/internal/processors/session"
 )
 
@@ -106,16 +103,21 @@ func (ns *App) setupDota() {
 }
 
 func (ns *App) setupSupervisor() {
-	sessCredentials := ns.options.Credentials.sessionCredentials()
-	session := nssess.NewManager(sessCredentials).ChildSpec(ns.options.ShutdownTimeout)
-	dispatcher := nsgc.NewDispatcher(busBufSize).ChildSpec(ns.options.ShutdownTimeout)
-	liveMatches := nslm.NewWatcher(liveMatchesQueryInterval).ChildSpec(ns.options.ShutdownTimeout)
-	rtStats := nsrts.NewMonitor(rtStatsPoolSize).ChildSpec(ns.options.ShutdownTimeout)
+	sessOptions := &nssess.ManagerOptions{
+		Logger:                   ns.log,
+		Credentials:              ns.options.Credentials.sessionCredentials(),
+		ShutdownTimeout:          ns.options.ShutdownTimeout,
+		LiveMatchesQueryInterval: liveMatchesQueryInterval,
+		BusBufferSize:            busBufSize,
+		RealtimeStatsPoolSize:    rtStatsPoolSize,
+	}
+
+	session := nssess.NewManager(sessOptions).ChildSpec()
 
 	ns.supervisor = oversight.New(
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(ns.log.WithPackage("supervisor")),
-		oversight.Process(session, dispatcher, liveMatches, rtStats),
+		oversight.Process(session),
 	)
 }
 

@@ -28,14 +28,20 @@ const (
 	cardExpiration = 1 * time.Hour
 )
 
-var _ nsproc.Processor = (*Updater)(nil)
-
 var (
 	ErrInvalidProfileCardResponse = errors.New("Invalid profile card response")
 )
 
+type UpdaterOptions struct {
+	Logger          *nslog.Logger
+	PoolSize        int
+	ShutdownTimeout time.Duration
+}
+
+var _ nsproc.Processor = (*Updater)(nil)
+
 type Updater struct {
-	poolSize          int
+	options           *UpdaterOptions
 	ctx               context.Context
 	log               *nslog.Logger
 	db                *gorm.DB
@@ -48,26 +54,23 @@ type Updater struct {
 	busSubLiveMatches chan interface{}
 }
 
-func NewUpdater(poolSize int) *Updater {
+func NewUpdater(options *UpdaterOptions) *Updater {
 	return &Updater{
-		poolSize: poolSize,
+		options: options,
+		log:     options.Logger.WithPackage(processorName),
 	}
 }
 
-func (p *Updater) ChildSpec(stimeout time.Duration) oversight.ChildProcessSpecification {
+func (p *Updater) ChildSpec() oversight.ChildProcessSpecification {
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Restart:  oversight.Transient(),
 		Start:    p.Start,
-		Shutdown: oversight.Timeout(stimeout),
+		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
 	}
 }
 
 func (p *Updater) Start(ctx context.Context) error {
-	if p.log = nsctx.GetLogger(ctx); p.log == nil {
-		return nsproc.ErrProcessorContextLogger
-	}
-
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
 	}
@@ -85,11 +88,10 @@ func (p *Updater) Start(ctx context.Context) error {
 	}
 
 	p.ctx = ctx
-	p.log = p.log.WithPackage(processorName)
 	p.busSubLiveMatches = p.bus.Sub(nsbus.TopicLiveMatches)
 	p.activeReqs = make(map[uint32]bool)
 
-	pool, err := ants.NewPool(p.poolSize)
+	pool, err := ants.NewPool(p.options.PoolSize)
 
 	if err != nil {
 		p.log.WithError(err).Error("error starting worker pool")

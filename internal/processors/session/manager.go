@@ -18,6 +18,9 @@ import (
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
+	nsgc "github.com/13k/night-stalker/internal/processors/gc"
+	nslm "github.com/13k/night-stalker/internal/processors/livematches"
+	nsrts "github.com/13k/night-stalker/internal/processors/rtstats"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -28,10 +31,19 @@ const (
 	helloRetryInterval = 30 * time.Second
 )
 
+type ManagerOptions struct {
+	Logger                   *nslog.Logger
+	Credentials              *Credentials
+	ShutdownTimeout          time.Duration
+	LiveMatchesQueryInterval time.Duration
+	BusBufferSize            int
+	RealtimeStatsPoolSize    int
+}
+
 var _ nsproc.Processor = (*Manager)(nil)
 
 type Manager struct {
-	credentials *Credentials
+	options     *ManagerOptions
 	ctx         context.Context
 	login       *models.SteamLogin
 	log         *nslog.Logger
@@ -39,31 +51,61 @@ type Manager struct {
 	steam       *steam.Client
 	dota        *dota2.Dota2
 	bus         *pubsub.PubSub
+	supervisor  *oversight.Tree
 	ready       bool
 	helloTicker *time.Ticker
 	helloCount  int
 }
 
-func NewManager(credentials *Credentials) *Manager {
-	return &Manager{
-		credentials: credentials,
-		login:       &models.SteamLogin{},
+func NewManager(options *ManagerOptions) *Manager {
+	p := &Manager{
+		options: options,
+		log:     options.Logger.WithPackage(processorName),
+		login:   &models.SteamLogin{},
+	}
+
+	p.setupSupervisor()
+
+	return p
+}
+
+func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
+	return oversight.ChildProcessSpecification{
+		Name:     processorName,
+		Restart:  oversight.Permanent(),
+		Start:    p.Start,
+		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
 	}
 }
 
-func (p *Manager) ChildSpec(stimeout time.Duration) oversight.ChildProcessSpecification {
-	return oversight.ChildProcessSpecification{
-		Name:     processorName,
-		Restart:  oversight.Transient(),
-		Start:    p.Start,
-		Shutdown: oversight.Timeout(stimeout),
-	}
+func (p *Manager) setupSupervisor() {
+	dispatcher := nsgc.NewDispatcher(&nsgc.DispatcherOptions{
+		Logger:          p.log,
+		BufferSize:      p.options.BusBufferSize,
+		ShutdownTimeout: p.options.ShutdownTimeout,
+	}).ChildSpec()
+
+	liveMatches := nslm.NewWatcher(&nslm.WatcherOptions{
+		Logger:          p.log,
+		Interval:        p.options.LiveMatchesQueryInterval,
+		ShutdownTimeout: p.options.ShutdownTimeout,
+	}).ChildSpec()
+
+	rtStats := nsrts.NewMonitor(&nsrts.MonitorOptions{
+		Logger:          p.log,
+		PoolSize:        p.options.RealtimeStatsPoolSize,
+		ShutdownTimeout: p.options.ShutdownTimeout,
+	}).ChildSpec()
+
+	p.supervisor = oversight.New(
+		oversight.WithRestartStrategy(oversight.OneForOne()),
+		oversight.WithLogger(p.log.WithPackage("supervisor")),
+		oversight.Process(dispatcher, liveMatches, rtStats),
+	)
 }
 
 func (p *Manager) Start(ctx context.Context) error {
-	if p.log = nsctx.GetLogger(ctx); p.log == nil {
-		return nsproc.ErrProcessorContextLogger
-	}
+	p.ctx = ctx
 
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
@@ -81,9 +123,6 @@ func (p *Manager) Start(ctx context.Context) error {
 		return nsproc.ErrProcessorContextPubSub
 	}
 
-	p.ctx = ctx
-	p.log = p.log.WithPackage(processorName)
-
 	if err := p.loadLogin(); err != nil {
 		p.log.WithError(err).Error("error loading login info")
 		return err
@@ -99,7 +138,9 @@ func (p *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
-	return p.loop()
+	go p.loop()
+
+	return p.supervisor.Start(ctx)
 }
 
 func (p *Manager) stop() {
@@ -133,18 +174,20 @@ func (p *Manager) cancelSession() {
 	p.publishSession(false)
 }
 
-func (p *Manager) loop() error {
+func (p *Manager) loop() {
 	defer func() {
+		p.stop()
 		p.log.Warn("stop")
 	}()
 
 	for {
 		select {
 		case <-p.ctx.Done():
-			p.stop()
+			return
 		case ev := <-p.steam.Events():
 			if err := p.handleEvent(ev); err != nil {
-				return err
+				p.log.WithError(err).Error()
+				return
 			}
 		}
 	}
@@ -236,7 +279,7 @@ func (p *Manager) saveServers(addresses []*netutil.PortAddr) error {
 
 func (p *Manager) loadLogin() error {
 	err := p.db.
-		Where(&models.SteamLogin{Username: p.credentials.Username}).
+		Where(&models.SteamLogin{Username: p.options.Credentials.Username}).
 		FirstOrInit(p.login).
 		Error
 
@@ -303,15 +346,15 @@ func (p *Manager) connectSteam() error {
 }
 
 func (p *Manager) onSteamConnect() error { //nolint: unparam
-	p.log.WithField("username", p.credentials.Username).Info("connected, logging in")
+	p.log.WithField("username", p.options.Credentials.Username).Info("connected, logging in")
 
 	logOnDetails := &steam.LogOnDetails{
-		Username:               p.credentials.Username,
-		Password:               p.credentials.Password,
-		AuthCode:               p.credentials.AuthCode,
-		TwoFactorCode:          p.credentials.TwoFactorCode,
+		Username:               p.options.Credentials.Username,
+		Password:               p.options.Credentials.Password,
+		AuthCode:               p.options.Credentials.AuthCode,
+		TwoFactorCode:          p.options.Credentials.TwoFactorCode,
 		SentryFileHash:         steam.SentryHash(p.login.MachineHash),
-		ShouldRememberPassword: p.credentials.RememberPassword,
+		ShouldRememberPassword: p.options.Credentials.RememberPassword,
 	}
 
 	if logOnDetails.Password == "" {

@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	processorName = "gc/dispatcher"
+	processorName = "gc.dispatcher"
 
 	msgTypeFindTopSourceTVGamesResponse = protocol.EDOTAGCMsg_k_EMsgGCToClientFindTopSourceTVGamesResponse
 	msgTypeMatchesMinimalResponse       = protocol.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalResponse
@@ -29,9 +29,16 @@ func UnmarshalPacket(packet *gc.GCPacket, message proto.Message) error {
 	return proto.Unmarshal(packet.Body, message)
 }
 
+type DispatcherOptions struct {
+	Logger          *nslog.Logger
+	BufferSize      int
+	ShutdownTimeout time.Duration
+}
+
 var _ nsproc.Processor = (*Dispatcher)(nil)
 
 type Dispatcher struct {
+	options    *DispatcherOptions
 	ctx        context.Context
 	log        *nslog.Logger
 	steam      *steam.Client
@@ -40,26 +47,24 @@ type Dispatcher struct {
 	busSubSend chan interface{}
 }
 
-func NewDispatcher(bufSize int) *Dispatcher {
+func NewDispatcher(options *DispatcherOptions) *Dispatcher {
 	return &Dispatcher{
-		queue: make(chan *gc.GCPacket, bufSize),
+		options: options,
+		log:     options.Logger.WithPackage(processorName),
+		queue:   make(chan *gc.GCPacket, options.BufferSize),
 	}
 }
 
-func (p *Dispatcher) ChildSpec(stimeout time.Duration) oversight.ChildProcessSpecification {
+func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Restart:  oversight.Transient(),
 		Start:    p.Start,
-		Shutdown: oversight.Timeout(stimeout),
+		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
 	}
 }
 
 func (p *Dispatcher) Start(ctx context.Context) error {
-	if p.log = nsctx.GetLogger(ctx); p.log == nil {
-		return nsproc.ErrProcessorContextLogger
-	}
-
 	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
 		return nsproc.ErrProcessorContextSteamClient
 	}
@@ -69,7 +74,6 @@ func (p *Dispatcher) Start(ctx context.Context) error {
 	}
 
 	p.ctx = ctx
-	p.log = p.log.WithPackage(processorName)
 	p.busSubSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
 
 	p.steam.GC.RegisterPacketHandler(p)
@@ -97,6 +101,10 @@ func (p *Dispatcher) write(msgType protocol.EDOTAGCMsg, message proto.Message) {
 }
 
 func (p *Dispatcher) loop() error {
+	defer func() {
+		p.log.Warn("stop")
+	}()
+
 	for {
 		select {
 		case <-p.ctx.Done():

@@ -29,11 +29,17 @@ const (
 	msgTypeMatchesMinimalRequest = protocol.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalRequest
 )
 
+type WatcherOptions struct {
+	Logger          *nslog.Logger
+	Interval        time.Duration
+	ShutdownTimeout time.Duration
+}
+
 var _ nsproc.Processor = (*Watcher)(nil)
 
 type Watcher struct {
+	options              *WatcherOptions
 	seq                  *querySeq
-	interval             time.Duration
 	ctx                  context.Context
 	log                  *nslog.Logger
 	db                   *gorm.DB
@@ -46,27 +52,24 @@ type Watcher struct {
 	busSubSourceTVGames  chan interface{}
 }
 
-func NewWatcher(interval time.Duration) *Watcher {
+func NewWatcher(options *WatcherOptions) *Watcher {
 	return &Watcher{
-		interval: interval,
-		seq:      newQuerySeq(),
+		options: options,
+		log:     options.Logger.WithPackage(processorName),
+		seq:     newQuerySeq(),
 	}
 }
 
-func (p *Watcher) ChildSpec(stimeout time.Duration) oversight.ChildProcessSpecification {
+func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Restart:  oversight.Transient(),
 		Start:    p.Start,
-		Shutdown: oversight.Timeout(stimeout),
+		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
 	}
 }
 
 func (p *Watcher) Start(ctx context.Context) error {
-	if p.log = nsctx.GetLogger(ctx); p.log == nil {
-		return nsproc.ErrProcessorContextLogger
-	}
-
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
 	}
@@ -88,7 +91,6 @@ func (p *Watcher) Start(ctx context.Context) error {
 	}
 
 	p.ctx = ctx
-	p.log = p.log.WithPackage(processorName)
 	p.busSubSession = p.bus.Sub(nsbus.TopicSession)
 	p.busSubMatchesMinimal = p.bus.Sub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse)
 	p.busSubSourceTVGames = p.bus.Sub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse)
@@ -98,7 +100,7 @@ func (p *Watcher) Start(ctx context.Context) error {
 
 func (p *Watcher) loop() error {
 	ready := false
-	ticker := time.NewTicker(p.interval)
+	ticker := time.NewTicker(p.options.Interval)
 
 	defer func() {
 		ticker.Stop()
