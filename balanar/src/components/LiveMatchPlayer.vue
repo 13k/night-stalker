@@ -100,9 +100,9 @@ export default {
     iconClasses() {
       return {
         "order-first": this.isLeft,
-        "mr-2": this.isLeft,
+        "mr-3": this.isLeft,
         "ml-1": this.isLeft,
-        "ml-2": this.isRight,
+        "ml-3": this.isRight,
         "mr-1": this.isRight,
       };
     },

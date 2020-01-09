@@ -1,7 +1,5 @@
 <template>
-  <div class="home">
-    <LiveMatches />
-  </div>
+  <LiveMatches />
 </template>
 
 <script>

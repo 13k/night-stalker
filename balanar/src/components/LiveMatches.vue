@@ -12,7 +12,7 @@
           xl="3"
         >
           <v-item
-            v-slot:default="{ active, toggle }"
+            v-slot="{ active, toggle }"
             :value="match.match_id"
           >
             <LiveMatch
