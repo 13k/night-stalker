@@ -32,7 +32,9 @@ export default {
     },
     alt: {
       type: String,
-      default: () => `View on ${this.site}`,
+      default() {
+        return `View on ${this.site}`;
+      },
     },
     icon: {
       type: Boolean,
