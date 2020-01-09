@@ -5,7 +5,6 @@ process.env.VUE_APP_VERSION = pkg.version;
 
 module.exports = {
   devServer: {
-    host: "localhost",
     proxy: {
       "^(/api|/ws)": {
         target: "http://localhost:3000",
