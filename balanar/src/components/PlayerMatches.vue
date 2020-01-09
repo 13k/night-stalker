@@ -3,246 +3,219 @@
     class="mx-auto"
     outlined
   >
-    <v-toolbar
-      flat
-      dark
-      color="secondary"
+    <v-data-iterator
+      :items="matches"
+      :items-per-page="itemsPerPage"
+      :page="page"
+      :search="filterByHeroName"
+      :custom-filter="filterMatches"
+      :sort-by="sortBy"
+      :sort-desc="sortDesc"
+      :custom-sort="sortMatches"
+      hide-default-footer
     >
-      <v-container>
-        <v-row>
-          <v-spacer />
-
-          <v-col
-            cols="12"
-            md="2"
-          >
-            <v-select
-              v-model="sortBy"
-              :items="sortValues"
-              dense
-              hide-details
-              :class="$vuetify.breakpoint.mdAndUp ? '' : 'mb-6'"
-            />
-          </v-col>
-
-          <v-col
-            cols="12"
-            md="2"
-          >
-            <v-text-field
-              v-model="searchQuery"
-              append-icon="mdi-magnify"
-              clearable
-              color="white"
-              hide-details
-              label="Search ..."
-              single-line
-              type="search"
-            />
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-toolbar>
-
-    <v-list
-      two-line
-      dense
-    >
-      <v-list-item
-        v-for="match in filteredMatches"
-        :key="match.match_id.toString()"
-      >
-        <v-list-item-icon>
-          <HeroImage
-            :hero="match.hero"
-            version="icon"
-            width="32"
-            height="32"
-          />
-        </v-list-item-icon>
-
-        <v-list-item-content>
-          <v-list-item-title v-text="match.match_id" />
-          <v-list-item-subtitle v-text="match.activate_time.toLocaleString()" />
-        </v-list-item-content>
-
-        <v-list-item-icon>
-          <CommunitySiteBtn
-            site="opendota"
-            :href="match | opendotaMatchURL"
-            :alt="`View match ${match.match_id} on OpenDota`"
-            target="_blank"
-            width="28"
-            height="28"
-          />
-        </v-list-item-icon>
-
-        <v-list-item-icon class="ml-1">
-          <CommunitySiteBtn
-            site="dotabuff"
-            :href="match | dotabuffMatchURL"
-            :alt="`View match ${match.match_id} on Dotabuff`"
-            target="_blank"
-            width="28"
-            height="28"
-          />
-        </v-list-item-icon>
-
-        <v-list-item-icon class="ml-1">
-          <CommunitySiteBtn
-            site="stratz"
-            :href="match | stratzMatchURL"
-            :alt="`View match ${match.match_id} on Stratz`"
-            target="_blank"
-            width="28"
-            height="28"
-          />
-        </v-list-item-icon>
-
-        <v-list-item-icon
-          v-if="match.league_id"
-          class="ml-1"
+      <template v-slot:header>
+        <v-toolbar
+          dark
+          color="secondary"
+          height="auto"
         >
-          <CommunitySiteBtn
-            site="datdota"
-            :href="match | datdotaMatchURL"
-            :alt="`View match ${match.match_id} on DatDota`"
-            target="_blank"
-            width="28"
-            height="28"
-          />
-        </v-list-item-icon>
+          <v-container>
+            <v-row>
+              <v-col
+                cols="12"
+                md="3"
+              >
+                <v-autocomplete
+                  v-model="filterByHeroName"
+                  :items="heroes"
+                  clearable
+                  dense
+                  hide-details
+                  single-line
+                  item-text="localized_name"
+                  item-value="name"
+                  label="Filter by hero"
+                  :class="$vuetify.breakpoint.mdAndUp ? '' : 'mb-3'"
+                >
+                  <template v-slot:item="{ item }">
+                    <v-list-item-avatar>
+                      <HeroImage
+                        :hero="item"
+                        version="icon"
+                        width="28"
+                        height="28"
+                      />
+                    </v-list-item-avatar>
 
-        <v-list-item-icon>
-          <v-icon>mdi-star</v-icon>
-        </v-list-item-icon>
-      </v-list-item>
-    </v-list>
+                    <v-list-item-content>
+                      <v-list-item-title v-text="item.localized_name" />
+                    </v-list-item-content>
+                  </template>
+                </v-autocomplete>
+              </v-col>
+
+              <v-col
+                cols="12"
+                md="3"
+                class="d-flex"
+              >
+                <v-select
+                  v-model="sortBy"
+                  :items="sortValues"
+                  dense
+                  hide-details
+                  class="mr-1"
+                />
+
+                <v-btn
+                  icon
+                  small
+                  :title="sortDesc ? 'Sort ascending' : 'Sort descending'"
+                  @click.stop="sortDesc = !sortDesc"
+                >
+                  <v-icon>{{ sortDesc ? "mdi-sort-ascending" : "mdi-sort-descending" }}</v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-toolbar>
+      </template>
+
+      <template v-slot="{ items }">
+        <v-expansion-panels hover>
+          <PlayerMatch
+            v-for="match in items"
+            :key="match.match_id.toString()"
+            :match="match"
+          />
+        </v-expansion-panels>
+      </template>
+
+      <template v-slot:footer>
+        <v-row
+          class="mt-3 mb-3"
+          align="center"
+          justify="center"
+        >
+          <v-btn
+            small
+            icon
+            dark
+            class="mr-1"
+            :disabled="!hasPrevPage"
+            @click="prevPage"
+          >
+            <v-icon>mdi-chevron-left</v-icon>
+          </v-btn>
+
+          <span>
+            {{ page }} / {{ numberOfPages }}
+          </span>
+
+          <v-btn
+            small
+            icon
+            dark
+            class="ml-1"
+            :disabled="!hasNextPage"
+            @click="nextPage"
+          >
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-btn>
+        </v-row>
+      </template>
+    </v-data-iterator>
   </v-card>
 </template>
 
 <script>
 import _ from "lodash";
 
-import heroAliases from "@/dota2/hero_aliases.json";
-import filters from "@/components/filters";
-import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import HeroImage from "@/components/HeroImage.vue";
+import PlayerMatch from "@/components/PlayerMatch.vue";
 
 export default {
   name: "PlayerMatches",
 
   components: {
-    CommunitySiteBtn,
     HeroImage,
+    PlayerMatch,
   },
-
-  filters,
 
   props: {
     matches: {
       type: Array,
       default: () => [],
     },
+    itemsPerPage: {
+      type: Number,
+      default: 15,
+    },
   },
 
   data: () => ({
-    searchQuery: null,
-    sortBy: "time:desc",
+    page: 1,
+    filterByHeroName: null,
+    sortBy: "time",
+    sortDesc: true,
     sortValues: [
-      { text: "Newest", value: "time:desc" },
-      { text: "Oldest", value: "time:asc" },
-      { text: "Hero", value: "hero:asc" },
-      { text: "Hero (desc)", value: "hero:desc" },
+      { text: "Date", value: "time" },
+      { text: "Hero", value: "hero" },
     ],
-    filteredMatches: [],
   }),
 
   computed: {
-    tokenizedHeroNames() {
+    heroes() {
       return _.chain(this.matches)
-        .filter("hero")
-        .transform((tokenized, { hero: { id, name, localized_name } }) => {
-          if (tokenized[id]) return;
-
-          tokenized[id] = _.chain(localized_name)
-            .words()
-            .map(_.toLower)
-            .concat(
-              _.chain(name)
-                .replace(/^npc_dota_hero_/, "")
-                .words()
-                .value()
-            )
-            .sortBy()
-            .sortedUniq()
-            .value();
-        }, {})
+        .map("hero")
+        .filter("id")
+        .uniqBy("id")
+        .sortBy("localized_name")
         .value();
     },
-  },
-
-  watch: {
-    searchQuery() {
-      this.filterMatches();
+    numberOfPages() {
+      return Math.ceil(this.matches.length / this.itemsPerPage);
     },
-    sortBy() {
-      this.filterMatches();
+    hasPrevPage() {
+      return this.page > 1;
     },
-  },
-
-  created() {
-    this.filterMatches();
+    hasNextPage() {
+      return this.page < this.numberOfPages;
+    },
   },
 
   methods: {
-    filterMatches: _.throttle(function() {
-      const query = _.toLower(this.searchQuery);
-
-      let matches = this.matches;
-
-      if (query.length > 1) {
-        const heroNamesByAlias = _.chain(heroAliases)
-          .toPairs()
-          .filter(([, aliases]) => {
-            return _.sortedIndexOf(aliases, query) >= 0;
-          })
-          .map(([name]) => name)
-          .sortBy()
-          .value();
-
-        matches = _.filter(matches, ({ hero }) => {
-          if (!hero) {
-            return false;
-          }
-
-          return (
-            _.sortedIndexOf(this.tokenizedHeroNames[hero.id], query) >= 0 ||
-            _.sortedIndexOf(heroNamesByAlias, hero.name) >= 0
-          );
-        });
+    nextPage() {
+      if (this.page + 1 <= this.numberOfPages) this.page += 1;
+    },
+    prevPage() {
+      if (this.page - 1 >= 1) this.page -= 1;
+    },
+    filterMatches(matches, search) {
+      if (_.isEmpty(search)) {
+        return matches;
       }
 
-      switch (this.sortBy) {
-        case "time:asc":
-          matches = _.sortBy(matches, "activate_time");
+      return _.filter(matches, { hero: { name: search } });
+    },
+    sortMatches(matches, sortBy, sortDesc) {
+      sortBy = _.get(sortBy, "[0]", "time");
+      sortDesc = _.get(sortDesc, "[0]", true);
+
+      switch (sortBy) {
+        case "time":
+          matches = _.orderBy(matches, "activate_time", sortDesc ? "desc" : "asc");
           break;
-        case "time:desc":
-          matches = _.sortBy(matches, m => -m.activate_time.getTime());
-          break;
-        case "hero:asc":
-          matches = _.sortBy(matches, ["hero", "localized_name"]);
-          break;
-        case "hero:desc":
-          // matches.sort()
-          matches = _.sortBy(matches, m => -m.hero_id);
+        case "hero":
+          matches = _.orderBy(matches, "hero.localized_name", sortDesc ? "desc" : "asc");
           break;
         default:
-          this.$log.error("Invalid player matches sorting:", this.sortBy);
+          this.$log.error("Invalid player matches sorting:", sortBy);
       }
 
-      this.filteredMatches = matches;
-    }, 500),
+      return matches;
+    },
   },
 };
 </script>
