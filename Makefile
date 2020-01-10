@@ -29,8 +29,12 @@ proto-js: balanar
 proto: proto-go proto-js
 
 $(TOOLS_PATH): tools.go
-	bash hack/install-tools.bash
+	hack/go-install-tools.sh
 	@touch $(TOOLS_PATH)
 
-.PHONY: install-tools
-install-tools: $(TOOLS_PATH)
+.PHONY: go-install-tools
+go-install-tools: $(TOOLS_PATH)
+
+.PHONY: go-mod-update
+go-mod-update:
+	hack/go-mod-update.sh
