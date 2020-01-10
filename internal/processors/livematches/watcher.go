@@ -18,6 +18,7 @@ import (
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
+	nspb "github.com/13k/night-stalker/internal/protocol"
 	nsrds "github.com/13k/night-stalker/internal/redis"
 	"github.com/13k/night-stalker/models"
 )
@@ -193,7 +194,7 @@ func (p *Watcher) queryPage(page *queryPage) error {
 	return nil
 }
 
-func (p *Watcher) requestMatchesMinimal(matchIDs []uint64) { //nolint: unused
+func (p *Watcher) requestMatchesMinimal(matchIDs []nspb.MatchID) { //nolint: unused
 	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
 		MatchIds: matchIDs,
 	}
@@ -230,13 +231,13 @@ func (p *Watcher) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 func (p *Watcher) handleFindTopSourceTVGamesResponse(
 	msg *protocol.CMsgGCToClientFindTopSourceTVGamesResponse,
 ) {
-	query := &queryPage{
+	page := &queryPage{
 		index: msg.GetGameListIndex(),
 		start: msg.GetStartGame(),
 		res:   msg,
 	}
 
-	p.handleResponse(query)
+	p.handleResponse(page)
 }
 
 func (p *Watcher) handleResponse(page *queryPage) {
@@ -255,7 +256,10 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		"start": page.start,
 	}).Info("received live matches")
 
-	if err := p.saveResponse(page.res); err != nil {
+	games := cleanResponseGames(page.res.GetGameList())
+	page.res.GameList = games
+
+	if err := p.saveResponseGames(games); err != nil {
 		p.log.WithError(err).WithFields(logrus.Fields{
 			"index": page.index,
 			"start": page.start,
@@ -264,21 +268,7 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		return
 	}
 
-	games := page.res.GetGameList()
-	matchIDs := make([]uint64, len(games))
-	rZMatchIDs := make([]*redis.Z, len(games))
-	rKey := nsrds.KeyLiveMatches(int(page.index))
-
-	for i, game := range games {
-		matchIDs[i] = game.GetMatchId()
-
-		rZMatchIDs[i] = &redis.Z{
-			Score:  float64(game.GetSortScore()),
-			Member: game.GetMatchId(),
-		}
-	}
-
-	if err := p.redis.ZAdd(rKey, rZMatchIDs...).Err(); err != nil {
+	if err := p.appendRedisLiveMatches(page.index, games); err != nil {
 		p.log.WithError(err).WithFields(logrus.Fields{
 			"index": page.index,
 			"start": page.start,
@@ -305,6 +295,78 @@ func (p *Watcher) handleResponse(page *queryPage) {
 	if p.seq.IsFull() {
 		p.flush()
 	}
+}
+
+func (p *Watcher) saveResponseGames(games []*protocol.CSourceTVGameSmall) error {
+	for _, game := range games {
+		if p.ctx.Err() != nil {
+			return p.ctx.Err()
+		}
+
+		l := p.log.WithFields(logrus.Fields{
+			"match_id": game.GetMatchId(),
+			"lobby_id": game.GetLobbyId(),
+		})
+
+		tx := p.db.Begin()
+		liveMatch := models.LiveMatchDotaProto(game)
+		result := tx.
+			Where(models.LiveMatch{MatchID: liveMatch.MatchID}).
+			Assign(liveMatch).
+			FirstOrCreate(liveMatch)
+
+		if err := result.Error; err != nil {
+			tx.Rollback()
+			l.WithError(err).Error("error upserting match")
+			return err
+		}
+
+		for _, player := range game.GetPlayers() {
+			if p.ctx.Err() != nil {
+				tx.Rollback()
+				return p.ctx.Err()
+			}
+
+			livePlayer := models.LiveMatchPlayerDotaProto(player)
+			livePlayer.LiveMatchID = liveMatch.ID
+
+			criteria := &models.LiveMatchPlayer{
+				LiveMatchID: livePlayer.LiveMatchID,
+				AccountID:   livePlayer.AccountID,
+			}
+
+			result = tx.
+				Where(criteria).
+				Assign(livePlayer).
+				FirstOrCreate(livePlayer)
+
+			if err := result.Error; err != nil {
+				tx.Rollback()
+				l.WithError(err).Error("error upserting live match player")
+				return err
+			}
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *Watcher) appendRedisLiveMatches(index uint32, games []*protocol.CSourceTVGameSmall) error {
+	rZMatchIDs := make([]*redis.Z, len(games))
+	rKey := nsrds.KeyLiveMatches(int(index))
+
+	for i, game := range games {
+		rZMatchIDs[i] = &redis.Z{
+			Score:  float64(game.GetSortScore()),
+			Member: game.GetMatchId(),
+		}
+	}
+
+	return p.redis.ZAdd(rKey, rZMatchIDs...).Err()
 }
 
 func (p *Watcher) flush() {
@@ -396,63 +458,4 @@ func (p *Watcher) clearRedisIndices(currentIndex uint32) error {
 	}
 
 	return p.redis.Del(keys...).Err()
-}
-
-func (p *Watcher) saveResponse(resp *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) error {
-	for _, match := range resp.GetGameList() {
-		if p.ctx.Err() != nil {
-			return p.ctx.Err()
-		}
-
-		l := p.log.WithFields(logrus.Fields{
-			"match_id": match.GetMatchId(),
-			"lobby_id": match.GetLobbyId(),
-		})
-
-		tx := p.db.Begin()
-		liveMatch := models.LiveMatchDotaProto(match)
-		result := tx.
-			Where(models.LiveMatch{MatchID: liveMatch.MatchID}).
-			Assign(liveMatch).
-			FirstOrCreate(liveMatch)
-
-		if err := result.Error; err != nil {
-			tx.Rollback()
-			l.WithError(err).Error("error upserting match")
-			return err
-		}
-
-		for _, player := range match.GetPlayers() {
-			if p.ctx.Err() != nil {
-				tx.Rollback()
-				return p.ctx.Err()
-			}
-
-			livePlayer := models.LiveMatchPlayerDotaProto(player)
-			livePlayer.LiveMatchID = liveMatch.ID
-
-			criteria := &models.LiveMatchPlayer{
-				LiveMatchID: livePlayer.LiveMatchID,
-				AccountID:   livePlayer.AccountID,
-			}
-
-			result = tx.
-				Where(criteria).
-				Assign(livePlayer).
-				FirstOrCreate(livePlayer)
-
-			if err := result.Error; err != nil {
-				tx.Rollback()
-				l.WithError(err).Error("error upserting live match player")
-				return err
-			}
-		}
-
-		if err := tx.Commit().Error; err != nil {
-			return err
-		}
-	}
-
-	// p.log.WithField("count", len(resp.GetGameList())).Debug("updated live matches")
-	return nil
 }
