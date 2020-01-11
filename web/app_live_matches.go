@@ -82,7 +82,7 @@ func (app *App) handleLiveMatchesUpdate(rmsg *redis.Message) {
 	}
 
 	if len(view.Matches) == 0 {
-		l.Debug("ignoring empty live matches update")
+		l.Debug("ignoring empty live matches view")
 		return
 	}
 
@@ -164,7 +164,7 @@ func (app *App) handleMatchStatsUpdate(rmsg *redis.Message) {
 	}
 
 	if len(view.Matches) == 0 {
-		l.Debug("ignoring empty live matches update")
+		l.Debug("ignoring empty live matches view")
 		return
 	}
 

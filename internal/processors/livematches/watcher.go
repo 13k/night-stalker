@@ -182,7 +182,7 @@ func (p *Watcher) queryPage(page *queryPage) error {
 	p.log.WithFields(logrus.Fields{
 		"index": req.GetGameListIndex(),
 		"start": req.GetStartGame(),
-	}).Info("requesting live matches")
+	}).Debug("requesting live matches")
 
 	busmsg := &nsbus.GCDispatcherSendMessage{
 		MsgType: msgTypeFindTopSourceTVGames,
@@ -234,6 +234,7 @@ func (p *Watcher) handleFindTopSourceTVGamesResponse(
 	page := &queryPage{
 		index: msg.GetGameListIndex(),
 		start: msg.GetStartGame(),
+		total: msg.GetNumGames(),
 		res:   msg,
 	}
 
@@ -251,29 +252,24 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		return
 	}
 
-	p.log.WithFields(logrus.Fields{
+	l := p.log.WithFields(logrus.Fields{
 		"index": page.index,
 		"start": page.start,
-	}).Info("received live matches")
+		"total": page.total,
+	})
+
+	l.Debug("received live matches")
 
 	games := cleanResponseGames(page.res.GetGameList())
 	page.res.GameList = games
 
 	if err := p.saveResponseGames(games); err != nil {
-		p.log.WithError(err).WithFields(logrus.Fields{
-			"index": page.index,
-			"start": page.start,
-		}).Error("error saving live matches response")
-
+		l.WithError(err).Error("error saving live matches response")
 		return
 	}
 
 	if err := p.appendRedisLiveMatches(page.index, games); err != nil {
-		p.log.WithError(err).WithFields(logrus.Fields{
-			"index": page.index,
-			"start": page.start,
-		}).Error("error caching live match IDs")
-
+		l.WithError(err).Error("error caching live match IDs")
 		return
 	}
 
@@ -281,11 +277,7 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		p.seq.Init(page)
 
 		if err := p.query(); err != nil {
-			p.log.WithError(err).WithFields(logrus.Fields{
-				"index": page.index,
-				"start": page.start,
-			}).Error("error requesting live matches")
-
+			l.WithError(err).Error("error requesting live matches")
 			return
 		}
 	}

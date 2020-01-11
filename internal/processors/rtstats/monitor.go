@@ -142,6 +142,16 @@ func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesDotaMessage) {
 func (p *Monitor) handleLiveMatch(match *protocol.CSourceTVGameSmall) {
 	l := p.log.WithField("match_id", match.GetMatchId())
 
+	if match.GetMatchId() == 0 {
+		l.WithFields(logrus.Fields{
+			"nil_match":       match == nil,
+			"server_steam_id": match.GetServerSteamId(),
+			"lobby_id":        match.GetLobbyId(),
+		}).Warn("ignoring match with zero match_id")
+
+		return
+	}
+
 	if err := p.ctx.Err(); err != nil {
 		l.WithError(err).Error("error processing live match")
 		return
@@ -161,7 +171,10 @@ func (p *Monitor) handleLiveMatch(match *protocol.CSourceTVGameSmall) {
 }
 
 func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
-	l := p.log.WithField("match_id", match.GetMatchId())
+	l := p.log.WithFields(logrus.Fields{
+		"match_id":        match.GetMatchId(),
+		"server_steam_id": match.GetServerSteamId(),
+	})
 
 	var skip bool
 	p.activeReqsMtx.Lock()
@@ -206,7 +219,7 @@ func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
 		return
 	}
 
-	l.Debug("saved stats")
+	l.Debug("saved and published stats")
 }
 
 func (p *Monitor) needsUpdate(match *protocol.CSourceTVGameSmall) bool {
@@ -328,6 +341,5 @@ func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsT
 }
 
 func (p *Monitor) publishChange(stats *models.LiveMatchStats) error {
-	p.log.WithField("match_id", stats.MatchID).Debug("publishing match stats update")
 	return p.redis.Publish(nsrds.TopicMatchStatsUpdate, stats.MatchID).Err()
 }

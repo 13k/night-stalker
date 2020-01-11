@@ -9,6 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	pkgKey = "@pkg"
+)
+
 type Logger struct {
 	logrus.FieldLogger
 
@@ -18,17 +22,21 @@ type Logger struct {
 }
 
 func New(output io.Writer, level logrus.Level) (*Logger, error) {
-	logrusLogger := logrus.New()
+	logger := logrus.New()
 
-	logrusLogger.SetLevel(level)
-	logrusLogger.SetOutput(output)
-
-	logger := &Logger{
-		FieldLogger: logrusLogger,
-		logger:      logrusLogger,
+	logger.SetLevel(level)
+	logger.SetOutput(output)
+	logger.Formatter = &logrus.TextFormatter{
+		FullTimestamp:    true,
+		QuoteEmptyFields: true,
 	}
 
-	return logger, nil
+	l := &Logger{
+		FieldLogger: logger,
+		logger:      logger,
+	}
+
+	return l, nil
 }
 
 func (l *Logger) isStdio() bool {
@@ -56,7 +64,7 @@ func (l *Logger) WithPackage(pkg string) *Logger {
 	pkg = strings.Join(pkgPath, "/")
 
 	return &Logger{
-		FieldLogger: l.WithField("component", pkg),
+		FieldLogger: l.WithField(pkgKey, pkg),
 		logger:      l.logger,
 		pkgPath:     pkgPath,
 		pkg:         pkg,

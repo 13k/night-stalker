@@ -9,6 +9,7 @@ import (
 type queryPage struct {
 	index uint32
 	start uint32
+	total uint32
 	res   *protocol.CMsgGCToClientFindTopSourceTVGamesResponse
 }
 
