@@ -15,7 +15,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.1
 	github.com/jinzhu/gorm v1.9.12
-	github.com/kshvakov/clickhouse v1.3.5 // indirect
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/labstack/gommon v0.3.0
 	github.com/lib/pq v1.3.0
