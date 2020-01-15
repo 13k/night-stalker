@@ -56,11 +56,19 @@ func NewDispatcher(options *DispatcherOptions) *Dispatcher {
 }
 
 func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
+	var shutdown oversight.Shutdown
+
+	if p.options.ShutdownTimeout > 0 {
+		shutdown = oversight.Timeout(p.options.ShutdownTimeout)
+	} else {
+		shutdown = oversight.Infinity()
+	}
+
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Restart:  oversight.Transient(),
 		Start:    p.Start,
-		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
+		Shutdown: shutdown,
 	}
 }
 
@@ -104,6 +112,8 @@ func (p *Dispatcher) loop() error {
 	defer func() {
 		p.log.Warn("stop")
 	}()
+
+	p.log.Info("start")
 
 	for {
 		select {

@@ -20,7 +20,7 @@ var Cmd = &cobra.Command{
 }
 
 const (
-	defaultShutdownTimeout = 10 * time.Second
+	defaultShutdownTimeout = time.Duration(0)
 )
 
 var (
