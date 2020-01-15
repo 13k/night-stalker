@@ -3,16 +3,11 @@ package cmddebug
 import (
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/jinzhu/gorm"
 	"github.com/markbates/pkger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
 	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	nspb "github.com/13k/night-stalker/internal/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
 var Cmd = &cobra.Command{
@@ -61,45 +56,21 @@ func debugPkger(cmd *cobra.Command, args []string) {
 }
 
 func debugDB(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	/*
+		log, err := logger.New()
 
-	if err != nil {
-		panic(err)
-	}
+		if err != nil {
+			panic(err)
+		}
 
-	defer log.Close()
+		defer log.Close()
 
-	db, err := db.Connect()
+		db, err := db.Connect()
 
-	if err != nil {
-		log.WithError(err).Fatal("error connecting to database")
-	}
+		if err != nil {
+			log.WithError(err).Fatal("error connecting to database")
+		}
 
-	defer db.Close()
-
-	type livePlayerResult struct {
-		*models.LiveMatchPlayer
-		MatchID nspb.MatchID
-	}
-
-	var livePlayers []*models.LiveMatchPlayer
-
-	err = db.
-		Debug().
-		Where(&models.LiveMatchPlayer{AccountID: 140288368}).
-		Preload("LiveMatch").
-		Find(&livePlayers).
-		Error
-
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
-		log.WithError(err).Fatal("database live players")
-	}
-
-	// livePlayers := make(map[nspb.MatchID]*models.LiveMatchPlayer)
-
-	// for _, result := range livePlayerResults {
-	// 	livePlayers[result.MatchID] = result.LiveMatchPlayer
-	// }
-
-	log.Println(spew.Sdump(livePlayers))
+		defer db.Close()
+	*/
 }
