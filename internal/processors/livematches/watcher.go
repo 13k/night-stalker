@@ -48,7 +48,6 @@ type Watcher struct {
 	steam                *steam.Client
 	dota                 *dota2.Dota2
 	bus                  *pubsub.PubSub
-	busSubSession        chan interface{}
 	busSubMatchesMinimal chan interface{}
 	busSubSourceTVGames  chan interface{}
 }
@@ -100,7 +99,6 @@ func (p *Watcher) Start(ctx context.Context) error {
 	}
 
 	p.ctx = ctx
-	p.busSubSession = p.bus.Sub(nsbus.TopicSession)
 	p.busSubMatchesMinimal = p.bus.Sub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse)
 	p.busSubSourceTVGames = p.bus.Sub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse)
 
@@ -108,34 +106,21 @@ func (p *Watcher) Start(ctx context.Context) error {
 }
 
 func (p *Watcher) loop() error {
-	ready := false
 	ticker := time.NewTicker(p.options.Interval)
 
 	defer func() {
+		p.flush()
 		ticker.Stop()
 		p.log.Warn("stop")
 	}()
+
+	p.log.Info("start")
+	p.tick()
 
 	for {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSubSession:
-			if !ok {
-				return nil
-			}
-
-			if change, ok := busmsg.(*nsbus.SessionChangeMessage); ok {
-				ready = change.IsReady
-
-				if ready {
-					p.log.Debug("started querying live matches")
-					p.tick()
-				} else {
-					p.flush()
-					p.log.Warn("stopped querying live matches")
-				}
-			}
 		case busmsg := <-p.busSubMatchesMinimal:
 			if msg, ok := busmsg.(*nsbus.GCDispatcherReceivedMessage); ok {
 				p.handleGCMessage(msg)
@@ -145,9 +130,7 @@ func (p *Watcher) loop() error {
 				p.handleGCMessage(msg)
 			}
 		case <-ticker.C:
-			if ready {
-				p.tick()
-			}
+			p.tick()
 		}
 	}
 }

@@ -43,18 +43,20 @@ type ManagerOptions struct {
 var _ nsproc.Processor = (*Manager)(nil)
 
 type Manager struct {
-	options     *ManagerOptions
-	ctx         context.Context
-	login       *models.SteamLogin
-	log         *nslog.Logger
-	db          *gorm.DB
-	steam       *steam.Client
-	dota        *dota2.Dota2
-	bus         *pubsub.PubSub
-	supervisor  *oversight.Tree
-	ready       bool
-	helloTicker *time.Ticker
-	helloCount  int
+	options       *ManagerOptions
+	ctx           context.Context
+	sessionCtx    context.Context
+	sessionCancel context.CancelFunc
+	login         *models.SteamLogin
+	log           *nslog.Logger
+	db            *gorm.DB
+	steam         *steam.Client
+	dota          *dota2.Dota2
+	bus           *pubsub.PubSub
+	supervisor    *oversight.Tree
+	ready         bool
+	helloTicker   *time.Ticker
+	helloCount    int
 }
 
 func NewManager(options *ManagerOptions) *Manager {
@@ -70,43 +72,50 @@ func NewManager(options *ManagerOptions) *Manager {
 }
 
 func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
+	var shutdown oversight.Shutdown
+
+	if p.options.ShutdownTimeout > 0 {
+		shutdown = oversight.Timeout(p.options.ShutdownTimeout)
+	} else {
+		shutdown = oversight.Infinity()
+	}
+
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Restart:  oversight.Permanent(),
 		Start:    p.Start,
-		Shutdown: oversight.Timeout(p.options.ShutdownTimeout),
+		Shutdown: shutdown,
 	}
 }
 
 func (p *Manager) setupSupervisor() {
-	dispatcher := nsgc.NewDispatcher(&nsgc.DispatcherOptions{
+	dispatcherSpec := nsgc.NewDispatcher(&nsgc.DispatcherOptions{
 		Logger:          p.log,
 		BufferSize:      p.options.BusBufferSize,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	liveMatches := nslm.NewWatcher(&nslm.WatcherOptions{
+	liveMatchesSpec := nslm.NewWatcher(&nslm.WatcherOptions{
 		Logger:          p.log,
 		Interval:        p.options.LiveMatchesQueryInterval,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	rtStats := nsrts.NewMonitor(&nsrts.MonitorOptions{
+	rtStatsSpec := nsrts.NewMonitor(&nsrts.MonitorOptions{
 		Logger:          p.log,
 		PoolSize:        p.options.RealtimeStatsPoolSize,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
 	p.supervisor = oversight.New(
+		oversight.NeverHalt(),
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(p.log.WithPackage("supervisor")),
-		oversight.Process(dispatcher, liveMatches, rtStats),
+		oversight.Process(dispatcherSpec, liveMatchesSpec, rtStatsSpec),
 	)
 }
 
 func (p *Manager) Start(ctx context.Context) error {
-	p.ctx = ctx
-
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
 	}
@@ -138,13 +147,13 @@ func (p *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
-	go p.loop()
+	p.ctx = ctx
 
-	return p.supervisor.Start(ctx)
+	return p.loop()
 }
 
 func (p *Manager) stop() {
-	p.log.Warn("exiting...")
+	p.log.Warn("stopping...")
 	p.cancelSession()
 	p.dota.Close()
 	p.steam.Disconnect()
@@ -154,40 +163,42 @@ func (p *Manager) publishEvent(ev interface{}) {
 	p.bus.TryPub(&nsbus.SteamEventMessage{Event: ev}, nsbus.TopicSteamEvents)
 }
 
-func (p *Manager) publishSession(ready bool) {
-	p.bus.Pub(&nsbus.SessionChangeMessage{IsReady: ready}, nsbus.TopicSession)
-}
-
 func (p *Manager) startSession() {
-	if !p.ready {
-		return
-	}
+	p.log.Debug("startSession()")
 
-	p.publishSession(true)
+	p.sessionCtx, p.sessionCancel = context.WithCancel(p.ctx)
+
+	go func() {
+		if err := p.supervisor.Start(p.sessionCtx); err != nil {
+			p.log.WithError(err).Error("supervisor error")
+		}
+	}()
 }
 
 func (p *Manager) cancelSession() {
-	if p.ready {
-		return
-	}
+	p.log.WithField("sessionCancel_nil", p.sessionCancel == nil).Debug("cancelSession()")
 
-	p.publishSession(false)
+	if p.sessionCancel != nil {
+		p.sessionCancel()
+	}
 }
 
-func (p *Manager) loop() {
+func (p *Manager) loop() error {
 	defer func() {
 		p.stop()
 		p.log.Warn("stop")
 	}()
 
+	p.log.Info("start")
+
 	for {
 		select {
 		case <-p.ctx.Done():
-			return
+			return nil
 		case ev := <-p.steam.Events():
 			if err := p.handleEvent(ev); err != nil {
 				p.log.WithError(err).Error()
-				return
+				return err
 			}
 		}
 	}
@@ -581,8 +592,8 @@ func (p *Manager) onDotaGCStateChange(e events.ClientStateChanged) error { //nol
 		p.startSession()
 	} else if e.OldState.IsReady() && !e.NewState.IsReady() {
 		p.log.Warn("dota disconnected")
-		go p.dotaHello()
 		p.cancelSession()
+		go p.dotaHello()
 	}
 
 	return nil

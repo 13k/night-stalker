@@ -108,8 +108,6 @@ func (p *Updater) Start(ctx context.Context) error {
 
 	p.workerPool = pool
 
-	p.log.Info("start")
-
 	return p.loop()
 }
 
@@ -121,6 +119,8 @@ func (p *Updater) loop() error {
 	defer func() {
 		p.workerPool.Release()
 	}()
+
+	p.log.Info("start")
 
 	for {
 		select {

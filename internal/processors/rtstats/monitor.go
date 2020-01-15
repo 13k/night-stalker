@@ -120,6 +120,8 @@ func (p *Monitor) loop() error {
 		p.log.Warn("stop")
 	}()
 
+	p.log.Info("start")
+
 	for {
 		select {
 		case busmsg, ok := <-p.busSubLiveMatches:
