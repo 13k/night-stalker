@@ -20,7 +20,7 @@ import (
 
 const (
 	busBufSize               = 10
-	liveMatchesQueryInterval = 90 * time.Second
+	liveMatchesQueryInterval = 30 * time.Second
 	rtStatsPoolSize          = 5
 	defaultShutdownTimeout   = 10 * time.Second
 )
