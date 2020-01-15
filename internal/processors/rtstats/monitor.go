@@ -167,10 +167,6 @@ func (p *Monitor) handleLiveMatch(match *protocol.CSourceTVGameSmall) {
 		return
 	}
 
-	if !p.needsUpdate(match) {
-		return
-	}
-
 	err := p.workerPool.Submit(func() {
 		p.work(match)
 	})
@@ -230,53 +226,6 @@ func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
 	}
 
 	l.Debug("saved and published stats")
-}
-
-func (p *Monitor) needsUpdate(match *protocol.CSourceTVGameSmall) bool {
-	l := p.log.WithField("match_id", match.GetMatchId())
-
-	stats, err := p.loadMatchStats(match)
-
-	if err != nil {
-		l.WithError(err).Error("error fetching stats from database")
-		return false
-	}
-
-	if p.db.NewRecord(stats) {
-		return true
-	}
-
-	var count int
-
-	lmsp := &models.LiveMatchStatsPlayer{LiveMatchStatsID: stats.ID}
-	dbResult := p.db.
-		Model(models.LiveMatchStatsPlayerModel).
-		Where(lmsp).
-		Where("hero_id = ?", 0).
-		Count(&count)
-
-	if err = dbResult.Error; err != nil {
-		l.WithError(err).Error("error counting stats players in database")
-		return false
-	}
-
-	return count > 0
-}
-
-func (p *Monitor) loadMatchStats(match *protocol.CSourceTVGameSmall) (*models.LiveMatchStats, error) {
-	stats := &models.LiveMatchStats{}
-
-	dbResult := p.db.
-		Select([]string{"id"}).
-		Where(&models.LiveMatchStats{MatchID: match.GetMatchId()}).
-		Order("updated_at DESC").
-		FirstOrInit(stats)
-
-	if dbResult.Error != nil {
-		return nil, dbResult.Error
-	}
-
-	return stats, nil
 }
 
 func (p *Monitor) requestMatchStats(
