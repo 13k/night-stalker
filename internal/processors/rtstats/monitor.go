@@ -129,7 +129,7 @@ func (p *Monitor) loop() error {
 				return nil
 			}
 
-			if msg, ok := busmsg.(*nsbus.LiveMatchesDotaMessage); ok {
+			if msg, ok := busmsg.(*nsbus.LiveMatchesMessage); ok {
 				p.handleLiveMatches(msg)
 			}
 		case <-p.ctx.Done():
@@ -138,9 +138,8 @@ func (p *Monitor) loop() error {
 	}
 }
 
-func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesDotaMessage) {
+func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesMessage) {
 	p.log.WithFields(logrus.Fields{
-		"index": msg.Index,
 		"count": len(msg.Matches),
 	}).Debug("processing live matches")
 
@@ -149,14 +148,14 @@ func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesDotaMessage) {
 	}
 }
 
-func (p *Monitor) handleLiveMatch(match *protocol.CSourceTVGameSmall) {
-	l := p.log.WithField("match_id", match.GetMatchId())
+func (p *Monitor) handleLiveMatch(match *models.LiveMatch) {
+	l := p.log.WithField("match_id", match.MatchID)
 
-	if match.GetMatchId() == 0 {
+	if match.MatchID == 0 {
 		l.WithFields(logrus.Fields{
 			"nil_match":       match == nil,
-			"server_steam_id": match.GetServerSteamId(),
-			"lobby_id":        match.GetLobbyId(),
+			"server_steam_id": match.ServerSteamID,
+			"lobby_id":        match.LobbyID,
 		}).Warn("ignoring match with zero match_id")
 
 		return
@@ -176,15 +175,15 @@ func (p *Monitor) handleLiveMatch(match *protocol.CSourceTVGameSmall) {
 	}
 }
 
-func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
+func (p *Monitor) work(match *models.LiveMatch) {
 	l := p.log.WithFields(logrus.Fields{
-		"match_id":        match.GetMatchId(),
-		"server_steam_id": match.GetServerSteamId(),
+		"match_id":        match.MatchID,
+		"server_steam_id": match.ServerSteamID,
 	})
 
 	var skip bool
 	p.activeReqsMtx.Lock()
-	skip = p.activeReqs[match.GetMatchId()]
+	skip = p.activeReqs[match.MatchID]
 	p.activeReqsMtx.Unlock()
 
 	if skip {
@@ -193,12 +192,12 @@ func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
 	}
 
 	p.activeReqsMtx.Lock()
-	p.activeReqs[match.GetMatchId()] = true
+	p.activeReqs[match.MatchID] = true
 	p.activeReqsMtx.Unlock()
 
 	defer func() {
 		p.activeReqsMtx.Lock()
-		delete(p.activeReqs, match.GetMatchId())
+		delete(p.activeReqs, match.MatchID)
 		p.activeReqsMtx.Unlock()
 	}()
 
@@ -228,9 +227,7 @@ func (p *Monitor) work(match *protocol.CSourceTVGameSmall) {
 	l.Debug("saved and published stats")
 }
 
-func (p *Monitor) requestMatchStats(
-	match *protocol.CSourceTVGameSmall,
-) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
+func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
 	req, err := p.apiMatchStats.GetRealtimeStats()
 
 	if err != nil {
@@ -244,7 +241,7 @@ func (p *Monitor) requestMatchStats(
 	}
 
 	params := url.Values{}
-	params.Set("server_steam_id", strconv.FormatUint(match.GetServerSteamId(), 10))
+	params.Set("server_steam_id", strconv.FormatUint(match.ServerSteamID.ToUint64(), 10))
 
 	reqOptions := geyser.RequestOptions{
 		Context: p.ctx,

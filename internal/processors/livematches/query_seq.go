@@ -4,13 +4,17 @@ import (
 	"math"
 
 	"github.com/paralin/go-dota2/protocol"
+
+	"github.com/13k/night-stalker/models"
 )
 
 type queryPage struct {
-	index uint32
-	start uint32
-	total uint32
-	res   *protocol.CMsgGCToClientFindTopSourceTVGamesResponse
+	index   uint32
+	start   uint32
+	total   uint32
+	games   []*protocol.CSourceTVGameSmall
+	matches []*models.LiveMatch
+	res     *protocol.CMsgGCToClientFindTopSourceTVGamesResponse
 }
 
 type queryPageCacheKey [2]uint32
@@ -19,8 +23,9 @@ func newQueryPageCacheKey(page *queryPage) [2]uint32 {
 	return [2]uint32{page.index, page.start}
 }
 
-// valid only for a single session.
-// must be discarded/reset on session restart.
+// queryPageCache is a concurrency-safe cache of CMsgGCToClientFindTopSourceTVGamesResponse.
+//
+// It's valid only for a single session and must be discarded/reset on session restart.
 type queryPageCache map[queryPageCacheKey]*queryPage
 
 func (c queryPageCache) Contains(page *queryPage) bool {

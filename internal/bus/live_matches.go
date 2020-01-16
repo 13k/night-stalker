@@ -2,12 +2,12 @@ package bus
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protocol"
-	"github.com/paralin/go-dota2/protocol"
+
+	"github.com/13k/night-stalker/models"
 )
 
-type LiveMatchesDotaMessage struct {
-	Index   uint32
-	Matches []*protocol.CSourceTVGameSmall
+type LiveMatchesMessage struct {
+	Matches []*models.LiveMatch
 }
 
 type LiveMatchesChangeMessage struct {

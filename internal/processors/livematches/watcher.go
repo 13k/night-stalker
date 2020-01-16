@@ -223,10 +223,11 @@ func (p *Watcher) handleFindTopSourceTVGamesResponse(
 	msg *protocol.CMsgGCToClientFindTopSourceTVGamesResponse,
 ) {
 	page := &queryPage{
+		res:   msg,
 		index: msg.GetGameListIndex(),
 		start: msg.GetStartGame(),
 		total: msg.GetNumGames(),
-		res:   msg,
+		games: msg.GetGameList(),
 	}
 
 	p.handleResponse(page)
@@ -251,18 +252,23 @@ func (p *Watcher) handleResponse(page *queryPage) {
 
 	l.Debug("received live matches")
 
-	games := cleanResponseGames(page.res.GetGameList())
-	page.res.GameList = games
+	page.games = cleanResponseGames(page.res.GetGameList())
 
-	if err := p.saveResponseGames(games); err != nil {
+	matches, err := p.savePage(page)
+
+	if err != nil {
 		l.WithError(err).Error("error saving live matches response")
 		return
 	}
 
-	if err := p.appendRedisLiveMatches(page.index, games); err != nil {
+	page.matches = matches
+
+	if err := p.appendRedisLiveMatches(page.index, matches); err != nil {
 		l.WithError(err).Error("error caching live match IDs")
 		return
 	}
+
+	p.seq.Cache(page)
 
 	if p.seq.index == 0 {
 		p.seq.Init(page)
@@ -273,17 +279,17 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		}
 	}
 
-	p.seq.Cache(page)
-
 	if p.seq.IsFull() {
 		p.flush()
 	}
 }
 
-func (p *Watcher) saveResponseGames(games []*protocol.CSourceTVGameSmall) error {
-	for _, game := range games {
+func (p *Watcher) savePage(page *queryPage) ([]*models.LiveMatch, error) {
+	var matches []*models.LiveMatch
+
+	for _, game := range page.games {
 		if p.ctx.Err() != nil {
-			return p.ctx.Err()
+			return nil, p.ctx.Err()
 		}
 
 		l := p.log.WithFields(logrus.Fields{
@@ -301,13 +307,13 @@ func (p *Watcher) saveResponseGames(games []*protocol.CSourceTVGameSmall) error 
 		if err := result.Error; err != nil {
 			tx.Rollback()
 			l.WithError(err).Error("error upserting match")
-			return err
+			return nil, err
 		}
 
 		for _, player := range game.GetPlayers() {
 			if p.ctx.Err() != nil {
 				tx.Rollback()
-				return p.ctx.Err()
+				return nil, p.ctx.Err()
 			}
 
 			livePlayer := models.LiveMatchPlayerDotaProto(player)
@@ -326,26 +332,28 @@ func (p *Watcher) saveResponseGames(games []*protocol.CSourceTVGameSmall) error 
 			if err := result.Error; err != nil {
 				tx.Rollback()
 				l.WithError(err).Error("error upserting live match player")
-				return err
+				return nil, err
 			}
 		}
 
 		if err := tx.Commit().Error; err != nil {
-			return err
+			return nil, err
 		}
+
+		matches = append(matches, liveMatch)
 	}
 
-	return nil
+	return matches, nil
 }
 
-func (p *Watcher) appendRedisLiveMatches(index uint32, games []*protocol.CSourceTVGameSmall) error {
-	rZMatchIDs := make([]*redis.Z, len(games))
+func (p *Watcher) appendRedisLiveMatches(index uint32, matches []*models.LiveMatch) error {
+	rZMatchIDs := make([]*redis.Z, len(matches))
 	rKey := nsrds.KeyLiveMatches(int(index))
 
-	for i, game := range games {
+	for i, match := range matches {
 		rZMatchIDs[i] = &redis.Z{
-			Score:  float64(game.GetSortScore()),
-			Member: game.GetMatchId(),
+			Score:  match.SortScore,
+			Member: match.MatchID,
 		}
 	}
 
@@ -361,10 +369,10 @@ func (p *Watcher) flush() {
 
 	index := p.seq.MaxIndex()
 
-	var matches []*protocol.CSourceTVGameSmall
+	var matches []*models.LiveMatch
 
 	for _, page := range p.seq.Pages() {
-		matches = append(matches, page.res.GetGameList()...)
+		matches = append(matches, page.matches...)
 	}
 
 	p.log.WithFields(logrus.Fields{
@@ -372,7 +380,7 @@ func (p *Watcher) flush() {
 		"count": len(matches),
 	}).Debug("flushing matches")
 
-	p.publishBusMatches(index, matches)
+	p.publishBusMatches(matches)
 
 	if err := p.publishRedisIndex(index); err != nil {
 		p.log.
@@ -393,12 +401,8 @@ func (p *Watcher) flush() {
 	}
 }
 
-func (p *Watcher) publishBusMatches(index uint32, matches []*protocol.CSourceTVGameSmall) {
-	busmsg := &nsbus.LiveMatchesDotaMessage{
-		Index:   index,
-		Matches: matches,
-	}
-
+func (p *Watcher) publishBusMatches(matches []*models.LiveMatch) {
+	busmsg := &nsbus.LiveMatchesMessage{Matches: matches}
 	p.bus.Pub(busmsg, nsbus.TopicLiveMatches)
 }
 
