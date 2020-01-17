@@ -1,7 +1,7 @@
 package models
 
 import (
-	nsproto "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/faceit/go-steam/steamid"
 	"github.com/paralin/go-dota2/protocol"
 )
@@ -15,7 +15,7 @@ type LiveMatchStatsTeam struct {
 	ID               LiveMatchStatsTeamID `gorm:"column:id;primary_key"`
 	LiveMatchStatsID LiveMatchStatsID     `gorm:"column:live_match_stats_id"`
 	TeamID           TeamID               `gorm:"column:team_id"`
-	GameTeam         nsproto.GameTeam     `gorm:"column:game_team"`
+	GameTeam         nspb.GameTeam        `gorm:"column:game_team"`
 	Name             string               `gorm:"column:name;size:255"`
 	Tag              string               `gorm:"column:tag;size:255"`
 	LogoID           steamid.SteamId      `gorm:"column:logo_id"`
@@ -28,10 +28,14 @@ type LiveMatchStatsTeam struct {
 	Team           *Team
 }
 
+func (*LiveMatchStatsTeam) TableName() string {
+	return "live_match_stats_teams"
+}
+
 func LiveMatchStatsTeamDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_TeamDetails) *LiveMatchStatsTeam {
 	return &LiveMatchStatsTeam{
 		TeamID:   TeamID(pb.GetTeamId()),
-		GameTeam: nsproto.GameTeam(pb.GetTeamNumber()),
+		GameTeam: nspb.GameTeam(pb.GetTeamNumber()),
 		Name:     pb.GetTeamName(),
 		Tag:      pb.GetTeamTag(),
 		LogoID:   steamid.SteamId(pb.GetTeamLogo()),

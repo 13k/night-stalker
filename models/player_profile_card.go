@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	nsproto "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/paralin/go-dota2/protocol"
 )
 
@@ -14,7 +14,7 @@ type PlayerProfileCardID uint64
 // PlayerProfileCard ...
 type PlayerProfileCard struct {
 	ID                     PlayerProfileCardID `gorm:"column:id;primary_key"`
-	AccountID              nsproto.AccountID   `gorm:"column:account_id;unique_index;not null"`
+	AccountID              nspb.AccountID      `gorm:"column:account_id;unique_index;not null"`
 	BackgroundDefIndex     uint32              `gorm:"column:background_def_index"`
 	BadgePoints            uint32              `gorm:"column:badge_points"`
 	EventPoints            uint32              `gorm:"column:event_points"`
@@ -32,9 +32,11 @@ type PlayerProfileCard struct {
 	LeaderboardRankSupport uint32              `gorm:"column:leaderboard_rank_support"`
 	IsPlusSubscriber       bool                `gorm:"column:is_plus_subscriber"`
 	PlusOriginalStartDate  *time.Time          `gorm:"column:plus_original_start_date"`
-	// Slots                  []*protocol.CMsgDOTAProfileCard_Slot
-	// RecentBattleCupVictory *protocol.CMsgBattleCupVictory
 	Timestamps
+}
+
+func (*PlayerProfileCard) TableName() string {
+	return "player_profile_cards"
 }
 
 func PlayerProfileCardProto(pb *protocol.CMsgDOTAProfileCard) *PlayerProfileCard {

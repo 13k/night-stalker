@@ -1,7 +1,7 @@
 package models
 
 import (
-	nsproto "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/paralin/go-dota2/protocol"
 )
 
@@ -13,7 +13,7 @@ type LiveMatchPlayerID uint64
 type LiveMatchPlayer struct {
 	ID          LiveMatchPlayerID `gorm:"column:id;primary_key"`
 	LiveMatchID LiveMatchID       `gorm:"column:live_match_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"` //nolint: lll
-	AccountID   nsproto.AccountID `gorm:"column:account_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"`    //nolint: lll
+	AccountID   nspb.AccountID    `gorm:"column:account_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"`    //nolint: lll
 	HeroID      HeroID            `gorm:"column:hero_id"`
 	Timestamps
 

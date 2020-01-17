@@ -10,3 +10,7 @@ type SteamServer struct {
 	Address string        `gorm:"column:address;size:255;unique_index;not null"`
 	Timestamps
 }
+
+func (*SteamServer) TableName() string {
+	return "steam_servers"
+}

@@ -1,7 +1,7 @@
 package models
 
 import (
-	nsproto "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/lib/pq"
 	"github.com/paralin/go-dota2/protocol"
 )
@@ -14,10 +14,10 @@ type LiveMatchStatsPlayerID uint64
 type LiveMatchStatsPlayer struct {
 	ID               LiveMatchStatsPlayerID `gorm:"column:id;primary_key"`
 	LiveMatchStatsID LiveMatchStatsID       `gorm:"column:live_match_stats_id"`
-	AccountID        nsproto.AccountID      `gorm:"column:account_id"`
-	PlayerSlot       nsproto.GamePlayerSlot `gorm:"column:player_slot"`
+	AccountID        nspb.AccountID         `gorm:"column:account_id"`
+	PlayerSlot       nspb.GamePlayerSlot    `gorm:"column:player_slot"`
 	Name             string                 `gorm:"column:name;size:255"`
-	GameTeam         nsproto.GameTeam       `gorm:"column:game_team"`
+	GameTeam         nspb.GameTeam          `gorm:"column:game_team"`
 	HeroID           HeroID                 `gorm:"column:hero_id"`
 	Level            uint32                 `gorm:"column:level"`
 	Kills            uint32                 `gorm:"column:kills"`
@@ -44,9 +44,9 @@ func (*LiveMatchStatsPlayer) TableName() string {
 func LiveMatchStatsPlayerDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
 	return &LiveMatchStatsPlayer{
 		AccountID:  pb.GetAccountid(),
-		PlayerSlot: nsproto.GamePlayerSlot(pb.GetPlayerid()),
+		PlayerSlot: nspb.GamePlayerSlot(pb.GetPlayerid()),
 		Name:       pb.GetName(),
-		GameTeam:   nsproto.GameTeam(pb.GetTeam()),
+		GameTeam:   nspb.GameTeam(pb.GetTeam()),
 		HeroID:     HeroID(pb.GetHeroid()),
 		Level:      pb.GetLevel(),
 		Kills:      pb.GetKillCount(),

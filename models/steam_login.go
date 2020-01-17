@@ -49,3 +49,7 @@ type SteamLogin struct {
 	ForceClientUpdateCheck    bool              `gorm:"column:force_client_update_check"`
 	Timestamps
 }
+
+func (*SteamLogin) TableName() string {
+	return "steam_logins"
+}

@@ -20,3 +20,7 @@ type Team struct {
 	LastMatchTime *time.Time `gorm:"column:last_match_time"`
 	Timestamps
 }
+
+func (*Team) TableName() string {
+	return "teams"
+}
