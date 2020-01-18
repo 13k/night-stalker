@@ -18,6 +18,7 @@ import (
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
+	nscomm "github.com/13k/night-stalker/internal/processors/comm"
 	nsgc "github.com/13k/night-stalker/internal/processors/gc"
 	nslm "github.com/13k/night-stalker/internal/processors/livematches"
 	nsrts "github.com/13k/night-stalker/internal/processors/rtstats"
@@ -109,11 +110,16 @@ func (p *Manager) setupSupervisor() {
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
+	chatSpec := nscomm.NewChat(&nscomm.ChatOptions{
+		Logger:          p.log,
+		ShutdownTimeout: p.options.ShutdownTimeout,
+	}).ChildSpec()
+
 	p.supervisor = oversight.New(
 		oversight.NeverHalt(),
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(p.log.WithPackage("supervisor")),
-		oversight.Process(dispatcherSpec, liveMatchesSpec, rtStatsSpec),
+		oversight.Process(dispatcherSpec, liveMatchesSpec, rtStatsSpec, chatSpec),
 	)
 }
 
