@@ -164,9 +164,10 @@ func (p *Manager) publishEvent(ev interface{}) {
 }
 
 func (p *Manager) startSession() {
-	p.log.Debug("startSession()")
-
 	p.sessionCtx, p.sessionCancel = context.WithCancel(p.ctx)
+
+	busmsg := &nsbus.SessionChangeMessage{IsReady: true}
+	p.bus.Pub(busmsg, nsbus.TopicSession)
 
 	go func() {
 		if err := p.supervisor.Start(p.sessionCtx); err != nil {
@@ -176,10 +177,13 @@ func (p *Manager) startSession() {
 }
 
 func (p *Manager) cancelSession() {
-	p.log.WithField("sessionCancel_nil", p.sessionCancel == nil).Debug("cancelSession()")
-
 	if p.sessionCancel != nil {
 		p.sessionCancel()
+
+		busmsg := &nsbus.SessionChangeMessage{IsReady: false}
+		p.bus.Pub(busmsg, nsbus.TopicSession)
+
+		p.sessionCancel = nil
 	}
 }
 
@@ -364,7 +368,9 @@ func (p *Manager) connectSteam() error {
 }
 
 func (p *Manager) onSteamConnect() error { //nolint: unparam
-	p.log.WithField("username", p.options.Credentials.Username).Info("connected, logging in")
+	p.log.
+		WithField("username", p.options.Credentials.Username).
+		Info("connected, logging in")
 
 	logOnDetails := &steam.LogOnDetails{
 		Username:               p.options.Credentials.Username,
@@ -385,7 +391,7 @@ func (p *Manager) onSteamConnect() error { //nolint: unparam
 }
 
 func (p *Manager) onSteamDisconnect() error {
-	p.log.Info("disconnected")
+	p.log.Warn("disconnected")
 	return ErrSteamDisconnected
 }
 
@@ -539,8 +545,8 @@ func (p *Manager) dotaHello() {
 
 	for {
 		select {
-		case msg := <-sessionSub:
-			if msg == nil {
+		case msg, ok := <-sessionSub:
+			if !ok {
 				return
 			}
 
