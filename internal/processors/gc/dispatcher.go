@@ -2,6 +2,7 @@ package gc
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -108,6 +109,13 @@ func (p *Dispatcher) write(msgType protocol.EDOTAGCMsg, message proto.Message) {
 }
 
 func (p *Dispatcher) loop() error {
+	defer func() {
+		if err := recover(); err != nil {
+			p.log.WithField("error", err).Error("recovered panic")
+			p.log.Error(string(debug.Stack()))
+		}
+	}()
+
 	defer func() {
 		p.log.Warn("stop")
 	}()

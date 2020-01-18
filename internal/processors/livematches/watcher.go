@@ -2,6 +2,7 @@ package livematches
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -105,6 +106,13 @@ func (p *Watcher) Start(ctx context.Context) error {
 }
 
 func (p *Watcher) loop() error {
+	defer func() {
+		if err := recover(); err != nil {
+			p.log.WithField("error", err).Error("recovered panic")
+			p.log.Error(string(debug.Stack()))
+		}
+	}()
+
 	ticker := time.NewTicker(p.options.Interval)
 
 	defer func() {

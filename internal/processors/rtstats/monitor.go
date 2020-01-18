@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -114,6 +115,13 @@ func (p *Monitor) Start(ctx context.Context) error {
 }
 
 func (p *Monitor) loop() error {
+	defer func() {
+		if err := recover(); err != nil {
+			p.log.WithField("error", err).Error("recovered panic")
+			p.log.Error(string(debug.Stack()))
+		}
+	}()
+
 	defer func() {
 		p.workerPool.Release()
 		p.log.Warn("stop")
