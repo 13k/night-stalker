@@ -139,6 +139,7 @@ linters:
   # enable-all: false
   disable-all: true
   enable:
+    - gofmt
     - govet
     - errcheck
     - staticcheck
