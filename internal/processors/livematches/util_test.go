@@ -28,20 +28,20 @@ func TestCleanResponseGames(t *testing.T) {
 		},
 		{
 			Subject: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{},
+				{},
 			},
 			Expected: []*protocol.CSourceTVGameSmall{},
 		},
 		{
 			Subject: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
 					SortScore:      proto.Uint32(1),
 				},
 			},
 			Expected: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
 					SortScore:      proto.Uint32(1),
@@ -50,24 +50,24 @@ func TestCleanResponseGames(t *testing.T) {
 		},
 		{
 			Subject: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
 					SortScore:      proto.Uint32(2),
 				},
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(2),
 					LastUpdateTime: proto.Float32(2.0),
 					SortScore:      proto.Uint32(1),
 				},
 			},
 			Expected: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
 					SortScore:      proto.Uint32(2),
 				},
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(2),
 					LastUpdateTime: proto.Float32(2.0),
 					SortScore:      proto.Uint32(1),
@@ -76,37 +76,37 @@ func TestCleanResponseGames(t *testing.T) {
 		},
 		{
 			Subject: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
 					SortScore:      proto.Uint32(4),
 				},
-				&protocol.CSourceTVGameSmall{},
-				&protocol.CSourceTVGameSmall{
+				{},
+				{
 					MatchId:        proto.Uint64(2),
 					LastUpdateTime: proto.Float32(2.0),
 					SortScore:      proto.Uint32(3),
 				},
 				nil,
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(2),
 					LastUpdateTime: proto.Float32(2.1),
 					SortScore:      proto.Uint32(2),
 				},
-				&protocol.CSourceTVGameSmall{},
-				&protocol.CSourceTVGameSmall{
+				{},
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.1),
 					SortScore:      proto.Uint32(1),
 				},
 			},
 			Expected: []*protocol.CSourceTVGameSmall{
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(2),
 					LastUpdateTime: proto.Float32(2.1),
 					SortScore:      proto.Uint32(2),
 				},
-				&protocol.CSourceTVGameSmall{
+				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.1),
 					SortScore:      proto.Uint32(1),
