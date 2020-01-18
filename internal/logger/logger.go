@@ -59,6 +59,14 @@ func (l *Logger) Close() error {
 	return nil
 }
 
+func (l *Logger) Debugfn(fn func()) {
+	if !l.logger.IsLevelEnabled(logrus.DebugLevel) {
+		return
+	}
+
+	fn()
+}
+
 func (l *Logger) WithPackage(pkg string) *Logger {
 	pkgPath := append(l.pkgPath, pkg)
 	pkg = strings.Join(pkgPath, "/")
