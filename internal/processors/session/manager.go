@@ -27,8 +27,8 @@ import (
 const (
 	processorName = "session"
 
-	helloRetryCount    = 720
-	helloRetryInterval = 30 * time.Second
+	helloRetryCount    = 360
+	helloRetryInterval = 10 * time.Second
 )
 
 type ManagerOptions struct {
