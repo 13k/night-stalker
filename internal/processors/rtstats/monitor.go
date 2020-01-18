@@ -34,6 +34,7 @@ const (
 type MonitorOptions struct {
 	Logger          *nslog.Logger
 	PoolSize        int
+	Interval        time.Duration
 	ShutdownTimeout time.Duration
 }
 
@@ -52,6 +53,8 @@ type Monitor struct {
 	busSubLiveMatches chan interface{}
 	activeReqsMtx     sync.Mutex
 	activeReqs        map[nspb.MatchID]bool
+	matchesMtx        sync.RWMutex
+	matches           []*models.LiveMatch
 }
 
 func NewMonitor(options *MonitorOptions) *Monitor {
@@ -122,7 +125,10 @@ func (p *Monitor) loop() error {
 		}
 	}()
 
+	tick := time.NewTicker(p.options.Interval)
+
 	defer func() {
+		tick.Stop()
 		p.workerPool.Release()
 		p.log.Warn("stop")
 	}()
@@ -131,6 +137,10 @@ func (p *Monitor) loop() error {
 
 	for {
 		select {
+		case <-p.ctx.Done():
+			return nil
+		case <-tick.C:
+			p.tick()
 		case busmsg, ok := <-p.busSubLiveMatches:
 			if !ok {
 				return nil
@@ -139,8 +149,6 @@ func (p *Monitor) loop() error {
 			if msg, ok := busmsg.(*nsbus.LiveMatchesMessage); ok {
 				p.handleLiveMatches(msg)
 			}
-		case <-p.ctx.Done():
-			return nil
 		}
 	}
 }
@@ -148,28 +156,35 @@ func (p *Monitor) loop() error {
 func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesMessage) {
 	p.log.WithFields(logrus.Fields{
 		"count": len(msg.Matches),
-	}).Debug("processing live matches")
+	}).Debug("received live matches")
 
-	for _, match := range msg.Matches {
-		p.handleLiveMatch(match)
-	}
+	p.matchesMtx.Lock()
+	defer p.matchesMtx.Unlock()
+	p.matches = msg.Matches
 }
 
-func (p *Monitor) handleLiveMatch(match *models.LiveMatch) {
-	l := p.log.WithField("match_id", match.MatchID)
+func (p *Monitor) tick() {
+	p.matchesMtx.RLock()
+	defer p.matchesMtx.RUnlock()
 
-	if match.MatchID == 0 {
-		l.WithFields(logrus.Fields{
-			"nil_match":       match == nil,
-			"server_steam_id": match.ServerSteamID,
-			"lobby_id":        match.LobbyID,
-		}).Warn("ignoring match with zero match_id")
-
+	if len(p.matches) == 0 {
 		return
 	}
 
+	p.log.WithFields(logrus.Fields{
+		"count": len(p.matches),
+	}).Debug("requesting stats")
+
+	for _, match := range p.matches {
+		p.submitLiveMatch(match)
+	}
+}
+
+func (p *Monitor) submitLiveMatch(match *models.LiveMatch) {
+	l := p.log.WithField("match_id", match.MatchID)
+
 	if err := p.ctx.Err(); err != nil {
-		l.WithError(err).Error("error processing live match")
+		l.WithError(err).Error()
 		return
 	}
 
@@ -226,12 +241,10 @@ func (p *Monitor) work(match *models.LiveMatch) {
 		return
 	}
 
-	if err := p.publishChange(stats); err != nil {
+	if err := p.redisPublishChange(stats); err != nil {
 		l.WithError(err).Error("error publishing stats change")
 		return
 	}
-
-	l.Debug("saved and published stats")
 }
 
 func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
@@ -303,6 +316,6 @@ func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsT
 	return stats, nil
 }
 
-func (p *Monitor) publishChange(stats *models.LiveMatchStats) error {
+func (p *Monitor) redisPublishChange(stats *models.LiveMatchStats) error {
 	return p.redis.Publish(nsrds.TopicMatchStatsUpdate, stats.MatchID).Err()
 }

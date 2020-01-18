@@ -22,6 +22,7 @@ const (
 	busBufSize               = 10
 	liveMatchesQueryInterval = 30 * time.Second
 	rtStatsPoolSize          = 5
+	rtStatsInterval          = 30 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
 )
 
@@ -110,6 +111,7 @@ func (ns *App) setupSupervisor() {
 		LiveMatchesQueryInterval: liveMatchesQueryInterval,
 		BusBufferSize:            busBufSize,
 		RealtimeStatsPoolSize:    rtStatsPoolSize,
+		RealtimeStatsInterval:    rtStatsInterval,
 	}
 
 	session := nssess.NewManager(sessOptions).ChildSpec()

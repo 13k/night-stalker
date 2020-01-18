@@ -38,6 +38,7 @@ type ManagerOptions struct {
 	LiveMatchesQueryInterval time.Duration
 	BusBufferSize            int
 	RealtimeStatsPoolSize    int
+	RealtimeStatsInterval time.Duration
 }
 
 var _ nsproc.Processor = (*Manager)(nil)
@@ -104,6 +105,7 @@ func (p *Manager) setupSupervisor() {
 	rtStatsSpec := nsrts.NewMonitor(&nsrts.MonitorOptions{
 		Logger:          p.log,
 		PoolSize:        p.options.RealtimeStatsPoolSize,
+		Interval:        p.options.RealtimeStatsInterval,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
