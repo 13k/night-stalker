@@ -395,17 +395,17 @@ func (p *Manager) onSteamDisconnect() error {
 	return ErrSteamDisconnected
 }
 
-func (p *Manager) onSteamServerList(e *steam.ClientCMListEvent) error { //nolint: unparam
+func (p *Manager) onSteamServerList(e *steam.ClientCMListEvent) error {
 	p.log.WithField("count", len(e.Addresses)).Debug("received server list")
 
 	if err := p.saveServers(e.Addresses); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
 }
 
-func (p *Manager) onSteamLoginKey(e *steam.LoginKeyEvent) error { //nolint: unparam
+func (p *Manager) onSteamLoginKey(e *steam.LoginKeyEvent) error {
 	p.log.Debug("received login key")
 
 	update := &models.SteamLogin{
@@ -414,25 +414,25 @@ func (p *Manager) onSteamLoginKey(e *steam.LoginKeyEvent) error { //nolint: unpa
 	}
 
 	if err := p.updateLogin(update); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
 }
 
-func (p *Manager) onSteamMachineAuth(e *steam.MachineAuthUpdateEvent) error { //nolint: unparam
+func (p *Manager) onSteamMachineAuth(e *steam.MachineAuthUpdateEvent) error {
 	p.log.Debug("received machine hash")
 
 	update := &models.SteamLogin{MachineHash: e.Hash}
 
 	if err := p.updateLogin(update); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
 }
 
-func (p *Manager) onSteamWebSession(_ *steam.WebSessionIdEvent) error { //nolint: unparam
+func (p *Manager) onSteamWebSession(_ *steam.WebSessionIdEvent) error {
 	p.log.Debug("received web session id")
 
 	update := &models.SteamLogin{
@@ -440,7 +440,7 @@ func (p *Manager) onSteamWebSession(_ *steam.WebSessionIdEvent) error { //nolint
 	}
 
 	if err := p.updateLogin(update); err != nil {
-		return nil
+		return err
 	}
 
 	// p.steam.Web.LogOn()
@@ -448,7 +448,7 @@ func (p *Manager) onSteamWebSession(_ *steam.WebSessionIdEvent) error { //nolint
 	return nil
 }
 
-func (p *Manager) onSteamWebLogOn(_ *steam.WebLoggedOnEvent) error { //nolint: unparam
+func (p *Manager) onSteamWebLogOn(_ *steam.WebLoggedOnEvent) error {
 	p.log.Debug("web logged on")
 
 	update := &models.SteamLogin{
@@ -457,7 +457,7 @@ func (p *Manager) onSteamWebLogOn(_ *steam.WebLoggedOnEvent) error { //nolint: u
 	}
 
 	if err := p.updateLogin(update); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
