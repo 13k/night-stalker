@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/cskr/pubsub"
 	"github.com/faceit/go-steam"
 	"github.com/faceit/go-steam/netutil"
 	"github.com/faceit/go-steam/protocol/steamlang"
@@ -52,7 +51,7 @@ type Manager struct {
 	db            *gorm.DB
 	steam         *steam.Client
 	dota          *dota2.Dota2
-	bus           *pubsub.PubSub
+	bus           *nsbus.Bus
 	supervisor    *oversight.Tree
 	ready         bool
 	helloTicker   *time.Ticker
@@ -128,8 +127,8 @@ func (p *Manager) Start(ctx context.Context) error {
 		return nsproc.ErrProcessorContextDotaClient
 	}
 
-	if p.bus = nsctx.GetPubSub(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextPubSub
+	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
+		return nsproc.ErrProcessorContextBus
 	}
 
 	if err := p.loadLogin(); err != nil {

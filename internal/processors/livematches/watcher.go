@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/cskr/pubsub"
 	"github.com/faceit/go-steam"
 	"github.com/go-redis/redis/v7"
 	"github.com/golang/protobuf/proto"
@@ -47,7 +46,7 @@ type Watcher struct {
 	redis                *redis.Client
 	steam                *steam.Client
 	dota                 *dota2.Dota2
-	bus                  *pubsub.PubSub
+	bus                  *nsbus.Bus
 	busSubMatchesMinimal chan interface{}
 	busSubSourceTVGames  chan interface{}
 }
@@ -82,7 +81,7 @@ func (p *Watcher) Start(ctx context.Context) error {
 		return nsproc.ErrProcessorContextDatabase
 	}
 
-	if p.redis = nsctx.GetRedis(ctx); p.db == nil {
+	if p.redis = nsctx.GetRedis(ctx); p.redis == nil {
 		return nsproc.ErrProcessorContextRedis
 	}
 
@@ -94,8 +93,8 @@ func (p *Watcher) Start(ctx context.Context) error {
 		return nsproc.ErrProcessorContextDotaClient
 	}
 
-	if p.bus = nsctx.GetPubSub(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextPubSub
+	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
+		return nsproc.ErrProcessorContextBus
 	}
 
 	p.ctx = ctx

@@ -5,12 +5,12 @@ import (
 
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/cskr/pubsub"
 	"github.com/faceit/go-steam"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2"
 
+	nsbus "github.com/13k/night-stalker/internal/bus"
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
 
@@ -22,7 +22,7 @@ const (
 	ctxKeyRedis
 	ctxKeySteam
 	ctxKeyDota
-	ctxKeyPubSub
+	ctxKeyBus
 	ctxKeyAPI
 	ctxKeyDotaAPI
 )
@@ -102,13 +102,13 @@ func GetDota(ctx context.Context) *dota2.Dota2 {
 	return v
 }
 
-func WithPubSub(ctx context.Context, ps *pubsub.PubSub) context.Context {
-	return context.WithValue(ctx, ctxKeyPubSub, ps)
+func WithBus(ctx context.Context, bus *nsbus.Bus) context.Context {
+	return context.WithValue(ctx, ctxKeyBus, bus)
 }
 
-func GetPubSub(ctx context.Context) *pubsub.PubSub {
-	i := ctx.Value(ctxKeyPubSub)
-	v, ok := i.(*pubsub.PubSub)
+func GetBus(ctx context.Context) *nsbus.Bus {
+	i := ctx.Value(ctxKeyBus)
+	v, ok := i.(*nsbus.Bus)
 
 	if !ok {
 		return nil

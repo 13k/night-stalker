@@ -11,7 +11,6 @@ import (
 	"cirello.io/oversight"
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/cskr/pubsub"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
@@ -48,7 +47,7 @@ type Monitor struct {
 	workerPool        *ants.Pool
 	api               *geyserd2.Client
 	apiMatchStats     *geyserd2.DOTA2MatchStats
-	bus               *pubsub.PubSub
+	bus               *nsbus.Bus
 	busSubLiveMatches chan interface{}
 	activeReqsMtx     sync.Mutex
 	activeReqs        map[nspb.MatchID]bool
@@ -84,12 +83,12 @@ func (p *Monitor) Start(ctx context.Context) error {
 		return nsproc.ErrProcessorContextDatabase
 	}
 
-	if p.redis = nsctx.GetRedis(ctx); p.db == nil {
+	if p.redis = nsctx.GetRedis(ctx); p.redis == nil {
 		return nsproc.ErrProcessorContextRedis
 	}
 
-	if p.bus = nsctx.GetPubSub(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextPubSub
+	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
+		return nsproc.ErrProcessorContextBus
 	}
 
 	if p.api = nsctx.GetDotaAPI(ctx); p.api == nil {

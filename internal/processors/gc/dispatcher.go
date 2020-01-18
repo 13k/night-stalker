@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/cskr/pubsub"
 	"github.com/faceit/go-steam"
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
 	"github.com/golang/protobuf/proto"
@@ -43,7 +42,7 @@ type Dispatcher struct {
 	log        *nslog.Logger
 	steam      *steam.Client
 	queue      chan *gc.GCPacket
-	bus        *pubsub.PubSub
+	bus        *nsbus.Bus
 	busSubSend chan interface{}
 }
 
@@ -77,8 +76,8 @@ func (p *Dispatcher) Start(ctx context.Context) error {
 		return nsproc.ErrProcessorContextSteamClient
 	}
 
-	if p.bus = nsctx.GetPubSub(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextPubSub
+	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
+		return nsproc.ErrProcessorContextBus
 	}
 
 	p.ctx = ctx

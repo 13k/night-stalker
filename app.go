@@ -7,12 +7,12 @@ import (
 	"cirello.io/oversight"
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/cskr/pubsub"
 	"github.com/faceit/go-steam"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2"
 
+	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nssess "github.com/13k/night-stalker/internal/processors/session"
@@ -45,7 +45,7 @@ type App struct {
 	supervisor *oversight.Tree
 	ctx        context.Context
 	cancel     context.CancelFunc
-	bus        *pubsub.PubSub
+	bus        *nsbus.Bus
 }
 
 func New(options *AppOptions) (*App, error) {
@@ -54,7 +54,7 @@ func New(options *AppOptions) (*App, error) {
 		log:     options.Log,
 		db:      options.DB,
 		rds:     options.Redis,
-		bus:     pubsub.New(busBufSize),
+		bus:     nsbus.New(busBufSize),
 	}
 
 	if ns.options.ShutdownTimeout == 0 {
@@ -127,7 +127,7 @@ func (ns *App) setupContext() {
 	ctx = nsctx.WithLogger(ctx, ns.log)
 	ctx = nsctx.WithDB(ctx, ns.db)
 	ctx = nsctx.WithRedis(ctx, ns.rds)
-	ctx = nsctx.WithPubSub(ctx, ns.bus)
+	ctx = nsctx.WithBus(ctx, ns.bus)
 	ctx = nsctx.WithSteam(ctx, ns.steam)
 	ctx = nsctx.WithDota(ctx, ns.dota)
 	ctx = nsctx.WithAPI(ctx, ns.api)
