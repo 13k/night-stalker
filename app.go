@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	busBufSize               = 10
-	liveMatchesQueryInterval = 30 * time.Second
-	rtStatsPoolSize          = 5
-	rtStatsInterval          = 30 * time.Second
-	defaultShutdownTimeout   = 10 * time.Second
+	busBufSize             = 10
+	liveMatchesInterval    = 60 * time.Second
+	rtStatsPoolSize        = 10
+	rtStatsInterval        = 30 * time.Second
+	defaultShutdownTimeout = 10 * time.Second
 )
 
 type AppOptions struct {
@@ -105,13 +105,13 @@ func (ns *App) setupDota() {
 
 func (ns *App) setupSupervisor() {
 	sessOptions := &nssess.ManagerOptions{
-		Logger:                   ns.log,
-		Credentials:              ns.options.Credentials.sessionCredentials(),
-		ShutdownTimeout:          ns.options.ShutdownTimeout,
-		LiveMatchesQueryInterval: liveMatchesQueryInterval,
-		BusBufferSize:            busBufSize,
-		RealtimeStatsPoolSize:    rtStatsPoolSize,
-		RealtimeStatsInterval:    rtStatsInterval,
+		Logger:                ns.log,
+		Credentials:           ns.options.Credentials.sessionCredentials(),
+		ShutdownTimeout:       ns.options.ShutdownTimeout,
+		BusBufferSize:         busBufSize,
+		LiveMatchesInterval:   liveMatchesInterval,
+		RealtimeStatsPoolSize: rtStatsPoolSize,
+		RealtimeStatsInterval: rtStatsInterval,
 	}
 
 	session := nssess.NewManager(sessOptions).ChildSpec()

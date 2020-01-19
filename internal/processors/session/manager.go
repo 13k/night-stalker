@@ -33,12 +33,12 @@ const (
 )
 
 type ManagerOptions struct {
-	Logger                   *nslog.Logger
-	Credentials              *Credentials
-	ShutdownTimeout          time.Duration
-	LiveMatchesQueryInterval time.Duration
-	BusBufferSize            int
-	RealtimeStatsPoolSize    int
+	Logger                *nslog.Logger
+	Credentials           *Credentials
+	ShutdownTimeout       time.Duration
+	BusBufferSize         int
+	LiveMatchesInterval   time.Duration
+	RealtimeStatsPoolSize int
 	RealtimeStatsInterval time.Duration
 }
 
@@ -99,7 +99,7 @@ func (p *Manager) setupSupervisor() {
 
 	liveMatchesSpec := nslm.NewWatcher(&nslm.WatcherOptions{
 		Logger:          p.log,
-		Interval:        p.options.LiveMatchesQueryInterval,
+		Interval:        p.options.LiveMatchesInterval,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
