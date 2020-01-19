@@ -21,6 +21,7 @@ import (
 	nscomm "github.com/13k/night-stalker/internal/processors/comm"
 	nsgc "github.com/13k/night-stalker/internal/processors/gc"
 	nslm "github.com/13k/night-stalker/internal/processors/livematches"
+	nsmdtl "github.com/13k/night-stalker/internal/processors/matchdetails"
 	nsrts "github.com/13k/night-stalker/internal/processors/rtstats"
 	"github.com/13k/night-stalker/models"
 )
@@ -40,6 +41,8 @@ type ManagerOptions struct {
 	LiveMatchesInterval   time.Duration
 	RealtimeStatsPoolSize int
 	RealtimeStatsInterval time.Duration
+	MatchInfoPoolSize     int
+	MatchInfoInterval     time.Duration
 }
 
 var _ nsproc.Processor = (*Manager)(nil)
@@ -110,6 +113,13 @@ func (p *Manager) setupSupervisor() {
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
+	matchInfoSpec := nsmdtl.NewMonitor(&nsmdtl.MonitorOptions{
+		Logger:          p.log,
+		PoolSize:        p.options.MatchInfoPoolSize,
+		Interval:        p.options.MatchInfoInterval,
+		ShutdownTimeout: p.options.ShutdownTimeout,
+	}).ChildSpec()
+
 	chatSpec := nscomm.NewChat(&nscomm.ChatOptions{
 		Logger:          p.log,
 		ShutdownTimeout: p.options.ShutdownTimeout,
@@ -119,7 +129,7 @@ func (p *Manager) setupSupervisor() {
 		oversight.NeverHalt(),
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(p.log.WithPackage("supervisor")),
-		oversight.Process(dispatcherSpec, liveMatchesSpec, rtStatsSpec, chatSpec),
+		oversight.Process(dispatcherSpec, liveMatchesSpec, rtStatsSpec, matchInfoSpec, chatSpec),
 	)
 }
 

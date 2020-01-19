@@ -23,6 +23,8 @@ const (
 	liveMatchesInterval    = 60 * time.Second
 	rtStatsPoolSize        = 10
 	rtStatsInterval        = 30 * time.Second
+	matchInfoPoolSize      = 10
+	matchInfoInterval      = 45 * time.Second
 	defaultShutdownTimeout = 10 * time.Second
 )
 
@@ -112,6 +114,8 @@ func (ns *App) setupSupervisor() {
 		LiveMatchesInterval:   liveMatchesInterval,
 		RealtimeStatsPoolSize: rtStatsPoolSize,
 		RealtimeStatsInterval: rtStatsInterval,
+		MatchInfoPoolSize:     matchInfoPoolSize,
+		MatchInfoInterval:     matchInfoInterval,
 	}
 
 	session := nssess.NewManager(sessOptions).ChildSpec()

@@ -190,9 +190,10 @@ func (p *Watcher) queryPage(page *queryPage) error {
 }
 
 func (p *Watcher) handleMatchesFinished(msg *nsbus.LiveMatchesFinishedMessage) {
-	p.log.
-		WithField("match_ids", msg.MatchIDs).
-		Debug("matches finished")
+	p.log.WithFields(logrus.Fields{
+		"count": len(msg.MatchIDs),
+		"match_ids": msg.MatchIDs,
+	}).Debug("matches finished")
 
 	if err := p.redisRemoveLiveMatches(msg.MatchIDs...); err != nil {
 		p.log.WithError(err).Error("error removing matches from redis")
@@ -238,7 +239,7 @@ func (p *Watcher) handleResponse(page *queryPage) {
 
 	games := cleanResponseGames(page.res.GetGameList())
 	realCount := len(games)
-	l = l.WithField("real_count", realCount)
+	l = l.WithField("count_real", realCount)
 
 	if page.psize != realCount {
 		l.WithField("cleaned", page.psize-realCount).
