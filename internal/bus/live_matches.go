@@ -1,13 +1,16 @@
 package bus
 
 import (
+	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protocol"
-
-	"github.com/13k/night-stalker/models"
 )
 
 type LiveMatchesMessage struct {
-	Matches []*models.LiveMatch
+	Matches nscol.LiveMatchesSlice
+}
+
+type LiveMatchesFinishedMessage struct {
+	MatchIDs []nspb.MatchID
 }
 
 type LiveMatchesChangeMessage struct {

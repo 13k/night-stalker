@@ -67,7 +67,7 @@ func (app *App) handleLiveMatchesUpdate(rmsg *redis.Message) {
 
 	l.Debug("received live matches update")
 
-	matchIDs, err := app.liveMatchIDs()
+	matchIDs, err := app.redisLiveMatchIDs()
 
 	if err != nil {
 		l.WithError(err).Error("error loading live matches ids")
@@ -178,24 +178,12 @@ func (app *App) handleMatchStatsUpdate(rmsg *redis.Message) {
 	app.bus.Pub(busmsg, nsbus.TopicLiveMatches)
 }
 
-func (app *App) liveMatchIDs() ([]nspb.MatchID, error) {
-	idx, err := app.rds.Get(nsrds.KeyLiveMatchesIndex).Int()
-
-	if err != nil {
-		app.log.
-			WithField("key", nsrds.KeyLiveMatchesIndex).
-			WithError(err).
-			Error("error fetching cached live matches index")
-
-		return nil, err
-	}
-
-	liveMatchesKey := nsrds.KeyLiveMatches(idx)
-	result := app.rds.ZRevRange(liveMatchesKey, 0, -1)
+func (app *App) redisLiveMatchIDs() ([]nspb.MatchID, error) {
+	result := app.rds.ZRevRange(nsrds.KeyLiveMatches, 0, -1)
 
 	if err := result.Err(); err != nil {
 		app.log.
-			WithField("key", liveMatchesKey).
+			WithField("key", nsrds.KeyLiveMatches).
 			WithError(err).
 			Error("error fetching cached live matches index")
 
@@ -404,7 +392,7 @@ func (app *App) loadProPlayers(accountIDs []nspb.AccountID) (map[nspb.AccountID]
 }
 
 func (app *App) serveLiveMatches(c echo.Context) error {
-	matchIDs, err := app.liveMatchIDs()
+	matchIDs, err := app.redisLiveMatchIDs()
 
 	if err != nil {
 		return err

@@ -19,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
@@ -54,7 +55,7 @@ type Monitor struct {
 	activeReqsMtx     sync.Mutex
 	activeReqs        map[nspb.MatchID]bool
 	matchesMtx        sync.RWMutex
-	matches           []*models.LiveMatch
+	matches           nscol.LiveMatchesSlice
 }
 
 func NewMonitor(options *MonitorOptions) *Monitor {
