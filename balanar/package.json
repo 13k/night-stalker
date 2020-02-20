@@ -24,6 +24,7 @@
   "dependencies": {
     "@dreipol/vue-log": "^0.0.8",
     "@mdi/font": "^4.7.95",
+    "clipboard": "^2.0.4",
     "core-js": "^3.4.3",
     "ky": "^0.16.1",
     "lodash": "^4.17.15",

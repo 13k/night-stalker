@@ -9,6 +9,11 @@ const log = Vue.log({ context: { location: "store/liveMatches" } });
 
 const state = {
   all: [],
+  clipboardNotification: {
+    show: false,
+    type: "success",
+    text: "",
+  },
 };
 
 const getters = {};
@@ -25,11 +30,17 @@ const actions = {
       let mutation;
 
       switch (liveMatchesChange.op) {
-        case pb.protocol.LiveMatchesChange.Op.REPLACE:
+        case pb.protocol.CollectionOp.REPLACE:
           mutation = "setLiveMatches";
           break;
-        case pb.protocol.LiveMatchesChange.Op.UPDATE:
+        case pb.protocol.CollectionOp.ADD:
+          mutation = "addLiveMatches";
+          break;
+        case pb.protocol.CollectionOp.UPDATE:
           mutation = "updateLiveMatches";
+          break;
+        case pb.protocol.CollectionOp.REMOVE:
+          mutation = "removeLiveMatches";
           break;
         default:
           log.error("<watch:message> unknown LiveMatchesChange.op:", liveMatchesChange.op);
@@ -50,22 +61,50 @@ const actions = {
   },
 };
 
+function upsertLiveMatch(matches, match) {
+  let idx = _.findIndex(matches, { match_id: match.match_id });
+  let delCount = 1;
+
+  if (idx < 0) {
+    idx = _.sortedIndexBy(matches, match, m => -m.sort_score);
+    delCount = 0;
+  }
+
+  matches.splice(idx, delCount, match);
+}
+
 const mutations = {
   setLiveMatches(state, { matches }) {
     state.all = matches;
   },
+  addLiveMatches(state, { matches }) {
+    _.each(matches, match => {
+      upsertLiveMatch(state.all, match);
+    });
+  },
   updateLiveMatches(state, { matches }) {
     _.each(matches, match => {
-      let idx = _.findIndex(state.all, { match_id: match.match_id });
-      let delCount = 1;
-
-      if (idx < 0) {
-        idx = _.sortedIndexBy(state.all, match, m => -m.sort_score);
-        delCount = 0;
-      }
-
-      state.all.splice(idx, delCount, match);
+      upsertLiveMatch(state.all, match);
     });
+  },
+  removeLiveMatches(state, { matches }) {
+    _.each(matches, match => {
+      let idx = _.findIndex(state.all, { match_id: match.match_id });
+
+      if (idx >= 0) {
+        state.all.splice(idx, 1);
+      }
+    });
+  },
+  showClipboardNotification(state, { type, text }) {
+    state.clipboardNotification.show = true;
+    state.clipboardNotification.type = type;
+    state.clipboardNotification.text = text;
+  },
+  hideClipboardNotification(state) {
+    state.clipboardNotification.show = false;
+    state.clipboardNotification.type = "success";
+    state.clipboardNotification.text = "";
   },
 };
 

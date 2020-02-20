@@ -3,7 +3,12 @@ import { isString } from "lodash/lang";
 
 import pb from "@/protocol/proto";
 
-export const MATCH_TIMESTAMP_FIELDS = ["activate_time", "deactivate_time", "last_update_time"];
+export const MATCH_TIMESTAMP_FIELDS = [
+  "start_time",
+  "activate_time",
+  "deactivate_time",
+  "last_update_time",
+];
 
 // https://github.com/protobufjs/protobuf.js/issues/677
 // https://github.com/protobufjs/protobuf.js/issues/893

@@ -14,6 +14,13 @@
       >
         ({{ label }})
       </span>
+
+      <span
+        v-if="kda"
+        class="ml-2 overline grey--text"
+      >
+        {{ kda.kills }}/{{ kda.deaths }}/{{ kda.assists }}
+      </span>
     </div>
 
     <div
@@ -77,6 +84,17 @@ export default {
 
       if (name !== label) {
         return this.player.label;
+      }
+
+      return null;
+    },
+    kda() {
+      if (this.player.kills > 0 || this.player.deaths > 0 || this.player.assists > 0) {
+        return {
+          kills: this.player.kills || 0,
+          deaths: this.player.deaths || 0,
+          assists: this.player.assists || 0,
+        };
       }
 
       return null;

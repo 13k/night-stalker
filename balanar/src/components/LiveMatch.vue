@@ -1,10 +1,5 @@
 <template>
-  <v-card
-    hover
-    :color="cardColor"
-    height="100%"
-    @click="toggle"
-  >
+  <v-card height="100%">
     <v-card-title>
       {{ match.match_id }}
 
@@ -17,7 +12,48 @@
     </v-card-title>
 
     <v-card-subtitle>
-      <kbd>watch_server {{ match.server_steam_id }}</kbd>
+      <kbd>
+        {{ watchCommand }}
+
+        <ClipboardBtn
+          :content="watchCommand"
+          :success="onClipboardSuccess"
+          :error="onClipboardError"
+        />
+      </kbd>
+
+      <v-list
+        v-if="match.game_time > 0"
+        dense
+        disabled
+      >
+        <v-list-item
+          dense
+          :two-line="match.delay > 0"
+        >
+          <v-list-item-icon class="mr-3">
+            <v-icon>mdi-clock-outline</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>{{ match.game_time | colonDuration }}</v-list-item-title>
+
+            <v-list-item-subtitle v-if="match.delay > 0">
+              {{ match.delay | humanDuration({verbose: true}) }} delay
+            </v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item dense>
+          <v-list-item-icon class="mr-3">
+            <v-icon>mdi-scoreboard-outline</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            {{ match.radiant_score }} - {{ match.dire_score }}
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
     </v-card-subtitle>
 
     <v-divider class="mx-4" />
@@ -34,13 +70,12 @@
           :class="team | playersColClasses"
         >
           <v-list
-            dense
             link
+            dense
           >
             <v-list-item
               v-for="player in team.players"
               :key="player.account_id"
-              dense
               class="player"
               :to="{
                 name: 'players.show',
@@ -79,18 +114,21 @@
 </template>
 
 <script>
-import filters from "@/components/filters";
+import { colonDuration, humanDuration } from "@/components/filters";
+import ClipboardBtn from "@/components/ClipboardBtn.vue";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
 
 export default {
   name: "LiveMatch",
 
   components: {
+    ClipboardBtn,
     LiveMatchPlayer,
   },
 
   filters: {
-    ...filters,
+    colonDuration,
+    humanDuration,
     playersColWidth(team) {
       return team.tag || team.name ? 9 : 12;
     },
@@ -111,22 +149,29 @@ export default {
       type: Object,
       required: true,
     },
-    active: {
-      type: Boolean,
-      default: false,
-    },
-    toggle: {
-      type: Function,
-      default: () => () => {},
-    },
   },
 
   computed: {
-    cardColor() {
-      return this.active ? "primary" : "";
-    },
     hasMMR() {
       return this.match.average_mmr > 0;
+    },
+    watchCommand() {
+      return `watch_server ${this.match.server_steam_id}`;
+    },
+  },
+
+  methods: {
+    onClipboardSuccess() {
+      this.$store.commit("liveMatches/showClipboardNotification", {
+        type: "success",
+        text: "Command copied to clipboard",
+      });
+    },
+    onClipboardError() {
+      this.$store.commit("liveMatches/showClipboardNotification", {
+        type: "error",
+        text: "Failed to copy command to clipboard",
+      });
     },
   },
 };

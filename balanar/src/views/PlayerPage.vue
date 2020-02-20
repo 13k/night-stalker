@@ -203,7 +203,17 @@
 
 <script>
 import { getPlayer } from "@/protocol/api";
-import filters from "@/components/filters";
+
+import {
+  opendotaPlayerURL,
+  opendotaTeamURL,
+  dotabuffPlayerURL,
+  dotabuffTeamURL,
+  stratzPlayerURL,
+  datdotaPlayerURL,
+  datdotaTeamURL,
+} from "@/components/filters";
+
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import PlayerMatches from "@/components/PlayerMatches.vue";
 
@@ -214,8 +224,6 @@ export default {
     CommunitySiteBtn,
     PlayerMatches,
   },
-
-  filters,
 
   data() {
     return {
@@ -239,17 +247,17 @@ export default {
       const sites = [
         {
           site: "opendota",
-          url: filters.opendotaPlayerURL(this.player),
+          url: opendotaPlayerURL(this.player),
           text: "View player on OpenDota",
         },
         {
           site: "dotabuff",
-          url: filters.dotabuffPlayerURL(this.player),
+          url: dotabuffPlayerURL(this.player),
           text: "View player on Dotabuff",
         },
         {
           site: "stratz",
-          url: filters.stratzPlayerURL(this.player),
+          url: stratzPlayerURL(this.player),
           text: "View player on Stratz",
         },
       ];
@@ -257,7 +265,7 @@ export default {
       if (this.player.is_pro) {
         sites.push({
           site: "datdota",
-          url: filters.datdotaPlayerURL(this.player),
+          url: datdotaPlayerURL(this.player),
           text: "View player on DatDota",
         });
       }
@@ -272,17 +280,17 @@ export default {
       return [
         {
           site: "opendota",
-          url: filters.opendotaTeamURL(this.player.team),
+          url: opendotaTeamURL(this.player.team),
           text: "View team on OpenDota",
         },
         {
           site: "dotabuff",
-          url: filters.dotabuffTeamURL(this.player.team),
+          url: dotabuffTeamURL(this.player.team),
           text: "View team on Dotabuff",
         },
         {
           site: "datdota",
-          url: filters.datdotaTeamURL(this.player.team),
+          url: datdotaTeamURL(this.player.team),
           text: "View team on DatDota",
         },
       ];

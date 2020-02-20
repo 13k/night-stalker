@@ -4,7 +4,7 @@
     outlined
   >
     <v-data-iterator
-      :items="matches"
+      :items="filteredMatches"
       :items-per-page="itemsPerPage"
       :page="page"
       :search="filterByHeroName"
@@ -76,6 +76,18 @@
                 >
                   <v-icon>{{ sortDesc ? "mdi-sort-ascending" : "mdi-sort-descending" }}</v-icon>
                 </v-btn>
+              </v-col>
+
+              <v-col
+                cols="12"
+                md="3"
+              >
+                <v-switch
+                  v-model="onlyWins"
+                  label="Victories only"
+                  color="white"
+                  dense
+                />
               </v-col>
             </v-row>
           </v-container>
@@ -163,19 +175,29 @@ export default {
       { text: "Date", value: "time" },
       { text: "Hero", value: "hero" },
     ],
+    onlyWins: false,
   }),
 
   computed: {
+    filteredMatches() {
+      let matches = this.matches;
+
+      if (this.onlyWins) {
+        matches = _.filter(matches, m => m.playerVictory);
+      }
+
+      return matches;
+    },
     heroes() {
-      return _.chain(this.matches)
-        .map("hero")
+      return _.chain(this.filteredMatches)
+        .map("player_details.hero")
         .filter("id")
         .uniqBy("id")
         .sortBy("localized_name")
         .value();
     },
     numberOfPages() {
-      return Math.ceil(this.matches.length / this.itemsPerPage);
+      return Math.ceil(this.filteredMatches.length / this.itemsPerPage);
     },
     hasPrevPage() {
       return this.page > 1;
@@ -197,7 +219,7 @@ export default {
         return matches;
       }
 
-      return _.filter(matches, { hero: { name: search } });
+      return _.filter(matches, { player_details: { hero: { name: search } } });
     },
     sortMatches(matches, sortBy, sortDesc) {
       sortBy = _.get(sortBy, "[0]", "time");
