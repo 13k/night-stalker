@@ -5,14 +5,13 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protocol"
 )
 
-type LiveMatchesMessage struct {
-	Matches nscol.LiveMatchesSlice
-}
-
-type LiveMatchesFinishedMessage struct {
-	MatchIDs []nspb.MatchID
-}
-
 type LiveMatchesChangeMessage struct {
-	Change *nspb.LiveMatchesChange
+	Op       nspb.CollectionOp
+	Matches  nscol.LiveMatchesSlice
+	MatchIDs nscol.MatchIDs
+}
+
+type LiveMatchStatsChangeMessage struct {
+	Op    nspb.CollectionOp
+	Stats nscol.LiveMatchStatsSlice
 }

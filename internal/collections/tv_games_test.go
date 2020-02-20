@@ -1,46 +1,48 @@
-package livematches
+package collections_test
 
 import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2/protocol"
+
+	nscol "github.com/13k/night-stalker/internal/collections"
 )
 
-func TestCleanResponseGames(t *testing.T) {
+func TestTVGames_Clean(t *testing.T) {
 	testCases := []struct {
-		Subject  []*protocol.CSourceTVGameSmall
-		Expected []*protocol.CSourceTVGameSmall
+		Subject  nscol.TVGames
+		Expected nscol.TVGames
 	}{
 		{
 			Subject:  nil,
 			Expected: nil,
 		},
 		{
-			Subject:  []*protocol.CSourceTVGameSmall{},
-			Expected: []*protocol.CSourceTVGameSmall{},
+			Subject:  nscol.TVGames{},
+			Expected: nscol.TVGames{},
 		},
 		{
-			Subject: []*protocol.CSourceTVGameSmall{
+			Subject: nscol.TVGames{
 				nil,
 			},
-			Expected: []*protocol.CSourceTVGameSmall{},
+			Expected: nscol.TVGames{},
 		},
 		{
-			Subject: []*protocol.CSourceTVGameSmall{
-				{},
+			Subject: nscol.TVGames{
+				&protocol.CSourceTVGameSmall{},
 			},
-			Expected: []*protocol.CSourceTVGameSmall{},
+			Expected: nscol.TVGames{},
 		},
 		{
-			Subject: []*protocol.CSourceTVGameSmall{
+			Subject: nscol.TVGames{
 				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
 					SortScore:      proto.Uint32(1),
 				},
 			},
-			Expected: []*protocol.CSourceTVGameSmall{
+			Expected: nscol.TVGames{
 				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
@@ -49,19 +51,7 @@ func TestCleanResponseGames(t *testing.T) {
 			},
 		},
 		{
-			Subject: []*protocol.CSourceTVGameSmall{
-				{
-					MatchId:        proto.Uint64(1),
-					LastUpdateTime: proto.Float32(1.0),
-					SortScore:      proto.Uint32(2),
-				},
-				{
-					MatchId:        proto.Uint64(2),
-					LastUpdateTime: proto.Float32(2.0),
-					SortScore:      proto.Uint32(1),
-				},
-			},
-			Expected: []*protocol.CSourceTVGameSmall{
+			Subject: nscol.TVGames{
 				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
@@ -73,9 +63,21 @@ func TestCleanResponseGames(t *testing.T) {
 					SortScore:      proto.Uint32(1),
 				},
 			},
+			Expected: nscol.TVGames{
+				{
+					MatchId:        proto.Uint64(1),
+					LastUpdateTime: proto.Float32(1.0),
+					SortScore:      proto.Uint32(2),
+				},
+				{
+					MatchId:        proto.Uint64(2),
+					LastUpdateTime: proto.Float32(2.0),
+					SortScore:      proto.Uint32(1),
+				},
+			},
 		},
 		{
-			Subject: []*protocol.CSourceTVGameSmall{
+			Subject: nscol.TVGames{
 				{
 					MatchId:        proto.Uint64(1),
 					LastUpdateTime: proto.Float32(1.0),
@@ -100,7 +102,7 @@ func TestCleanResponseGames(t *testing.T) {
 					SortScore:      proto.Uint32(1),
 				},
 			},
-			Expected: []*protocol.CSourceTVGameSmall{
+			Expected: nscol.TVGames{
 				{
 					MatchId:        proto.Uint64(2),
 					LastUpdateTime: proto.Float32(2.1),
@@ -116,7 +118,7 @@ func TestCleanResponseGames(t *testing.T) {
 	}
 
 	for testCaseIdx, testCase := range testCases {
-		actual := cleanResponseGames(testCase.Subject)
+		actual := testCase.Subject.Clean()
 
 		if testCase.Expected == nil && actual != nil {
 			t.Fatalf("case %d: expected nil, got %T", testCaseIdx, actual)

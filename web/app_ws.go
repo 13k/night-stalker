@@ -7,11 +7,19 @@ import (
 	"github.com/google/uuid"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nspb "github.com/13k/night-stalker/internal/protocol"
 )
 
 var wsUpgrader = ws.Upgrader{}
+
+type WSConn struct {
+	*ws.Conn
+
+	id uuid.UUID
+}
 
 func (app *App) serveWS(c echo.Context) error {
 	if !c.IsWebSocket() {
@@ -25,20 +33,24 @@ func (app *App) serveWS(c echo.Context) error {
 		return err
 	}
 
-	go app.serveWSConn(conn)
+	wsConn := &WSConn{
+		Conn: conn,
+		id:   uuid.New(),
+	}
+
+	go app.serveWSConn(wsConn)
 
 	return nil
 }
 
-func (app *App) serveWSConn(conn *ws.Conn) {
-	id := uuid.New()
-	l := app.wslog.WithField("id", id.String())
+func (app *App) serveWSConn(conn *WSConn) {
+	l := app.wslog.WithField("id", conn.id.String())
 
-	liveMatchesSub := app.bus.Sub(nsbus.TopicLiveMatches)
+	busSubLiveMatches := app.bus.Sub(nsbus.TopicWebPatternLiveMatchesAll)
 	connClosed := make(chan bool)
 
 	defer func() {
-		app.bus.Unsub(liveMatchesSub)
+		app.bus.Unsub(nsbus.TopicWebPatternLiveMatchesAll, busSubLiveMatches)
 		conn.Close()
 		l.Debug("stop")
 	}()
@@ -62,27 +74,37 @@ func (app *App) serveWSConn(conn *ws.Conn) {
 		case <-app.ctx.Done():
 			l.Debug("canceled")
 			return
-		case busmsg, ok := <-liveMatchesSub:
+		case busmsg, ok := <-busSubLiveMatches:
 			if !ok {
 				l.Debug("live matches channel closed")
 				return
 			}
 
-			if msg, ok := busmsg.(*nsbus.LiveMatchesChangeMessage); ok {
-				wsmsg, err := json.Marshal(msg.Change)
-
-				if err != nil {
-					l.WithError(err).Error("error serializing message")
-					continue
-				}
-
-				if err = conn.WriteMessage(ws.TextMessage, wsmsg); err != nil {
-					l.WithError(err).Error("error sending message")
-					continue
-				}
-
-				l.Debug("sent message")
+			if msg, ok := busmsg.Payload.(*nspb.LiveMatchesChange); ok {
+				app.pushWSLiveMatches(conn, msg)
 			}
 		}
 	}
+}
+
+func (app *App) pushWSLiveMatches(conn *WSConn, msg *nspb.LiveMatchesChange) {
+	l := app.wslog.WithFields(logrus.Fields{
+		"id":    conn.id.String(),
+		"op":    msg.Op.String(),
+		"count": len(msg.Change.Matches),
+	})
+
+	wsmsg, err := json.Marshal(msg)
+
+	if err != nil {
+		l.WithError(err).Error("error serializing message")
+		return
+	}
+
+	if err = conn.WriteMessage(ws.TextMessage, wsmsg); err != nil {
+		l.WithError(err).Error("error sending message")
+		return
+	}
+
+	l.Debug("sent message")
 }

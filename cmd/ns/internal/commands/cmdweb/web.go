@@ -84,7 +84,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.WithError(err).Fatal("error loading assets")
 	}
 
-	app, err := web.New(&web.AppOptions{
+	app, err := web.New(web.AppOptions{
 		Log:             log.WithPackage("web"),
 		DB:              db,
 		Redis:           rds,

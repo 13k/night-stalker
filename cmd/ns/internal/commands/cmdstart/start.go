@@ -70,7 +70,7 @@ func run(cmd *cobra.Command, args []string) {
 		RememberPassword: true,
 	}
 
-	app, err := ns.New(&ns.AppOptions{
+	app, err := ns.New(ns.AppOptions{
 		Log:             log.WithPackage("ns"),
 		DB:              db,
 		Redis:           rds,

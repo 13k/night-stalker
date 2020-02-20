@@ -363,13 +363,13 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 
 func TestLiveMatchesByScore_Remove(t *testing.T) {
 	type removeCase struct {
-		MatchID    nspb.MatchID
+		MatchID  nspb.MatchID
 		Expected bool
 	}
 
 	testCases := []struct {
 		Matches  nscol.LiveMatchesSlice
-		Remove      []*removeCase
+		Remove   []*removeCase
 		Expected nscol.LiveMatchesSlice
 	}{
 		// remove
@@ -390,7 +390,7 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 			},
 			Remove: []*removeCase{
 				{
-					MatchID: nspb.MatchID(2),
+					MatchID:  nspb.MatchID(2),
 					Expected: true,
 				},
 			},
@@ -415,7 +415,7 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 			},
 			Remove: []*removeCase{
 				{
-					MatchID: nspb.MatchID(2),
+					MatchID:  nspb.MatchID(2),
 					Expected: false,
 				},
 			},

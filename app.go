@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	busBufSize             = 10
-	liveMatchesInterval    = 60 * time.Second
+	busBufSize             = uint(100)
+	tvGamesInterval        = 60 * time.Second
 	rtStatsPoolSize        = 10
 	rtStatsInterval        = 30 * time.Second
 	matchInfoPoolSize      = 10
@@ -37,7 +37,7 @@ type AppOptions struct {
 }
 
 type App struct {
-	options    *AppOptions
+	options    AppOptions
 	log        *nslog.Logger
 	db         *gorm.DB
 	rds        *redis.Client
@@ -51,13 +51,18 @@ type App struct {
 	bus        *nsbus.Bus
 }
 
-func New(options *AppOptions) (*App, error) {
+func New(options AppOptions) (*App, error) {
+	bus := nsbus.New(nsbus.Options{
+		Cap: busBufSize,
+		Log: options.Log,
+	})
+
 	ns := &App{
 		options: options,
 		log:     options.Log,
 		db:      options.DB,
 		rds:     options.Redis,
-		bus:     nsbus.New(busBufSize),
+		bus:     bus,
 	}
 
 	if ns.options.ShutdownTimeout == 0 {
@@ -106,12 +111,12 @@ func (ns *App) setupDota() {
 }
 
 func (ns *App) setupSupervisor() {
-	sessOptions := &nssess.ManagerOptions{
-		Logger:                ns.log,
+	sessOptions := nssess.ManagerOptions{
+		Log:                   ns.log,
+		Bus:                   ns.bus,
 		Credentials:           ns.options.Credentials.sessionCredentials(),
 		ShutdownTimeout:       ns.options.ShutdownTimeout,
-		BusBufferSize:         busBufSize,
-		LiveMatchesInterval:   liveMatchesInterval,
+		TVGamesInterval:       tvGamesInterval,
 		RealtimeStatsPoolSize: rtStatsPoolSize,
 		RealtimeStatsInterval: rtStatsInterval,
 		MatchInfoPoolSize:     matchInfoPoolSize,

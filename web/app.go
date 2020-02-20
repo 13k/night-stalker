@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cskr/pubsub"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	mw "github.com/labstack/echo/v4/middleware"
 	"golang.org/x/crypto/acme/autocert"
 
+	nsbus "github.com/13k/night-stalker/internal/bus"
+	nscol "github.com/13k/night-stalker/internal/collections"
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
 
@@ -34,32 +35,36 @@ type AppOptions struct {
 }
 
 type App struct {
-	options                 *AppOptions
+	options                 AppOptions
 	log                     *nslog.Logger
 	wslog                   *nslog.Logger
 	db                      *gorm.DB
-	bus                     *pubsub.PubSub
+	bus                     *nsbus.Bus
 	engine                  *echo.Echo
 	sv                      *http.Server
 	ctx                     context.Context
 	cancel                  context.CancelFunc
-	stimeout                time.Duration
 	rds                     *redis.Client
-	rdsSubLiveMatchesUpdate *redis.PubSub
-	rdsSubMatchStatsUpdate  *redis.PubSub
+	rdsSubLiveMatchesAll    *redis.PubSub
+	rdsSubLiveMatchStatsAll *redis.PubSub
+	matches                 *nscol.LiveMatches
 }
 
-func New(options *AppOptions) (*App, error) {
+func New(options AppOptions) (*App, error) {
+	bus := nsbus.New(nsbus.Options{
+		Cap: busBufSize,
+		Log: options.Log,
+	})
+
 	app := &App{
-		options:  options,
-		engine:   echo.New(),
-		sv:       &http.Server{},
-		log:      options.Log,
-		wslog:    options.Log.WithPackage("ws"),
-		db:       options.DB,
-		rds:      options.Redis,
-		bus:      pubsub.New(busBufSize),
-		stimeout: options.ShutdownTimeout,
+		options: options,
+		engine:  echo.New(),
+		sv:      &http.Server{},
+		log:     options.Log,
+		wslog:   options.Log.WithPackage("ws"),
+		db:      options.DB,
+		rds:     options.Redis,
+		bus:     bus,
 	}
 
 	if err := app.configureEngine(); err != nil {
@@ -134,11 +139,15 @@ func (app *App) configureServer() error {
 func (app *App) Start() error {
 	app.ctx, app.cancel = context.WithCancel(context.Background())
 
-	if err := app.subscribeLiveMatchesUpdate(); err != nil {
+	if err := app.seedLiveMatches(); err != nil {
 		return err
 	}
 
-	if err := app.subscribeMatchStatsUpdate(); err != nil {
+	if err := app.subscribeLiveMatches(); err != nil {
+		return err
+	}
+
+	if err := app.subscribeLiveMatchStats(); err != nil {
 		return err
 	}
 
@@ -148,7 +157,7 @@ func (app *App) Start() error {
 func (app *App) Stop() {
 	app.cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), app.stimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), app.options.ShutdownTimeout)
 
 	defer cancel()
 

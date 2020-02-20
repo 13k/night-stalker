@@ -61,6 +61,19 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 		proPlayer = nil
 	}
 
+	var matchPlayers []*models.MatchPlayer
+
+	err = app.db.
+		Where(&models.MatchPlayer{AccountID: accountID}).
+		Preload("Match").
+		Find(&matchPlayers).
+		Error
+
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		app.log.WithError(err).Error("database players")
+		return nil, err
+	}
+
 	var livePlayers []*models.LiveMatchPlayer
 
 	err = app.db.
@@ -72,6 +85,12 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
 		app.log.WithError(err).Error("database live players")
 		return nil, err
+	}
+
+	livePlayersByMatchID := make(map[nspb.MatchID]*models.LiveMatchPlayer)
+
+	for _, livePlayer := range livePlayers {
+		livePlayersByMatchID[livePlayer.LiveMatch.MatchID] = livePlayer
 	}
 
 	var statsPlayers []*models.LiveMatchStatsPlayer
@@ -90,10 +109,6 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 	statsPlayersByMatchID := make(map[nspb.MatchID][]*models.LiveMatchStatsPlayer)
 
 	for _, statsPlayer := range statsPlayers {
-		if statsPlayer.LiveMatchStats == nil {
-			continue
-		}
-
 		statsPlayersByMatchID[statsPlayer.LiveMatchStats.MatchID] =
 			append(statsPlayersByMatchID[statsPlayer.LiveMatchStats.MatchID], statsPlayer)
 	}
@@ -102,7 +117,8 @@ func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
 		followed,
 		player,
 		proPlayer,
-		livePlayers,
+		matchPlayers,
+		livePlayersByMatchID,
 		statsPlayersByMatchID,
 	)
 }

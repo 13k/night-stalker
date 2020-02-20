@@ -11,7 +11,8 @@ func NewPlayer(
 	followed *models.FollowedPlayer,
 	player *models.Player,
 	proPlayer *models.ProPlayer,
-	livePlayers []*models.LiveMatchPlayer,
+	matchPlayers []*models.MatchPlayer,
+	livePlayersByMatchID map[nspb.MatchID]*models.LiveMatchPlayer,
 	statsPlayersByMatchID map[nspb.MatchID][]*models.LiveMatchStatsPlayer,
 ) (*nspb.Player, error) {
 	pb := &nspb.Player{}
@@ -48,14 +49,11 @@ func NewPlayer(
 		pb.Team = NewPlayerTeam(proPlayer.Team)
 	}
 
-	for _, livePlayer := range livePlayers {
-		if livePlayer.LiveMatch == nil {
-			continue
-		}
-
+	for _, matchPlayer := range matchPlayers {
 		pbMatch, err := NewPlayerMatch(
-			livePlayer,
-			statsPlayersByMatchID[livePlayer.LiveMatch.MatchID],
+			matchPlayer,
+			livePlayersByMatchID[matchPlayer.MatchID],
+			statsPlayersByMatchID[matchPlayer.MatchID],
 		)
 
 		if err != nil {
@@ -86,29 +84,41 @@ func NewPlayerTeam(team *models.Team) *nspb.Player_Team {
 }
 
 func NewPlayerMatch(
+	matchPlayer *models.MatchPlayer,
 	livePlayer *models.LiveMatchPlayer,
 	statsPlayers []*models.LiveMatchStatsPlayer,
 ) (*nspb.Player_Match, error) {
+	match := matchPlayer.Match
 	liveMatch := livePlayer.LiveMatch
 
 	pb := &nspb.Player_Match{
-		MatchId:         liveMatch.MatchID,
-		HeroId:          uint64(livePlayer.HeroID),
+		MatchId:         match.ID,
 		LobbyId:         liveMatch.LobbyID,
 		LobbyType:       liveMatch.LobbyType,
-		LeagueId:        liveMatch.LeagueID,
+		LeagueId:        match.LeagueID,
 		SeriesId:        liveMatch.SeriesID,
-		GameMode:        liveMatch.GameMode,
+		SeriesType:      match.SeriesType,
+		SeriesGame:      match.SeriesGame,
+		GameMode:        match.GameMode,
 		AverageMmr:      liveMatch.AverageMMR,
+		Duration:        match.Duration,
+		Outcome:         match.Outcome,
 		RadiantTeamId:   uint64(liveMatch.RadiantTeamID),
 		RadiantTeamName: liveMatch.RadiantTeamName,
 		RadiantTeamLogo: uint64(liveMatch.RadiantTeamLogo),
+		RadiantScore:    match.RadiantScore,
 		DireTeamId:      uint64(liveMatch.DireTeamID),
 		DireTeamName:    liveMatch.DireTeamName,
 		DireTeamLogo:    uint64(liveMatch.DireTeamLogo),
+		DireScore:       match.DireScore,
+		PlayerDetails:   NewPlayerMatchPlayerDetails(matchPlayer, statsPlayers),
 	}
 
 	var err error
+
+	if pb.StartTime, err = models.NullTimestampProto(match.StartTime); err != nil {
+		return nil, err
+	}
 
 	if pb.ActivateTime, err = models.NullTimestampProto(liveMatch.ActivateTime); err != nil {
 		return nil, err
@@ -123,12 +133,6 @@ func NewPlayerMatch(
 	}
 
 	for _, statsPlayer := range statsPlayers {
-		if pb.HeroId == 0 {
-			if statsPlayer.HeroID != 0 {
-				pb.HeroId = uint64(statsPlayer.HeroID)
-			}
-		}
-
 		if stats := statsPlayer.LiveMatchStats; stats != nil {
 			if pb.LeagueId == 0 {
 				pb.LeagueId = stats.LeagueID
@@ -197,4 +201,29 @@ func NewPlayerMatch(
 	}
 
 	return pb, nil
+}
+
+func NewPlayerMatchPlayerDetails(
+	matchPlayer *models.MatchPlayer,
+	statsPlayers []*models.LiveMatchStatsPlayer,
+) *nspb.Player_Match_PlayerDetails {
+	pb := &nspb.Player_Match_PlayerDetails{
+		HeroId:     uint64(matchPlayer.HeroID),
+		PlayerSlot: uint32(matchPlayer.PlayerSlot),
+		ProName:    matchPlayer.ProName,
+		Kills:      matchPlayer.Kills,
+		Deaths:     matchPlayer.Deaths,
+		Assists:    matchPlayer.Assists,
+		Items:      matchPlayer.Items,
+	}
+
+	for _, statsPlayer := range statsPlayers {
+		if pb.HeroId == 0 {
+			if statsPlayer.HeroID != 0 {
+				pb.HeroId = uint64(statsPlayer.HeroID)
+			}
+		}
+	}
+
+	return pb
 }

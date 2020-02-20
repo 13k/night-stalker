@@ -20,6 +20,7 @@ import (
 
 const (
 	processorName = "gc.dispatcher"
+	queueSize     = 1024
 
 	msgTypeFindTopSourceTVGamesResponse = protocol.EDOTAGCMsg_k_EMsgGCToClientFindTopSourceTVGamesResponse
 	msgTypeMatchesMinimalResponse       = protocol.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalResponse
@@ -30,29 +31,37 @@ func UnmarshalPacket(packet *gc.GCPacket, message proto.Message) error {
 }
 
 type DispatcherOptions struct {
-	Logger          *nslog.Logger
-	BufferSize      int
+	Log             *nslog.Logger
+	Bus             *nsbus.Bus
 	ShutdownTimeout time.Duration
 }
 
 var _ nsproc.Processor = (*Dispatcher)(nil)
 
 type Dispatcher struct {
-	options    *DispatcherOptions
+	options    DispatcherOptions
 	ctx        context.Context
 	log        *nslog.Logger
 	steam      *steam.Client
-	queue      chan *gc.GCPacket
 	bus        *nsbus.Bus
-	busSubSend chan interface{}
+	busSubSend <-chan nsbus.Message
+	handling   bool
+	rx         chan *gc.GCPacket
+	tx         chan *nsbus.GCDispatcherSendMessage
 }
 
-func NewDispatcher(options *DispatcherOptions) *Dispatcher {
-	return &Dispatcher{
+func NewDispatcher(options DispatcherOptions) *Dispatcher {
+	proc := &Dispatcher{
 		options: options,
-		log:     options.Logger.WithPackage(processorName),
-		queue:   make(chan *gc.GCPacket, options.BufferSize),
+		log:     options.Log.WithPackage(processorName),
+		bus:     options.Bus,
+		rx:      make(chan *gc.GCPacket, queueSize),
+		tx:      make(chan *nsbus.GCDispatcherSendMessage, queueSize),
 	}
+
+	proc.busSubscribe()
+
+	return proc
 }
 
 func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
@@ -73,39 +82,100 @@ func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
 }
 
 func (p *Dispatcher) Start(ctx context.Context) error {
-	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
-		return nsproc.ErrProcessorContextSteamClient
+	if err := p.setupContext(ctx); err != nil {
+		return err
 	}
 
-	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextBus
-	}
+	p.setupGCPacketHandling()
 
-	p.ctx = ctx
-	p.busSubSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
-
-	p.steam.GC.RegisterPacketHandler(p)
+	go p.recvLoop()
+	go p.sendLoop()
 
 	return p.loop()
 }
 
-// runs in the steam client goroutine
-func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
-	if packet.AppId != dota2.AppID {
-		return
-	}
-
-	msgType := protocol.EDOTAGCMsg(packet.MsgType)
-
-	select {
-	case p.queue <- packet:
-	default:
-		p.log.WithField("msg_type", msgType.String()).Warn("ignored packet (not handling packets or too busy)")
+func (p *Dispatcher) busSubscribe() {
+	if p.busSubSend == nil {
+		p.busSubSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
 	}
 }
 
-func (p *Dispatcher) write(msgType protocol.EDOTAGCMsg, message proto.Message) {
-	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), message))
+func (p *Dispatcher) busUnsubscribe() {
+	if p.busSubSend != nil {
+		p.bus.Unsub(nsbus.TopicGCDispatcherSend, p.busSubSend)
+	}
+}
+
+func (p *Dispatcher) setupContext(ctx context.Context) error {
+	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
+		return nsproc.ErrProcessorContextSteamClient
+	}
+
+	p.ctx = ctx
+
+	return nil
+}
+
+func (p *Dispatcher) setupGCPacketHandling() {
+	if !p.handling {
+		p.steam.GC.RegisterPacketHandler(p)
+		p.handling = true
+	}
+}
+
+func (p *Dispatcher) recvLoop() {
+	defer func() {
+		p.log.Debug("rx stop")
+	}()
+
+	p.log.Debug("rx start")
+
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case packet, ok := <-p.rx:
+			if !ok {
+				return
+			}
+
+			msgType := protocol.EDOTAGCMsg(packet.MsgType)
+			l := p.log.WithField("msg_type", msgType.String())
+
+			if err := p.recv(msgType, packet); err != nil {
+				l.WithError(err).Error("error receiving GC packet")
+			}
+		}
+	}
+}
+
+func (p *Dispatcher) sendLoop() {
+	defer func() {
+		p.log.Debug("tx stop")
+	}()
+
+	p.log.Debug("tx start")
+
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case sendmsg, ok := <-p.tx:
+			if !ok {
+				return
+			}
+
+			p.send(sendmsg.MsgType, sendmsg.Message)
+		}
+	}
+}
+
+func (p *Dispatcher) stop() {
+	p.busUnsubscribe()
+	close(p.rx)
+	close(p.tx)
+	p.rx = make(chan *gc.GCPacket, queueSize)
+	p.tx = make(chan *nsbus.GCDispatcherSendMessage, queueSize)
 }
 
 func (p *Dispatcher) loop() error {
@@ -117,6 +187,7 @@ func (p *Dispatcher) loop() error {
 	}()
 
 	defer func() {
+		p.stop()
 		p.log.Warn("stop")
 	}()
 
@@ -126,39 +197,84 @@ func (p *Dispatcher) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case packet := <-p.queue:
-			p.handlePacket(packet)
-		case busmsg := <-p.busSubSend:
-			if sendmsg, ok := busmsg.(*nsbus.GCDispatcherSendMessage); ok {
-				p.write(sendmsg.MsgType, sendmsg.Message)
+		case busmsg, ok := <-p.busSubSend:
+			if !ok {
+				return nil
+			}
+
+			if sendmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherSendMessage); ok {
+				p.enqueueTx(sendmsg)
 			}
 		}
 	}
 }
 
-func (p *Dispatcher) handlePacket(packet *gc.GCPacket) {
-	msgType := protocol.EDOTAGCMsg(packet.MsgType)
-	busmsg := &nsbus.GCDispatcherReceivedMessage{MsgType: msgType}
+// runs in the steam client goroutine
+func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
+	if packet.AppId != dota2.AppID {
+		return
+	}
 
+	p.enqueueRx(packet)
+}
+
+func (p *Dispatcher) enqueueRx(packet *gc.GCPacket) {
+	l := p.log.WithField("msg_type", protocol.EDOTAGCMsg(packet.MsgType).String())
+	// l.Debug("enqueuing incoming packet")
+
+	select {
+	case p.rx <- packet:
+		break
+	default:
+		l.Warn("ignored incoming packet (queue is full)")
+	}
+}
+
+func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) {
+	l := p.log.WithField("msg_type", sendmsg.MsgType.String())
+	// l.Debug("enqueuing outgoing message")
+
+	select {
+	case p.tx <- sendmsg:
+		break
+	default:
+		l.Warn("ignored outgoing message (queue is full)")
+	}
+}
+
+func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) error {
 	var topic string
+	var message proto.Message
 
 	switch msgType {
 	case msgTypeMatchesMinimalResponse:
-		busmsg.Message = &protocol.CMsgClientToGCMatchesMinimalResponse{}
+		message = &protocol.CMsgClientToGCMatchesMinimalResponse{}
 		topic = nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse
 	case msgTypeFindTopSourceTVGamesResponse:
-		busmsg.Message = &protocol.CMsgGCToClientFindTopSourceTVGamesResponse{}
+		message = &protocol.CMsgGCToClientFindTopSourceTVGamesResponse{}
 		topic = nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse
 	default:
-		return
+		return nil
 	}
 
-	p.log.WithField("msg_type", msgType.String()).Debug("handling")
+	p.log.WithField("msg_type", msgType.String()).Debug("receiving")
 
-	if err := UnmarshalPacket(packet, busmsg.Message); err != nil {
-		p.log.WithError(err).Error("error unmarshaling GC packet")
-		return
+	if err := UnmarshalPacket(packet, message); err != nil {
+		return err
 	}
 
-	p.bus.TryPub(busmsg, topic)
+	p.bus.Pub(nsbus.Message{
+		Topic: topic,
+		Payload: &nsbus.GCDispatcherReceivedMessage{
+			MsgType: msgType,
+			Message: message,
+		},
+	})
+
+	return nil
+}
+
+func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) {
+	p.log.WithField("msg_type", msgType.String()).Debug("sending")
+	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), message))
 }

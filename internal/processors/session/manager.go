@@ -23,6 +23,7 @@ import (
 	nslm "github.com/13k/night-stalker/internal/processors/livematches"
 	nsmdtl "github.com/13k/night-stalker/internal/processors/matchdetails"
 	nsrts "github.com/13k/night-stalker/internal/processors/rtstats"
+	nstv "github.com/13k/night-stalker/internal/processors/tvgames"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -34,11 +35,11 @@ const (
 )
 
 type ManagerOptions struct {
-	Logger                *nslog.Logger
+	Log                   *nslog.Logger
+	Bus                   *nsbus.Bus
 	Credentials           *Credentials
 	ShutdownTimeout       time.Duration
-	BusBufferSize         int
-	LiveMatchesInterval   time.Duration
+	TVGamesInterval       time.Duration
 	RealtimeStatsPoolSize int
 	RealtimeStatsInterval time.Duration
 	MatchInfoPoolSize     int
@@ -48,32 +49,29 @@ type ManagerOptions struct {
 var _ nsproc.Processor = (*Manager)(nil)
 
 type Manager struct {
-	options       *ManagerOptions
+	options       ManagerOptions
 	ctx           context.Context
 	sessionCtx    context.Context
 	sessionCancel context.CancelFunc
+	childrenStop  chan bool
 	login         *models.SteamLogin
 	log           *nslog.Logger
 	db            *gorm.DB
 	steam         *steam.Client
 	dota          *dota2.Dota2
 	bus           *nsbus.Bus
-	supervisor    *oversight.Tree
 	ready         bool
 	helloTicker   *time.Ticker
 	helloCount    int
 }
 
-func NewManager(options *ManagerOptions) *Manager {
-	p := &Manager{
+func NewManager(options ManagerOptions) *Manager {
+	return &Manager{
 		options: options,
-		log:     options.Logger.WithPackage(processorName),
+		log:     options.Log.WithPackage(processorName),
+		bus:     options.Bus,
 		login:   &models.SteamLogin{},
 	}
-
-	p.setupSupervisor()
-
-	return p
 }
 
 func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
@@ -93,61 +91,66 @@ func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Manager) setupSupervisor() {
-	dispatcherSpec := nsgc.NewDispatcher(&nsgc.DispatcherOptions{
-		Logger:          p.log,
-		BufferSize:      p.options.BusBufferSize,
+func (p *Manager) createSupervisor() *oversight.Tree {
+	dispatcherSpec := nsgc.NewDispatcher(nsgc.DispatcherOptions{
+		Log:             p.log,
+		Bus:             p.bus,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	liveMatchesSpec := nslm.NewWatcher(&nslm.WatcherOptions{
-		Logger:          p.log,
-		Interval:        p.options.LiveMatchesInterval,
+	tvGamesSpec := nstv.NewWatcher(nstv.WatcherOptions{
+		Log:             p.log,
+		Bus:             p.bus,
+		Interval:        p.options.TVGamesInterval,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	rtStatsSpec := nsrts.NewMonitor(&nsrts.MonitorOptions{
-		Logger:          p.log,
+	rtStatsSpec := nsrts.NewMonitor(nsrts.MonitorOptions{
+		Log:             p.log,
+		Bus:             p.bus,
 		PoolSize:        p.options.RealtimeStatsPoolSize,
 		Interval:        p.options.RealtimeStatsInterval,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	matchInfoSpec := nsmdtl.NewMonitor(&nsmdtl.MonitorOptions{
-		Logger:          p.log,
+	matchInfoSpec := nsmdtl.NewMonitor(nsmdtl.MonitorOptions{
+		Log:             p.log,
+		Bus:             p.bus,
 		PoolSize:        p.options.MatchInfoPoolSize,
 		Interval:        p.options.MatchInfoInterval,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	chatSpec := nscomm.NewChat(&nscomm.ChatOptions{
-		Logger:          p.log,
+	chatSpec := nscomm.NewChat(nscomm.ChatOptions{
+		Log:             p.log,
+		Bus:             p.bus,
 		ShutdownTimeout: p.options.ShutdownTimeout,
 	}).ChildSpec()
 
-	p.supervisor = oversight.New(
+	liveMatchesSpec := nslm.NewCollector(nslm.CollectorOptions{
+		Log:             p.log,
+		Bus:             p.bus,
+		ShutdownTimeout: p.options.ShutdownTimeout,
+	}).ChildSpec()
+
+	return oversight.New(
 		oversight.NeverHalt(),
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(p.log.WithPackage("supervisor")),
-		oversight.Process(dispatcherSpec, liveMatchesSpec, rtStatsSpec, matchInfoSpec, chatSpec),
+		oversight.Process(
+			dispatcherSpec,
+			tvGamesSpec,
+			rtStatsSpec,
+			matchInfoSpec,
+			chatSpec,
+			liveMatchesSpec,
+		),
 	)
 }
 
 func (p *Manager) Start(ctx context.Context) error {
-	if p.db = nsctx.GetDB(ctx); p.db == nil {
-		return nsproc.ErrProcessorContextDatabase
-	}
-
-	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
-		return nsproc.ErrProcessorContextSteamClient
-	}
-
-	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
-		return nsproc.ErrProcessorContextDotaClient
-	}
-
-	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextBus
+	if err := p.setupContext(ctx); err != nil {
+		return err
 	}
 
 	if err := p.loadLogin(); err != nil {
@@ -165,30 +168,55 @@ func (p *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
+	return p.loop()
+}
+
+func (p *Manager) setupContext(ctx context.Context) error {
+	if p.db = nsctx.GetDB(ctx); p.db == nil {
+		return nsproc.ErrProcessorContextDatabase
+	}
+
+	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
+		return nsproc.ErrProcessorContextSteamClient
+	}
+
+	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
+		return nsproc.ErrProcessorContextDotaClient
+	}
+
 	p.ctx = ctx
 
-	return p.loop()
+	return nil
 }
 
 func (p *Manager) stop() {
 	p.log.Warn("stopping...")
-	p.cancelSession()
 	p.dota.Close()
 	p.steam.Disconnect()
+	p.cancelSession()
 }
 
 func (p *Manager) publishEvent(ev interface{}) {
-	p.bus.TryPub(&nsbus.SteamEventMessage{Event: ev}, nsbus.TopicSteamEvents)
+	p.bus.Pub(nsbus.Message{
+		Topic:   nsbus.TopicSteamEvents,
+		Payload: &nsbus.SteamEventMessage{Event: ev},
+	})
 }
 
 func (p *Manager) startSession() {
+	supervisor := p.createSupervisor()
 	p.sessionCtx, p.sessionCancel = context.WithCancel(p.ctx)
+	p.childrenStop = make(chan bool)
 
-	busmsg := &nsbus.SessionChangeMessage{IsReady: true}
-	p.bus.Pub(busmsg, nsbus.TopicSession)
+	p.bus.Pub(nsbus.Message{
+		Topic:   nsbus.TopicSession,
+		Payload: &nsbus.SessionChangeMessage{IsReady: true},
+	})
 
 	go func() {
-		if err := p.supervisor.Start(p.sessionCtx); err != nil {
+		defer close(p.childrenStop)
+
+		if err := supervisor.Start(p.sessionCtx); err != nil {
 			p.log.WithError(err).Error("supervisor error")
 		}
 	}()
@@ -198,10 +226,21 @@ func (p *Manager) cancelSession() {
 	if p.sessionCancel != nil {
 		p.sessionCancel()
 
-		busmsg := &nsbus.SessionChangeMessage{IsReady: false}
-		p.bus.Pub(busmsg, nsbus.TopicSession)
+		p.bus.Pub(nsbus.Message{
+			Topic:   nsbus.TopicSession,
+			Payload: &nsbus.SessionChangeMessage{IsReady: false},
+		})
 
+		p.waitChildrenToStop()
 		p.sessionCancel = nil
+	}
+}
+
+func (p *Manager) waitChildrenToStop() {
+	if p.childrenStop != nil {
+		p.log.Debug("waiting for children to stop")
+		<-p.childrenStop
+		p.log.Debug("children stopped")
 	}
 }
 
@@ -224,7 +263,11 @@ func (p *Manager) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case ev := <-p.steam.Events():
+		case ev, ok := <-p.steam.Events():
+			if !ok {
+				return nil
+			}
+
 			if err := p.handleEvent(ev); err != nil {
 				p.log.WithError(err).Error()
 				return err
@@ -552,23 +595,24 @@ func (p *Manager) dotaHello() {
 
 	p.helloCount = 1
 	p.helloTicker = time.NewTicker(helloRetryInterval)
-	sessionSub := p.bus.Sub(nsbus.TopicSession)
+	busSubSession := p.bus.Sub(nsbus.TopicSession)
 
 	defer func() {
+		p.log.Debug("dotaHello() stop")
 		p.helloTicker.Stop()
-		p.bus.Unsub(sessionSub)
+		p.bus.Unsub(nsbus.TopicSession, busSubSession)
 	}()
 
 	p.dota.SayHello()
 
 	for {
 		select {
-		case msg, ok := <-sessionSub:
+		case busmsg, ok := <-busSubSession:
 			if !ok {
 				return
 			}
 
-			if s, ok := msg.(*nsbus.SessionChangeMessage); ok && s.IsReady {
+			if msg, ok := busmsg.Payload.(*nsbus.SessionChangeMessage); ok && msg.IsReady {
 				return
 			}
 		case <-p.helloTicker.C:

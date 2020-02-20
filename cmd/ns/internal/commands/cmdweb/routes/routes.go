@@ -24,7 +24,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	app, err := web.New(&web.AppOptions{
+	app, err := web.New(web.AppOptions{
 		Log: log,
 	})
 

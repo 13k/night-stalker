@@ -1,4 +1,4 @@
-package livematches
+package tvgames
 
 import (
 	"sync"

@@ -3,9 +3,11 @@ package models
 import (
 	"time"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/faceit/go-steam/steamid"
 	"github.com/paralin/go-dota2/protocol"
+
+	nspb "github.com/13k/night-stalker/internal/protocol"
+	nstime "github.com/13k/night-stalker/internal/time"
 )
 
 var LiveMatchModel = (*LiveMatch)(nil)
@@ -47,10 +49,43 @@ type LiveMatch struct {
 	Timestamps
 
 	Players []*LiveMatchPlayer
+	Stats   []*LiveMatchStats
 }
 
 func (*LiveMatch) TableName() string {
 	return "live_matches"
+}
+
+func (m *LiveMatch) Equal(other *LiveMatch) bool {
+	return m.MatchID == other.MatchID &&
+		m.ServerSteamID == other.ServerSteamID &&
+		m.LobbyID == other.LobbyID &&
+		m.LobbyType == other.LobbyType &&
+		m.LeagueID == other.LeagueID &&
+		m.SeriesID == other.SeriesID &&
+		m.GameMode == other.GameMode &&
+		m.AverageMMR == other.AverageMMR &&
+		m.RadiantLead == other.RadiantLead &&
+		m.RadiantTeamID == other.RadiantTeamID &&
+		m.RadiantTeamName == other.RadiantTeamName &&
+		m.RadiantTeamLogo == other.RadiantTeamLogo &&
+		m.RadiantScore == other.RadiantScore &&
+		m.DireTeamID == other.DireTeamID &&
+		m.DireTeamName == other.DireTeamName &&
+		m.DireTeamLogo == other.DireTeamLogo &&
+		m.DireScore == other.DireScore &&
+		m.Delay == other.Delay &&
+		nstime.EqualPtr(m.ActivateTime, other.ActivateTime) &&
+		nstime.EqualPtr(m.DeactivateTime, other.DeactivateTime) &&
+		nstime.EqualPtr(m.LastUpdateTime, other.LastUpdateTime) &&
+		m.GameTime == other.GameTime &&
+		m.Spectators == other.Spectators &&
+		m.SortScore == other.SortScore &&
+		m.BuildingState == other.BuildingState &&
+		m.WeekendTourneyTournamentID == other.WeekendTourneyTournamentID &&
+		m.WeekendTourneyDivision == other.WeekendTourneyDivision &&
+		m.WeekendTourneySkillLevel == other.WeekendTourneySkillLevel &&
+		m.WeekendTourneyBracketRound == other.WeekendTourneyBracketRound
 }
 
 func LiveMatchDotaProto(pb *protocol.CSourceTVGameSmall) *LiveMatch {

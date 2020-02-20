@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package protocol;
+
+enum CollectionOp {
+  REPLACE = 0;
+  ADD = 1;
+  UPDATE = 2;
+  REMOVE = 3;
+}

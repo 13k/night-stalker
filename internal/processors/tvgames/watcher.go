@@ -1,4 +1,4 @@
-package livematches
+package tvgames
 
 import (
 	"context"
@@ -6,11 +6,8 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/faceit/go-steam"
-	"github.com/go-redis/redis/v7"
 	"github.com/golang/protobuf/proto"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
 	"github.com/sirupsen/logrus"
 
@@ -20,18 +17,18 @@ import (
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protocol"
-	nsrds "github.com/13k/night-stalker/internal/redis"
 	"github.com/13k/night-stalker/models"
 )
 
 const (
-	processorName = "live_matches"
+	processorName = "tv_games"
 
 	msgTypeFindTopSourceTVGames = protocol.EDOTAGCMsg_k_EMsgClientToGCFindTopSourceTVGames
 )
 
 type WatcherOptions struct {
-	Logger          *nslog.Logger
+	Log             *nslog.Logger
+	Bus             *nsbus.Bus
 	Interval        time.Duration
 	ShutdownTimeout time.Duration
 }
@@ -39,27 +36,26 @@ type WatcherOptions struct {
 var _ nsproc.Processor = (*Watcher)(nil)
 
 type Watcher struct {
-	options                   *WatcherOptions
-	matches                   *nscol.LiveMatches
-	discoveryPage             *discoveryPage
-	ctx                       context.Context
-	log                       *nslog.Logger
-	db                        *gorm.DB
-	redis                     *redis.Client
-	steam                     *steam.Client
-	dota                      *dota2.Dota2
-	bus                       *nsbus.Bus
-	busSubSourceTVGames       chan interface{}
-	busSubLiveMatchesFinished chan interface{}
+	options        WatcherOptions
+	discoveryPage  *discoveryPage
+	ctx            context.Context
+	log            *nslog.Logger
+	db             *gorm.DB
+	bus            *nsbus.Bus
+	busTVGamesResp <-chan nsbus.Message
 }
 
-func NewWatcher(options *WatcherOptions) *Watcher {
-	return &Watcher{
+func NewWatcher(options WatcherOptions) *Watcher {
+	proc := &Watcher{
 		options:       options,
-		log:           options.Logger.WithPackage(processorName),
-		matches:       nscol.NewLiveMatches(),
+		log:           options.Log.WithPackage(processorName),
+		bus:           options.Bus,
 		discoveryPage: &discoveryPage{},
 	}
+
+	proc.busSubscribe()
+
+	return proc
 }
 
 func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
@@ -80,31 +76,33 @@ func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
 }
 
 func (p *Watcher) Start(ctx context.Context) error {
+	if err := p.setupContext(ctx); err != nil {
+		return err
+	}
+
+	return p.loop()
+}
+
+func (p *Watcher) busSubscribe() {
+	if p.busTVGamesResp == nil {
+		p.busTVGamesResp = p.bus.Sub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse)
+	}
+}
+
+func (p *Watcher) busUnsubscribe() {
+	if p.busTVGamesResp != nil {
+		p.bus.Unsub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse, p.busTVGamesResp)
+	}
+}
+
+func (p *Watcher) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
 	}
 
-	if p.redis = nsctx.GetRedis(ctx); p.redis == nil {
-		return nsproc.ErrProcessorContextRedis
-	}
-
-	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
-		return nsproc.ErrProcessorContextSteamClient
-	}
-
-	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
-		return nsproc.ErrProcessorContextDotaClient
-	}
-
-	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextBus
-	}
-
 	p.ctx = ctx
-	p.busSubSourceTVGames = p.bus.Sub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse)
-	p.busSubLiveMatchesFinished = p.bus.Sub(nsbus.TopicLiveMatchesFinished)
 
-	return p.loop()
+	return nil
 }
 
 func (p *Watcher) loop() error {
@@ -119,6 +117,7 @@ func (p *Watcher) loop() error {
 
 	defer func() {
 		ticker.Stop()
+		p.busUnsubscribe()
 		p.log.Warn("stop")
 	}()
 
@@ -131,13 +130,13 @@ func (p *Watcher) loop() error {
 			return nil
 		case <-ticker.C:
 			p.tick()
-		case busmsg := <-p.busSubLiveMatchesFinished:
-			if msg, ok := busmsg.(*nsbus.LiveMatchesFinishedMessage); ok {
-				p.handleMatchesFinished(msg)
+		case busmsg, ok := <-p.busTVGamesResp:
+			if !ok {
+				return nil
 			}
-		case busmsg := <-p.busSubSourceTVGames:
-			if dispatcherMsg, ok := busmsg.(*nsbus.GCDispatcherReceivedMessage); ok {
-				if res, ok := dispatcherMsg.Message.(*protocol.CMsgGCToClientFindTopSourceTVGamesResponse); ok {
+
+			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
+				if res, ok := dspmsg.Message.(*protocol.CMsgGCToClientFindTopSourceTVGamesResponse); ok {
 					p.handleFindTopSourceTVGamesResponse(res)
 				}
 			}
@@ -179,37 +178,15 @@ func (p *Watcher) queryPage(page *queryPage) error {
 		"start": req.GetStartGame(),
 	}).Debug("requesting live matches")
 
-	busmsg := &nsbus.GCDispatcherSendMessage{
-		MsgType: msgTypeFindTopSourceTVGames,
-		Message: req,
-	}
-
-	p.bus.Pub(busmsg, nsbus.TopicGCDispatcherSend)
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicGCDispatcherSend,
+		Payload: &nsbus.GCDispatcherSendMessage{
+			MsgType: msgTypeFindTopSourceTVGames,
+			Message: req,
+		},
+	})
 
 	return nil
-}
-
-func (p *Watcher) handleMatchesFinished(msg *nsbus.LiveMatchesFinishedMessage) {
-	p.log.WithFields(logrus.Fields{
-		"count": len(msg.MatchIDs),
-		"match_ids": msg.MatchIDs,
-	}).Debug("matches finished")
-
-	if err := p.redisRemoveLiveMatches(msg.MatchIDs...); err != nil {
-		p.log.WithError(err).Error("error removing matches from redis")
-		return
-	}
-
-	change := p.matches.Remove(msg.MatchIDs...)
-
-	if change > 0 {
-		p.busPublishMatches()
-
-		if err := p.redisPublishMatchesUpdate(); err != nil {
-			p.log.WithError(err).Error("error publishing live matches update")
-			return
-		}
-	}
 }
 
 func (p *Watcher) handleFindTopSourceTVGamesResponse(msg *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) {
@@ -224,56 +201,60 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		"count": page.psize,
 	})
 
+	if page.psize == 0 || page.total == 0 {
+		l.Warn("ignoring empty page")
+		return
+	}
+
 	if p.discoveryPage.Empty() {
 		l.Debug("received discovery response")
 
 		p.discoveryPage.SetPage(page)
 
 		if err := p.query(); err != nil {
-			l.WithError(err).Error("error requesting live matches")
+			l.WithError(err).Error("error requesting tv games")
 			return
 		}
 
 		return
 	}
 
-	games := cleanResponseGames(page.res.GetGameList())
+	games := nscol.TVGames(page.res.GetGameList()).Clean()
 	realCount := len(games)
 	l = l.WithField("count_real", realCount)
 
 	if page.psize != realCount {
 		l.WithField("cleaned", page.psize-realCount).
-			Warn("cleaned duplicate or invalid matches")
+			Warn("cleaned duplicate or invalid tv games")
 	}
 
-	l.Debug("received live matches")
+	l.Debug("received tv games")
 
 	matches, err := p.saveGames(games)
 
 	if err != nil {
-		l.WithError(err).Error("error saving live matches response")
+		l.WithError(err).Error("error saving tv games response")
 		return
 	}
 
-	if err := p.redisAppendLiveMatches(matches...); err != nil {
-		l.WithError(err).Error("error adding matches to redis")
+	if err := p.filterFinished(&matches); err != nil {
+		l.WithError(err).Error("error filtering finished matches")
 		return
 	}
 
-	change := p.matches.Add(matches...)
+	deactivated := matches.RemoveDeactivated()
 
-	if change > 0 {
-		p.busPublishMatches()
+	if len(matches) > 0 {
+		p.busPublishLiveMatchesAdd(matches)
+	}
 
-		if err := p.redisPublishMatchesUpdate(); err != nil {
-			p.log.WithError(err).Error("error publishing live matches update")
-			return
-		}
+	if len(deactivated) > 0 {
+		p.busPublishLiveMatchesRemove(deactivated)
 	}
 }
 
-func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) ([]*models.LiveMatch, error) {
-	liveMatches := make([]*models.LiveMatch, 0, len(games))
+func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) (nscol.LiveMatchesSlice, error) {
+	liveMatches := make(nscol.LiveMatchesSlice, 0, len(games))
 
 	for _, game := range games {
 		if p.ctx.Err() != nil {
@@ -336,40 +317,43 @@ func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) ([]*models.Liv
 	return liveMatches, nil
 }
 
-func (p *Watcher) busPublishMatches() {
-	busmsg := &nsbus.LiveMatchesMessage{Matches: p.matches.All()}
-	p.bus.Pub(busmsg, nsbus.TopicLiveMatches)
-}
+func (p *Watcher) filterFinished(liveMatches *nscol.LiveMatchesSlice) error {
+	matchIDs := liveMatches.MatchIDs()
+	var finishedMatchIDs []nspb.MatchID
 
-func (p *Watcher) redisAppendLiveMatches(matches ...*models.LiveMatch) error {
-	rZMatchIDs := make([]*redis.Z, len(matches))
+	err := p.db.
+		Model(models.MatchModel).
+		Where("matches.id IN (?)", matchIDs).
+		Pluck("id", &finishedMatchIDs).
+		Error
 
-	for i, match := range matches {
-		rZMatchIDs[i] = &redis.Z{
-			Score:  match.SortScore,
-			Member: match.MatchID,
-		}
-	}
-
-	return p.redis.ZAdd(nsrds.KeyLiveMatches, rZMatchIDs...).Err()
-}
-
-func (p *Watcher) redisRemoveLiveMatches(matchIDs ...nspb.MatchID) error {
-	ifaceMatchIDs := make([]interface{}, len(matchIDs))
-
-	for i, matchID := range matchIDs {
-		ifaceMatchIDs[i] = matchID
-	}
-
-	return p.redis.ZRem(nsrds.KeyLiveMatches, ifaceMatchIDs...).Err()
-}
-
-func (p *Watcher) redisPublishMatchesUpdate() error {
-	result := p.redis.Publish(nsrds.TopicLiveMatchesUpdate, nsrds.KeyLiveMatches)
-
-	if err := result.Err(); err != nil {
+	if err != nil {
 		return err
 	}
 
+	for _, matchID := range finishedMatchIDs {
+		liveMatches.RemoveByMatchID(matchID)
+	}
+
 	return nil
+}
+
+func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatchesSlice) {
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicLiveMatchesAdd,
+		Payload: &nsbus.LiveMatchesChangeMessage{
+			Op:      nspb.CollectionOp_ADD,
+			Matches: liveMatches,
+		},
+	})
+}
+
+func (p *Watcher) busPublishLiveMatchesRemove(liveMatches nscol.LiveMatchesSlice) {
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicLiveMatchesRemove,
+		Payload: &nsbus.LiveMatchesChangeMessage{
+			Op:      nspb.CollectionOp_REMOVE,
+			Matches: liveMatches,
+		},
+	})
 }

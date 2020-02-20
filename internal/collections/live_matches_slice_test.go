@@ -345,6 +345,143 @@ func TestLiveMatchesSlice_Remove(t *testing.T) {
 	}
 }
 
+func TestLiveMatchesSlice_RemoveDeactivated(t *testing.T) {
+	testCases := []struct {
+		Subject nscol.LiveMatchesSlice
+		Removed nscol.LiveMatchesSlice
+		Result  nscol.LiveMatchesSlice
+	}{
+		{
+			Subject: nil,
+			Removed: nil,
+			Result:  nil,
+		},
+		{
+			Subject: nscol.LiveMatchesSlice{},
+			Removed: nscol.LiveMatchesSlice{},
+			Result:  nscol.LiveMatchesSlice{},
+		},
+		{
+			Subject: nscol.LiveMatchesSlice{
+				{
+					MatchID:        nspb.MatchID(1),
+					DeactivateTime: nil,
+				},
+				{
+					MatchID:        nspb.MatchID(2),
+					DeactivateTime: models.NullUnixTimestamp(2),
+				},
+				{
+					MatchID:        nspb.MatchID(3),
+					DeactivateTime: nil,
+				},
+				{
+					MatchID:        nspb.MatchID(4),
+					DeactivateTime: models.NullUnixTimestamp(4),
+				},
+				{
+					MatchID:        nspb.MatchID(5),
+					DeactivateTime: models.NullUnixTimestamp(5),
+				},
+			},
+			Removed: nscol.LiveMatchesSlice{
+				{
+					MatchID:        nspb.MatchID(2),
+					DeactivateTime: models.NullUnixTimestamp(2),
+				},
+				{
+					MatchID:        nspb.MatchID(4),
+					DeactivateTime: models.NullUnixTimestamp(4),
+				},
+				{
+					MatchID:        nspb.MatchID(5),
+					DeactivateTime: models.NullUnixTimestamp(5),
+				},
+			},
+			Result: nscol.LiveMatchesSlice{
+				{
+					MatchID:        nspb.MatchID(1),
+					DeactivateTime: nil,
+				},
+				{
+					MatchID:        nspb.MatchID(3),
+					DeactivateTime: nil,
+				},
+			},
+		},
+	}
+
+	for testCaseIdx, testCase := range testCases {
+		removed := testCase.Subject.RemoveDeactivated()
+
+		if testCase.Removed == nil {
+			if removed != nil {
+				t.Fatalf("case %d: expected nil, got %#v", testCaseIdx, removed)
+			}
+		} else {
+			if removed == nil {
+				t.Fatalf("case %d: expected non-nil", testCaseIdx)
+			}
+		}
+
+		expectedRemovedLen := testCase.Removed.Len()
+
+		if actualRemovedLen := removed.Len(); actualRemovedLen != expectedRemovedLen {
+			t.Fatalf("case %d: expected removed length to be %d, got %d", testCaseIdx, expectedRemovedLen, actualRemovedLen)
+		}
+
+		for i, expected := range testCase.Removed {
+			actual := removed[i]
+
+			if actual == nil {
+				t.Fatalf("case %d: index %d: expected removed non-nil", testCaseIdx, i)
+			}
+
+			if actual.DeactivateTime == nil {
+				t.Fatalf("case %d: index %d: expected removed non-nil DeactivateTime", testCaseIdx, i)
+			}
+
+			if actual.MatchID != expected.MatchID {
+				t.Fatalf(
+					"case %d: index %d: expected removed MatchID to be %d, got %d",
+					testCaseIdx,
+					i,
+					expected.MatchID,
+					actual.MatchID,
+				)
+			}
+		}
+
+		expectedResultLen := testCase.Result.Len()
+
+		if actualResultLen := testCase.Subject.Len(); actualResultLen != expectedResultLen {
+			t.Fatalf("case %d: expected result length to be %d, got %d", testCaseIdx, expectedResultLen, actualResultLen)
+		}
+
+		for i, expected := range testCase.Result {
+			actual := testCase.Subject[i]
+
+			if actual == nil {
+				t.Fatalf("case %d: index %d: expected result non-nil", testCaseIdx, i)
+			}
+
+			if actual.DeactivateTime != nil {
+				t.Fatalf("case %d: index %d: expected result nil DeactivateTime", testCaseIdx, i)
+			}
+
+			if actual.MatchID != expected.MatchID {
+				t.Fatalf(
+					"case %d: index %d: expected result MatchID to be %d, got %d",
+					testCaseIdx,
+					i,
+					expected.MatchID,
+					actual.MatchID,
+				)
+			}
+		}
+	}
+}
+
 func TestLiveMatchesSlice_Batches(t *testing.T) {
 	testCases := []struct {
 		Subject   nscol.LiveMatchesSlice

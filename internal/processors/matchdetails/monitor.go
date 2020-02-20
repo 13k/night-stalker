@@ -23,13 +23,14 @@ import (
 
 const (
 	processorName = "match_details"
-	batchSize     = 10
+	batchSize     = 25
 
 	msgTypeMatchesMinimalRequest = protocol.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalRequest
 )
 
 type MonitorOptions struct {
-	Logger          *nslog.Logger
+	Log             *nslog.Logger
+	Bus             *nsbus.Bus
 	PoolSize        int
 	Interval        time.Duration
 	ShutdownTimeout time.Duration
@@ -38,23 +39,28 @@ type MonitorOptions struct {
 var _ nsproc.Processor = (*Monitor)(nil)
 
 type Monitor struct {
-	options              *MonitorOptions
-	ctx                  context.Context
-	log                  *nslog.Logger
-	db                   *gorm.DB
-	workerPool           *ants.Pool
-	bus                  *nsbus.Bus
-	busSubLiveMatches    chan interface{}
-	busSubMatchesMinimal chan interface{}
-	matchesMtx           sync.RWMutex
-	matches              nscol.LiveMatchesSlice
+	options               MonitorOptions
+	ctx                   context.Context
+	log                   *nslog.Logger
+	db                    *gorm.DB
+	workerPool            *ants.Pool
+	bus                   *nsbus.Bus
+	busLiveMatchesReplace <-chan nsbus.Message
+	busMatchesMinimalResp <-chan nsbus.Message
+	matchesMtx            sync.RWMutex
+	matches               nscol.LiveMatchesSlice
 }
 
-func NewMonitor(options *MonitorOptions) *Monitor {
-	return &Monitor{
+func NewMonitor(options MonitorOptions) *Monitor {
+	proc := &Monitor{
 		options: options,
-		log:     options.Logger.WithPackage(processorName),
+		log:     options.Log.WithPackage(processorName),
+		bus:     options.Bus,
 	}
+
+	proc.busSubscribe()
+
+	return proc
 }
 
 func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
@@ -75,17 +81,51 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 }
 
 func (p *Monitor) Start(ctx context.Context) error {
+	if err := p.setupContext(ctx); err != nil {
+		return err
+	}
+
+	if err := p.setupWorkerPool(); err != nil {
+		return err
+	}
+
+	return p.loop()
+}
+
+func (p *Monitor) busSubscribe() {
+	if p.busLiveMatchesReplace == nil {
+		p.busLiveMatchesReplace = p.bus.Sub(nsbus.TopicLiveMatchesReplace)
+	}
+
+	if p.busMatchesMinimalResp == nil {
+		p.busMatchesMinimalResp = p.bus.Sub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse)
+	}
+}
+
+func (p *Monitor) busUnsubscribe() {
+	if p.busLiveMatchesReplace != nil {
+		p.bus.Unsub(nsbus.TopicLiveMatchesReplace, p.busLiveMatchesReplace)
+	}
+
+	if p.busMatchesMinimalResp != nil {
+		p.bus.Unsub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse, p.busMatchesMinimalResp)
+	}
+}
+
+func (p *Monitor) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
 	}
 
-	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextBus
-	}
-
 	p.ctx = ctx
-	p.busSubLiveMatches = p.bus.Sub(nsbus.TopicLiveMatches)
-	p.busSubMatchesMinimal = p.bus.Sub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse)
+
+	return nil
+}
+
+func (p *Monitor) setupWorkerPool() error {
+	if p.workerPool != nil {
+		return nil
+	}
 
 	var err error
 
@@ -94,7 +134,7 @@ func (p *Monitor) Start(ctx context.Context) error {
 		return err
 	}
 
-	return p.loop()
+	return nil
 }
 
 func (p *Monitor) loop() error {
@@ -109,6 +149,7 @@ func (p *Monitor) loop() error {
 
 	defer func() {
 		tick.Stop()
+		p.busUnsubscribe()
 		p.workerPool.Release()
 		p.log.Warn("stop")
 	}()
@@ -121,17 +162,21 @@ func (p *Monitor) loop() error {
 			return nil
 		case <-tick.C:
 			p.tick()
-		case busmsg, ok := <-p.busSubLiveMatches:
+		case busmsg, ok := <-p.busLiveMatchesReplace:
 			if !ok {
 				return nil
 			}
 
-			if msg, ok := busmsg.(*nsbus.LiveMatchesMessage); ok {
-				p.handleLiveMatches(msg)
+			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
+				p.handleLiveMatchesChange(msg)
 			}
-		case busmsg := <-p.busSubMatchesMinimal:
-			if dispatcherMsg, ok := busmsg.(*nsbus.GCDispatcherReceivedMessage); ok {
-				if res, ok := dispatcherMsg.Message.(*protocol.CMsgClientToGCMatchesMinimalResponse); ok {
+		case busmsg, ok := <-p.busMatchesMinimalResp:
+			if !ok {
+				return nil
+			}
+
+			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
+				if res, ok := dspmsg.Message.(*protocol.CMsgClientToGCMatchesMinimalResponse); ok {
 					p.handleMatchesMinimalResponse(res)
 				}
 			}
@@ -139,7 +184,12 @@ func (p *Monitor) loop() error {
 	}
 }
 
-func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesMessage) {
+func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
+	if msg.Op != nspb.CollectionOp_REPLACE {
+		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
+		return
+	}
+
 	p.log.WithFields(logrus.Fields{
 		"count": len(msg.Matches),
 	}).Debug("received live matches")
@@ -157,11 +207,13 @@ func (p *Monitor) tick() {
 		return
 	}
 
-	p.log.WithFields(logrus.Fields{
-		"count": len(p.matches),
-	}).Debug("requesting match details")
-
 	batches := p.matches.Batches(batchSize)
+
+	p.log.WithFields(logrus.Fields{
+		"count":      len(p.matches),
+		"batches":    len(batches),
+		"batch_size": batchSize,
+	}).Debug("requesting matches details")
 
 	for _, batch := range batches {
 		p.submitLiveMatchesBatch(batch)
@@ -184,7 +236,7 @@ func (p *Monitor) submitLiveMatchesBatch(matches []*models.LiveMatch) {
 }
 
 func (p *Monitor) work(matches []*models.LiveMatch) {
-	matchIDs := make([]nspb.MatchID, len(matches))
+	matchIDs := make(nscol.MatchIDs, len(matches))
 
 	for i, match := range matches {
 		matchIDs[i] = match.MatchID
@@ -198,12 +250,13 @@ func (p *Monitor) requestMatchesMinimal(matchIDs ...nspb.MatchID) {
 		MatchIds: matchIDs,
 	}
 
-	busmsg := &nsbus.GCDispatcherSendMessage{
-		MsgType: msgTypeMatchesMinimalRequest,
-		Message: req,
-	}
-
-	p.bus.Pub(busmsg, nsbus.TopicGCDispatcherSend)
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicGCDispatcherSend,
+		Payload: &nsbus.GCDispatcherSendMessage{
+			MsgType: msgTypeMatchesMinimalRequest,
+			Message: req,
+		},
+	})
 }
 
 func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatchesMinimalResponse) {
@@ -213,7 +266,7 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 
 	p.log.
 		WithField("count", len(msg.GetMatches())).
-		Debug("received matches minimal")
+		Debug("received matches details")
 
 	matches, err := p.saveMatches(msg.GetMatches())
 
@@ -222,13 +275,7 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 		return
 	}
 
-	matchIDs := make([]nspb.MatchID, len(matches))
-
-	for i, match := range matches {
-		matchIDs[i] = match.ID
-	}
-
-	p.busPublishMatchesFinished(matchIDs...)
+	p.notifyMatchesFinished(matches)
 }
 
 func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) ([]*models.Match, error) {
@@ -291,7 +338,22 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) ([]*m
 	return matches, nil
 }
 
-func (p *Monitor) busPublishMatchesFinished(matchIDs ...nspb.MatchID) {
-	busmsg := &nsbus.LiveMatchesFinishedMessage{MatchIDs: matchIDs}
-	p.bus.Pub(busmsg, nsbus.TopicLiveMatchesFinished)
+func (p *Monitor) notifyMatchesFinished(matches []*models.Match) {
+	matchIDs := make(nscol.MatchIDs, len(matches))
+
+	for i, match := range matches {
+		matchIDs[i] = match.ID
+	}
+
+	p.busPublishLiveMatchesRemove(matchIDs)
+}
+
+func (p *Monitor) busPublishLiveMatchesRemove(matchIDs nscol.MatchIDs) {
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicLiveMatchesRemove,
+		Payload: &nsbus.LiveMatchesChangeMessage{
+			Op:       nspb.CollectionOp_REMOVE,
+			MatchIDs: matchIDs,
+		},
+	})
 }

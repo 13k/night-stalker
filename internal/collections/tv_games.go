@@ -1,4 +1,4 @@
-package livematches
+package collections
 
 import (
 	"sort"
@@ -8,7 +8,9 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protocol"
 )
 
-// cleanResponseGames cleans response games.
+type TVGames []*protocol.CSourceTVGameSmall
+
+// Clean cleans up Source TV games.
 //
 // * Removes nil games
 // * Removes games with invalid MatchId (zero)
@@ -18,14 +20,14 @@ import (
 // are placed in the same position as the first occurrence of duplicated entries.
 //
 // It returns the slice sorted by descending SortScore.
-func cleanResponseGames(games []*protocol.CSourceTVGameSmall) []*protocol.CSourceTVGameSmall {
-	if games == nil {
+func (s TVGames) Clean() TVGames {
+	if s == nil {
 		return nil
 	}
 
-	groupByMatchID := make(map[nspb.MatchID][]*protocol.CSourceTVGameSmall)
+	groupByMatchID := make(map[nspb.MatchID]TVGames)
 
-	for _, game := range games {
+	for _, game := range s {
 		if game == nil {
 			continue
 		}
@@ -38,9 +40,9 @@ func cleanResponseGames(games []*protocol.CSourceTVGameSmall) []*protocol.CSourc
 	}
 
 	visited := make(map[nspb.MatchID]bool)
-	result := make([]*protocol.CSourceTVGameSmall, 0, len(games))
+	result := make(TVGames, 0, len(s))
 
-	for _, game := range games {
+	for _, game := range s {
 		if game == nil {
 			continue
 		}

@@ -12,14 +12,21 @@ type LiveMatches struct {
 	matches *LiveMatchesByScore
 }
 
-func NewLiveMatches() *LiveMatches {
-	return &LiveMatches{matches: NewLiveMatchesByScore()}
+func NewLiveMatches(matches ...*models.LiveMatch) *LiveMatches {
+	return &LiveMatches{matches: NewLiveMatchesByScore(matches...)}
 }
 
 func (m *LiveMatches) Reset() {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 	m.matches = nil
+}
+
+func (m *LiveMatches) Len() int {
+	m.mtx.RLock()
+	defer m.mtx.RUnlock()
+
+	return m.matches.Len()
 }
 
 func (m *LiveMatches) All() LiveMatchesSlice {
@@ -36,7 +43,7 @@ func (m *LiveMatches) All() LiveMatchesSlice {
 	return matches
 }
 
-func (m *LiveMatches) Add(matches ...*models.LiveMatch) int {
+func (m *LiveMatches) Add(matches ...*models.LiveMatch) LiveMatchesSlice {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
@@ -44,30 +51,30 @@ func (m *LiveMatches) Add(matches ...*models.LiveMatch) int {
 		m.matches = &LiveMatchesByScore{}
 	}
 
-	var change int
+	change := LiveMatchesSlice{}
 
 	for _, match := range matches {
 		if m.matches.Add(match) {
-			change++
+			change.Push(match)
 		}
 	}
 
 	return change
 }
 
-func (m *LiveMatches) Remove(matchIDs ...nspb.MatchID) int {
+func (m *LiveMatches) Remove(matchIDs ...nspb.MatchID) MatchIDs {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
 	if m.matches == nil {
-		return 0
+		return nil
 	}
 
-	var change int
+	var change MatchIDs
 
 	for _, matchID := range matchIDs {
 		if m.matches.Remove(matchID) {
-			change++
+			change = append(change, matchID)
 		}
 	}
 

@@ -5,11 +5,19 @@ import (
 	"strconv"
 )
 
+const (
+	Uint64OverflowBase10  = "18446744073710000000"
+	Uint64OverflowPower10 = "1.844674407371e+19"
+)
+
 /*
 StringUint is an integer type used for JSON encoding.
 
 Used to deserialize big unsigned integer values encoded as strings (base 10)
 into uint64 and serialize uint64 into string (base 10).
+
+If the string value is equal to the uint64 overflow value (in several formats:
+Uint64OverflowBase10, Uint64OverflowPower10), it's deserialized as zero.
 */
 type StringUint uint64
 
@@ -31,7 +39,14 @@ func (si *StringUint) UnmarshalJSON(data []byte) error {
 	}
 
 	data = bytes.Trim(data, `"`)
-	i, err := strconv.ParseUint(string(data), 10, 64)
+	s := string(data)
+
+	if s == Uint64OverflowBase10 || s == Uint64OverflowPower10 {
+		*si = 0
+		return nil
+	}
+
+	i, err := strconv.ParseUint(s, 10, 64)
 
 	if err != nil {
 		return err

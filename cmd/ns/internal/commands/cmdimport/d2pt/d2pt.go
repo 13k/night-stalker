@@ -1,6 +1,8 @@
 package d2pt
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -30,6 +32,14 @@ var Cmd = &cobra.Command{
 	Use:   "d2pt",
 	Short: "Import players from dota2protracker",
 	Run:   run,
+}
+
+var (
+	inputFile string
+)
+
+func init() {
+	Cmd.Flags().StringVarP(&inputFile, "input", "i", "", "use given JSON file as input")
 }
 
 type dataResponse struct {
@@ -73,17 +83,11 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	client := resty.New().
-		SetHostURL(baseURL)
-
-	result := &dataResponse{}
-
-	_, err = client.R().
-		SetResult(result).
-		Get(dataPath)
+	client := resty.New().SetHostURL(baseURL)
+	result, err := loadData(client, inputFile)
 
 	if err != nil {
-		log.WithError(err).Fatal("error requesting d2pt data")
+		log.WithError(err).Fatal("error loading d2pt data")
 	}
 
 	workerPool, err := ants.NewPool(10)
@@ -198,4 +202,42 @@ func fetchAccountID(client *resty.Client, label string) (*player, *fetchError) {
 	}
 
 	return p, nil
+}
+
+func loadData(client *resty.Client, inputFile string) (*dataResponse, error) {
+	if inputFile != "" {
+		return loadLocalData(inputFile)
+	}
+
+	return loadRemoteData(client)
+}
+
+func loadLocalData(inputFile string) (*dataResponse, error) {
+	result := &dataResponse{}
+	data, err := ioutil.ReadFile(inputFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(data, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func loadRemoteData(client *resty.Client) (*dataResponse, error) {
+	result := &dataResponse{}
+	res, err := client.R().SetResult(result).Get(dataPath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if res.IsError() {
+		return nil, errors.New(res.Status())
+	}
+
+	return result, nil
 }

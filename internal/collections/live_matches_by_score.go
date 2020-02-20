@@ -66,14 +66,13 @@ func (s *LiveMatchesByScore) IsAt(i int, matchID nspb.MatchID) bool {
 	return s.safeIsAt(i, matchID)
 }
 
-// Add inserts a match in sorted order if it isn't present (matched by MatchID). If it's present but
-// out of order (SortScore possibly changed), it removes the existing match and inserts the given
-// match into the correct position.
+// Add inserts a match in sorted order if it isn't present (matched by MatchID). If it's present, it
+// updates the match (including SortScore, which will reposition the match) if the match changed.
 //
-// It returns true if the match was added or its position changed.
+// It returns true if the match was added or updated.
 func (s *LiveMatchesByScore) Add(match *models.LiveMatch) bool {
 	if m, ok := s.index[match.MatchID]; ok {
-		if m.SortScore == match.SortScore {
+		if m.Equal(match) {
 			return false
 		}
 

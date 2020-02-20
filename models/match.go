@@ -18,7 +18,7 @@ type Match struct {
 	SeriesGame                   uint32            `gorm:"column:series_game"`
 	GameMode                     nspb.GameMode     `gorm:"column:game_mode"`
 	StartTime                    *time.Time        `gorm:"column:start_time"`
-	Duration                     time.Duration     `gorm:"column:duration"`
+	Duration                     uint32            `gorm:"column:duration"`
 	Outcome                      nspb.MatchOutcome `gorm:"column:outcome"`
 	RadiantTeamID                TeamID            `gorm:"column:radiant_team_id"`
 	RadiantTeamName              string            `gorm:"column:radiant_team_name;size:255"`
@@ -51,7 +51,7 @@ func MatchDotaProto(pb *protocol.CMsgDOTAMatchMinimal) *Match {
 		SeriesGame:                   pb.GetTourney().GetSeriesGame(),
 		GameMode:                     nspb.GameMode(pb.GetGameMode()),
 		StartTime:                    NullUnixTimestamp(int64(pb.GetStartTime())),
-		Duration:                     time.Duration(pb.GetDuration()),
+		Duration:                     pb.GetDuration(),
 		Outcome:                      nspb.MatchOutcome(pb.GetMatchOutcome()),
 		RadiantTeamID:                TeamID(pb.GetTourney().GetRadiantTeamId()),
 		RadiantTeamName:              pb.GetTourney().GetRadiantTeamName(),

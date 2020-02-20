@@ -10,7 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
-	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 )
@@ -20,25 +19,31 @@ const (
 )
 
 type ChatOptions struct {
-	Logger          *nslog.Logger
+	Log             *nslog.Logger
+	Bus             *nsbus.Bus
 	ShutdownTimeout time.Duration
 }
 
 var _ nsproc.Processor = (*Chat)(nil)
 
 type Chat struct {
-	options           *ChatOptions
+	options           ChatOptions
 	ctx               context.Context
 	log               *nslog.Logger
 	bus               *nsbus.Bus
-	busSubSteamEvents chan interface{}
+	busSubSteamEvents <-chan nsbus.Message
 }
 
-func NewChat(options *ChatOptions) *Chat {
-	return &Chat{
+func NewChat(options ChatOptions) *Chat {
+	proc := &Chat{
 		options: options,
-		log:     options.Logger.WithPackage(processorName),
+		log:     options.Log.WithPackage(processorName),
+		bus:     options.Bus,
 	}
+
+	proc.busSubscribe()
+
+	return proc
 }
 
 func (p *Chat) ChildSpec() oversight.ChildProcessSpecification {
@@ -59,14 +64,21 @@ func (p *Chat) ChildSpec() oversight.ChildProcessSpecification {
 }
 
 func (p *Chat) Start(ctx context.Context) error {
-	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextBus
-	}
-
 	p.ctx = ctx
-	p.busSubSteamEvents = p.bus.Sub(nsbus.TopicSteamEvents)
 
 	return p.loop()
+}
+
+func (p *Chat) busSubscribe() {
+	if p.busSubSteamEvents == nil {
+		p.busSubSteamEvents = p.bus.Sub(nsbus.TopicSteamEvents)
+	}
+}
+
+func (p *Chat) busUnsubscribe() {
+	if p.busSubSteamEvents != nil {
+		p.bus.Unsub(nsbus.TopicSteamEvents, p.busSubSteamEvents)
+	}
 }
 
 func (p *Chat) loop() error {
@@ -78,6 +90,7 @@ func (p *Chat) loop() error {
 	}()
 
 	defer func() {
+		p.busUnsubscribe()
 		p.log.Warn("stop")
 	}()
 
@@ -92,7 +105,7 @@ func (p *Chat) loop() error {
 				return nil
 			}
 
-			if steammsg, ok := busmsg.(*nsbus.SteamEventMessage); ok {
+			if steammsg, ok := busmsg.Payload.(*nsbus.SteamEventMessage); ok {
 				if chatmsg, ok := steammsg.Event.(*steam.ChatMsgEvent); ok {
 					p.handleChatMessage(chatmsg)
 				}

@@ -12,7 +12,6 @@ import (
 	"cirello.io/oversight"
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
 	"github.com/paralin/go-dota2/protocol"
@@ -24,7 +23,6 @@ import (
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protocol"
-	nsrds "github.com/13k/night-stalker/internal/redis"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -33,7 +31,8 @@ const (
 )
 
 type MonitorOptions struct {
-	Logger          *nslog.Logger
+	Log             *nslog.Logger
+	Bus             *nsbus.Bus
 	PoolSize        int
 	Interval        time.Duration
 	ShutdownTimeout time.Duration
@@ -42,28 +41,32 @@ type MonitorOptions struct {
 var _ nsproc.Processor = (*Monitor)(nil)
 
 type Monitor struct {
-	options           *MonitorOptions
-	ctx               context.Context
-	log               *nslog.Logger
-	db                *gorm.DB
-	redis             *redis.Client
-	workerPool        *ants.Pool
-	api               *geyserd2.Client
-	apiMatchStats     *geyserd2.DOTA2MatchStats
-	bus               *nsbus.Bus
-	busSubLiveMatches chan interface{}
-	activeReqsMtx     sync.Mutex
-	activeReqs        map[nspb.MatchID]bool
-	matchesMtx        sync.RWMutex
-	matches           nscol.LiveMatchesSlice
+	options               MonitorOptions
+	ctx                   context.Context
+	log                   *nslog.Logger
+	db                    *gorm.DB
+	workerPool            *ants.Pool
+	api                   *geyserd2.Client
+	apiMatchStats         *geyserd2.DOTA2MatchStats
+	bus                   *nsbus.Bus
+	busLiveMatchesReplace <-chan nsbus.Message
+	activeReqsMtx         sync.Mutex
+	activeReqs            map[nspb.MatchID]bool
+	matchesMtx            sync.RWMutex
+	matches               nscol.LiveMatchesSlice
 }
 
-func NewMonitor(options *MonitorOptions) *Monitor {
-	return &Monitor{
+func NewMonitor(options MonitorOptions) *Monitor {
+	proc := &Monitor{
 		options:    options,
-		log:        options.Logger.WithPackage(processorName),
+		log:        options.Log.WithPackage(processorName),
+		bus:        options.Bus,
 		activeReqs: make(map[nspb.MatchID]bool),
 	}
+
+	proc.busSubscribe()
+
+	return proc
 }
 
 func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
@@ -84,16 +87,36 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 }
 
 func (p *Monitor) Start(ctx context.Context) error {
+	if err := p.setupContext(ctx); err != nil {
+		return err
+	}
+
+	if err := p.setupAPI(); err != nil {
+		return err
+	}
+
+	if err := p.setupWorkerPool(); err != nil {
+		return err
+	}
+
+	return p.loop()
+}
+
+func (p *Monitor) busSubscribe() {
+	if p.busLiveMatchesReplace == nil {
+		p.busLiveMatchesReplace = p.bus.Sub(nsbus.TopicLiveMatchesReplace)
+	}
+}
+
+func (p *Monitor) busUnsubscribe() {
+	if p.busLiveMatchesReplace != nil {
+		p.bus.Unsub(nsbus.TopicLiveMatchesReplace, p.busLiveMatchesReplace)
+	}
+}
+
+func (p *Monitor) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return nsproc.ErrProcessorContextDatabase
-	}
-
-	if p.redis = nsctx.GetRedis(ctx); p.redis == nil {
-		return nsproc.ErrProcessorContextRedis
-	}
-
-	if p.bus = nsctx.GetBus(ctx); p.bus == nil {
-		return nsproc.ErrProcessorContextBus
 	}
 
 	if p.api = nsctx.GetDotaAPI(ctx); p.api == nil {
@@ -101,7 +124,14 @@ func (p *Monitor) Start(ctx context.Context) error {
 	}
 
 	p.ctx = ctx
-	p.busSubLiveMatches = p.bus.Sub(nsbus.TopicLiveMatches)
+
+	return nil
+}
+
+func (p *Monitor) setupAPI() error {
+	if p.apiMatchStats != nil {
+		return nil
+	}
 
 	var err error
 
@@ -110,12 +140,22 @@ func (p *Monitor) Start(ctx context.Context) error {
 		return err
 	}
 
+	return nil
+}
+
+func (p *Monitor) setupWorkerPool() error {
+	if p.workerPool != nil {
+		return nil
+	}
+
+	var err error
+
 	if p.workerPool, err = ants.NewPool(p.options.PoolSize); err != nil {
 		p.log.WithError(err).Error("error starting worker pool")
 		return err
 	}
 
-	return p.loop()
+	return nil
 }
 
 func (p *Monitor) loop() error {
@@ -130,6 +170,7 @@ func (p *Monitor) loop() error {
 
 	defer func() {
 		tick.Stop()
+		p.busUnsubscribe()
 		p.workerPool.Release()
 		p.log.Warn("stop")
 	}()
@@ -142,19 +183,24 @@ func (p *Monitor) loop() error {
 			return nil
 		case <-tick.C:
 			p.tick()
-		case busmsg, ok := <-p.busSubLiveMatches:
+		case busmsg, ok := <-p.busLiveMatchesReplace:
 			if !ok {
 				return nil
 			}
 
-			if msg, ok := busmsg.(*nsbus.LiveMatchesMessage); ok {
-				p.handleLiveMatches(msg)
+			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
+				p.handleLiveMatchesChange(msg)
 			}
 		}
 	}
 }
 
-func (p *Monitor) handleLiveMatches(msg *nsbus.LiveMatchesMessage) {
+func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
+	if msg.Op != nspb.CollectionOp_REPLACE {
+		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
+		return
+	}
+
 	p.log.WithFields(logrus.Fields{
 		"count": len(msg.Matches),
 	}).Debug("received live matches")
@@ -224,28 +270,25 @@ func (p *Monitor) work(match *models.LiveMatch) {
 		p.activeReqsMtx.Unlock()
 	}()
 
-	apiStats, err := p.requestMatchStats(match)
+	result, err := p.requestMatchStats(match)
 
 	if err != nil {
 		l.WithError(err).Error("error requesting API")
 		return
 	}
 
-	if apiStats.GetMatch() == nil {
+	if result.GetMatch() == nil {
 		return
 	}
 
-	stats, err := p.createMatchStats(apiStats)
+	stats, err := p.createMatchStats(result)
 
 	if err != nil {
 		l.WithError(err).Error("error saving stats to database")
 		return
 	}
 
-	if err := p.redisPublishChange(stats); err != nil {
-		l.WithError(err).Error("error publishing stats change")
-		return
-	}
+	p.busPublishLiveMatchStatsAdd(stats)
 }
 
 func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
@@ -270,8 +313,7 @@ func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTA
 		Headers: headers,
 	}
 
-	result := &protocol.CMsgDOTARealtimeGameStatsTerse{}
-
+	result := &apiResult{}
 	req.SetOptions(reqOptions).SetResult(result)
 
 	resp, err := req.Execute()
@@ -284,13 +326,13 @@ func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTA
 		return nil, fmt.Errorf("invalid response status: %s", resp.Status())
 	}
 
-	return result, nil
+	return result.ToProto(), nil
 }
 
-func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsTerse) (*models.LiveMatchStats, error) {
-	stats := models.LiveMatchStatsDotaProto(apiStats)
+func (p *Monitor) createMatchStats(result *protocol.CMsgDOTARealtimeGameStatsTerse) (*models.LiveMatchStats, error) {
+	stats := models.LiveMatchStatsDotaProto(result)
 
-	for _, team := range apiStats.GetTeams() {
+	for _, team := range result.GetTeams() {
 		stats.Teams = append(stats.Teams, models.LiveMatchStatsTeamDotaProto(team))
 
 		for _, player := range team.GetPlayers() {
@@ -298,15 +340,15 @@ func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsT
 		}
 	}
 
-	for _, pickban := range apiStats.GetMatch().GetPicks() {
+	for _, pickban := range result.GetMatch().GetPicks() {
 		stats.Draft = append(stats.Draft, models.LiveMatchStatsPickBanDotaProto(false, pickban))
 	}
 
-	for _, pickban := range apiStats.GetMatch().GetBans() {
+	for _, pickban := range result.GetMatch().GetBans() {
 		stats.Draft = append(stats.Draft, models.LiveMatchStatsPickBanDotaProto(true, pickban))
 	}
 
-	for _, building := range apiStats.GetBuildings() {
+	for _, building := range result.GetBuildings() {
 		stats.Buildings = append(stats.Buildings, models.LiveMatchStatsBuildingDotaProto(building))
 	}
 
@@ -317,6 +359,12 @@ func (p *Monitor) createMatchStats(apiStats *protocol.CMsgDOTARealtimeGameStatsT
 	return stats, nil
 }
 
-func (p *Monitor) redisPublishChange(stats *models.LiveMatchStats) error {
-	return p.redis.Publish(nsrds.TopicMatchStatsUpdate, stats.MatchID).Err()
+func (p *Monitor) busPublishLiveMatchStatsAdd(stats ...*models.LiveMatchStats) {
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicLiveMatchStatsAdd,
+		Payload: &nsbus.LiveMatchStatsChangeMessage{
+			Op:    nspb.CollectionOp_ADD,
+			Stats: stats,
+		},
+	})
 }
