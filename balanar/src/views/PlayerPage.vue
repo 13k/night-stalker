@@ -193,7 +193,7 @@
             lg="8"
             offset-lg="2"
           >
-            <PlayerMatches :matches="player.matches" />
+            <PlayerMatches :matches="matches" />
           </v-col>
         </v-row>
       </section>
@@ -203,6 +203,7 @@
 
 <script>
 import { getPlayer } from "@/protocol/api";
+import * as t from "@/protocol/transform";
 
 import {
   opendotaPlayerURL,
@@ -234,6 +235,9 @@ export default {
   },
 
   computed: {
+    matches() {
+      return t.get(this.player, "matches");
+    },
     playerAvatarSize() {
       return this.$vuetify.breakpoint.xsOnly ? 32 : 64;
     },

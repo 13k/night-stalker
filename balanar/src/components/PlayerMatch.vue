@@ -2,7 +2,7 @@
   <v-expansion-panel>
     <v-expansion-panel-header class="justify-start">
       <HeroImage
-        :hero="match.player_details.hero"
+        :hero="hero"
         version="icon"
         max-width="32"
         max-height="32"
@@ -10,15 +10,21 @@
       />
 
       <div class="d-flex flex-column">
-        <div>
-          <span>{{ match.match_id }}</span>
-          <span
-            :class="outcomeClass"
-            class="outcome"
-          >{{ outcomeText }}</span>
+        <div class="d-flex align-center">
+          <v-icon
+            v-if="outcome"
+            :color="outcome.color"
+            :title="outcome.text"
+            class="mr-2"
+            small
+          >
+            {{ outcome.icon }}
+          </v-icon>
+
+          <span class="subtitle-2">{{ match.match_id }}</span>
         </div>
 
-        <span class="caption">{{ match.start_time.toLocaleString() }}</span>
+        <span class="caption">{{ date | l10n }}</span>
       </div>
 
       <v-spacer />
@@ -91,7 +97,7 @@
                 </v-list-item-icon>
 
                 <v-list-item-content>
-                  <v-list-item-title>{{ match.player_details.slot | teamSideName }}</v-list-item-title>
+                  <v-list-item-title>{{ playerSlot | teamSideName }}</v-list-item-title>
                   <v-list-item-subtitle>Side</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
@@ -118,6 +124,7 @@
 
 <script>
 import {
+  l10n,
   colonDuration,
   teamSideName,
   opendotaMatchURL,
@@ -126,6 +133,7 @@ import {
   datdotaMatchURL,
 } from "@/components/filters";
 
+import * as t from "@/protocol/transform";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import HeroImage from "@/components/HeroImage.vue";
 
@@ -138,6 +146,7 @@ export default {
   },
 
   filters: {
+    l10n,
     colonDuration,
     teamSideName,
   },
@@ -150,14 +159,27 @@ export default {
   },
 
   computed: {
-    outcomeClass() {
-      return {
-        victory: this.match.playerVictory,
-        defeat: !this.match.playerVictory,
-      };
+    hero() {
+      return t.get(this.match, "hero");
     },
-    outcomeText() {
-      return this.match.playerVictory ? "win" : "loss";
+    playerSlot() {
+      return t.get(this.match, "slot");
+    },
+    date() {
+      return t.get(this.match, "start_time") || t.get(this.match, "activate_time");
+    },
+    outcome() {
+      const outcome = t.get(this.match, "outcome");
+
+      if (!outcome) {
+        return null;
+      }
+
+      return {
+        text: outcome.playerVictory ? "Victory" : "Defeat",
+        color: outcome.playerVictory ? "green" : "red",
+        icon: outcome.playerVictory ? "mdi-trophy" : "mdi-bomb",
+      };
     },
     communitySiteIconSize() {
       return this.$vuetify.breakpoint.xsOnly ? 22 : 28;
@@ -194,17 +216,3 @@ export default {
   },
 };
 </script>
-
-<style lang="scss" scoped>
-.outcome {
-  margin-left: 8px;
-
-  &.victory {
-    color: rgb(169, 207, 84);
-  }
-
-  &.defeat {
-    color: rgb(194, 60, 42);
-  }
-}
-</style>

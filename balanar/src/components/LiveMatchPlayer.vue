@@ -24,11 +24,11 @@
     </div>
 
     <div
-      class="icon d-flex"
+      class="d-flex"
       :class="iconClasses"
     >
       <HeroImage
-        :hero="player.hero"
+        :hero="hero"
         version="portrait"
         width="64"
         height="36"
@@ -48,6 +48,7 @@
 <script>
 import _ from "lodash";
 
+import * as t from "@/protocol/transform";
 import HeroImage from "@/components/HeroImage.vue";
 
 const cleanName = name =>
@@ -78,6 +79,12 @@ export default {
   },
 
   computed: {
+    hero() {
+      return t.get(this.player, "hero");
+    },
+    slot() {
+      return t.get(this.player, "slot");
+    },
     label() {
       const label = cleanName(this.player.label);
       const name = cleanName(this.player.name);
@@ -127,17 +134,17 @@ export default {
     slotBarClasses() {
       return {
         "order-first": this.isLeft,
-        "slot-unknown": !this.player.hero,
-        "slot-blue": this.player.hero && this.player.player_slot === 0,
-        "slot-teal": this.player.hero && this.player.player_slot === 1,
-        "slot-purple": this.player.hero && this.player.player_slot === 2,
-        "slot-yellow": this.player.hero && this.player.player_slot === 3,
-        "slot-orange": this.player.hero && this.player.player_slot === 4,
-        "slot-pink": this.player.hero && this.player.player_slot === 5,
-        "slot-olive": this.player.hero && this.player.player_slot === 6,
-        "slot-light-blue": this.player.hero && this.player.player_slot === 7,
-        "slot-green": this.player.hero && this.player.player_slot === 8,
-        "slot-brown": this.player.hero && this.player.player_slot === 9,
+        "slot-unknown": !this.hero,
+        "slot-blue": this.hero && this.slot.index === 0,
+        "slot-teal": this.hero && this.slot.index === 1,
+        "slot-purple": this.hero && this.slot.index === 2,
+        "slot-yellow": this.hero && this.slot.index === 3,
+        "slot-orange": this.hero && this.slot.index === 4,
+        "slot-pink": this.hero && this.slot.index === 5,
+        "slot-olive": this.hero && this.slot.index === 6,
+        "slot-light-blue": this.hero && this.slot.index === 7,
+        "slot-green": this.hero && this.slot.index === 8,
+        "slot-brown": this.hero && this.slot.index === 9,
         "left": this.isLeft,
         "right": this.isRight,
       };
@@ -151,20 +158,16 @@ export default {
   width: 100%;
 }
 
-.icon {
-  box-shadow: 2px 2px 4px #000, -1px -1px 2px #333;
-}
-
 .slot-bar {
-  width: 6px;
+  width: 10px;
   height: 36px;
 
   &.left {
-    border-right: 1px solid #444;
+    margin-right: 4px;
   }
 
   &.right {
-    border-left: 1px solid #444;
+    margin-left: 4px;
   }
 }
 

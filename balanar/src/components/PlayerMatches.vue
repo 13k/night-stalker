@@ -144,6 +144,7 @@
 <script>
 import _ from "lodash";
 
+import * as t from "@/protocol/transform";
 import HeroImage from "@/components/HeroImage.vue";
 import PlayerMatch from "@/components/PlayerMatch.vue";
 
@@ -183,14 +184,14 @@ export default {
       let matches = this.matches;
 
       if (this.onlyWins) {
-        matches = _.filter(matches, m => m.playerVictory);
+        matches = _.filter(matches, t.bindGet("outcome.playerVictory"));
       }
 
       return matches;
     },
     heroes() {
       return _.chain(this.filteredMatches)
-        .map("player_details.hero")
+        .map(t.bindGet("hero"))
         .filter("id")
         .uniqBy("id")
         .sortBy("localized_name")
@@ -219,7 +220,7 @@ export default {
         return matches;
       }
 
-      return _.filter(matches, { player_details: { hero: { name: search } } });
+      return _.filter(matches, t.propertyMatches({ hero: { name: search } }));
     },
     sortMatches(matches, sortBy, sortDesc) {
       sortBy = _.get(sortBy, "[0]", "time");
@@ -227,10 +228,16 @@ export default {
 
       switch (sortBy) {
         case "time":
-          matches = _.orderBy(matches, "activate_time", sortDesc ? "desc" : "asc");
+          matches = _.orderBy(matches, t.property("activate_time"), sortDesc ? "desc" : "asc");
+
           break;
         case "hero":
-          matches = _.orderBy(matches, "hero.localized_name", sortDesc ? "desc" : "asc");
+          matches = _.orderBy(
+            matches,
+            t.property("hero.localized_name"),
+            sortDesc ? "desc" : "asc"
+          );
+
           break;
         default:
           this.$log.error("Invalid player matches sorting:", sortBy);

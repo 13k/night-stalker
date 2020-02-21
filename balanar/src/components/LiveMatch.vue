@@ -60,7 +60,7 @@
 
     <v-container>
       <v-row
-        v-for="team in match.teams"
+        v-for="team in teams"
         :key="team.number"
       >
         <v-col
@@ -114,6 +114,7 @@
 </template>
 
 <script>
+import * as t from "@/protocol/transform";
 import { colonDuration, humanDuration } from "@/components/filters";
 import ClipboardBtn from "@/components/ClipboardBtn.vue";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
@@ -152,6 +153,9 @@ export default {
   },
 
   computed: {
+    teams() {
+      return t.get(this.match, "teams");
+    },
     hasMMR() {
       return this.match.average_mmr > 0;
     },

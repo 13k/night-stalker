@@ -1,5 +1,5 @@
 import { assign, get } from "lodash/object";
-import { isEmpty } from "lodash/lang";
+import { isEmpty, isDate } from "lodash/lang";
 import prettyMs from "pretty-ms";
 
 const PRETTY_DURATION_DEFAULTS = { unit: "seconds" };
@@ -8,6 +8,14 @@ const TEAM_SIDES = {
   0: "Radiant",
   1: "Dire",
 };
+
+export function l10n(value) {
+  if (isDate(value)) {
+    return value.toLocaleString();
+  }
+
+  return value;
+}
 
 export function prettyDuration(duration, { unit, ...options } = PRETTY_DURATION_DEFAULTS) {
   unit = unit || "seconds";
