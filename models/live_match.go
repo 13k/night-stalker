@@ -50,6 +50,7 @@ type LiveMatch struct {
 
 	Players []*LiveMatchPlayer
 	Stats   []*LiveMatchStats
+	Match   *Match
 }
 
 func (*LiveMatch) TableName() string {

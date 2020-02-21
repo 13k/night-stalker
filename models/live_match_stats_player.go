@@ -44,7 +44,7 @@ func (*LiveMatchStatsPlayer) TableName() string {
 func LiveMatchStatsPlayerDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
 	return &LiveMatchStatsPlayer{
 		AccountID:  pb.GetAccountid(),
-		PlayerSlot: nspb.GamePlayerSlot(pb.GetPlayerid()),
+		PlayerSlot: nspb.GamePlayerIndex(pb.GetPlayerid()).GamePlayerSlot(),
 		Name:       pb.GetName(),
 		GameTeam:   nspb.GameTeam(pb.GetTeam()),
 		HeroID:     HeroID(pb.GetHeroid()),
