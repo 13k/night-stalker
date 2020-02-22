@@ -255,10 +255,10 @@ func (p *Collector) add(matches nscol.LiveMatchesSlice) {
 		p.notifyLiveMatchesAdd(change)
 
 		p.log.WithFields(logrus.Fields{
-			"added":         len(change),
+			"count":         len(change),
 			"total_before":  prevLen,
 			"total_current": p.matches.Len(),
-		}).Debug("matches changed")
+		}).Debug("matches added")
 	}
 }
 
@@ -279,15 +279,10 @@ func (p *Collector) remove(matchIDs nscol.MatchIDs) {
 		p.notifyLiveMatchesRemove(change)
 
 		p.log.WithFields(logrus.Fields{
-			"removed":       len(change),
+			"count":         len(change),
 			"total_before":  prevLen,
 			"total_current": p.matches.Len(),
-		}).Debug("matches changed")
-	} else {
-		p.log.WithFields(logrus.Fields{
-			"match_ids":     matchIDs,
-			"total_current": prevLen,
-		}).Warn("no-op remove")
+		}).Debug("matches removed")
 	}
 }
 

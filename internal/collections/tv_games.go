@@ -10,6 +10,68 @@ import (
 
 type TVGames []*protocol.CSourceTVGameSmall
 
+func (s TVGames) MatchIDs() MatchIDs {
+	matchIDs := make(MatchIDs, len(s))
+
+	for i, game := range s {
+		matchIDs[i] = game.GetMatchId()
+	}
+
+	return matchIDs
+}
+
+func (s TVGames) FindIndexByMatchID(matchID nspb.MatchID) int {
+	for i, game := range s {
+		if game.GetMatchId() == matchID {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (s TVGames) Shift() (TVGames, *protocol.CSourceTVGameSmall) {
+	if len(s) < 1 {
+		return s, nil
+	}
+
+	return s[1:], s[0]
+}
+
+func (s TVGames) Pop() (TVGames, *protocol.CSourceTVGameSmall) {
+	if len(s) < 1 {
+		return s, nil
+	}
+
+	return s[:len(s)-1], s[len(s)-1]
+}
+
+func (s TVGames) Remove(i int) (TVGames, *protocol.CSourceTVGameSmall) {
+	if i < 0 || i >= len(s) {
+		return s, nil
+	}
+
+	if i == 0 {
+		return s.Shift()
+	}
+
+	if i == len(s)-1 {
+		return s.Pop()
+	}
+
+	game := s[i]
+
+	copy(s[i:], s[i+1:])
+	s[len(s)-1] = nil
+	s = s[:len(s)-1]
+
+	return s, game
+}
+
+func (s TVGames) RemoveByMatchID(matchID nspb.MatchID) (TVGames, *protocol.CSourceTVGameSmall) {
+	return s.Remove(s.FindIndexByMatchID(matchID))
+}
+
 // Clean cleans up Source TV games.
 //
 // * Removes nil games

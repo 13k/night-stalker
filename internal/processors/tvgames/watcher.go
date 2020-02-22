@@ -219,13 +219,27 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		return
 	}
 
-	games := nscol.TVGames(page.res.GetGameList()).Clean()
-	realCount := len(games)
-	l = l.WithField("count_real", realCount)
+	games := nscol.TVGames(page.res.GetGameList())
+	originalLen := len(games)
+	games = games.Clean()
+	cleanLen := len(games)
+	cleanCount := originalLen - cleanLen
+	games, err := p.filterFinished(games)
 
-	if page.psize != realCount {
-		l.WithField("cleaned", page.psize-realCount).
-			Warn("cleaned duplicate or invalid tv games")
+	if err != nil {
+		l.WithError(err).Error("error filtering finished")
+		return
+	}
+
+	finalLen := len(games)
+	finishedCount := cleanLen - finalLen
+	l = l.WithField("count", finalLen)
+
+	if originalLen != finalLen {
+		l.WithFields(logrus.Fields{
+			"cleaned":  cleanCount,
+			"finished": finishedCount,
+		}).Debug("filtered tv games")
 	}
 
 	l.Debug("received tv games")
@@ -233,12 +247,7 @@ func (p *Watcher) handleResponse(page *queryPage) {
 	matches, err := p.saveGames(games)
 
 	if err != nil {
-		l.WithError(err).Error("error saving tv games response")
-		return
-	}
-
-	if err := p.filterFinished(&matches); err != nil {
-		l.WithError(err).Error("error filtering finished matches")
+		l.WithError(err).Error("error saving response")
 		return
 	}
 
@@ -317,25 +326,25 @@ func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) (nscol.LiveMat
 	return liveMatches, nil
 }
 
-func (p *Watcher) filterFinished(liveMatches *nscol.LiveMatchesSlice) error {
-	matchIDs := liveMatches.MatchIDs()
-	var finishedMatchIDs []nspb.MatchID
+func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
+	matchIDs := tvGames.MatchIDs()
+	var finishedMatchIDs nscol.MatchIDs
 
 	err := p.db.
 		Model(models.MatchModel).
-		Where("matches.id IN (?)", matchIDs).
+		Where("id IN (?)", matchIDs).
 		Pluck("id", &finishedMatchIDs).
 		Error
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, matchID := range finishedMatchIDs {
-		liveMatches.RemoveByMatchID(matchID)
+		tvGames, _ = tvGames.RemoveByMatchID(matchID)
 	}
 
-	return nil
+	return tvGames, nil
 }
 
 func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatchesSlice) {

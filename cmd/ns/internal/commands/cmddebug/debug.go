@@ -3,17 +3,23 @@ package cmddebug
 import (
 	"os"
 
+	// "github.com/davecgh/go-spew/spew"
+	// "github.com/jinzhu/gorm"
 	"github.com/markbates/pkger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
+	// nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	// nscol "github.com/13k/night-stalker/internal/collections"
+	// nspb "github.com/13k/night-stalker/internal/protocol"
+	// "github.com/13k/night-stalker/models"
 )
 
 var Cmd = &cobra.Command{
 	Use:   "debug",
 	Short: "Debug something",
-	Run:   debugDB,
+	Run:   debug,
 }
 
 var CmdPkger = &cobra.Command{
@@ -26,8 +32,28 @@ func init() {
 	Cmd.AddCommand(CmdPkger)
 }
 
+func debug(cmd *cobra.Command, args []string) {
+	/*
+		log, err := nscmdlog.New()
+
+		if err != nil {
+			panic(err)
+		}
+
+		defer log.Close()
+
+		db, err := nscmddb.Connect()
+
+		if err != nil {
+			log.WithError(err).Fatal("error connecting to database")
+		}
+
+		defer db.Close()
+	*/
+}
+
 func debugPkger(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -53,24 +79,4 @@ func debugPkger(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
-}
-
-func debugDB(cmd *cobra.Command, args []string) {
-	/*
-		log, err := logger.New()
-
-		if err != nil {
-			panic(err)
-		}
-
-		defer log.Close()
-
-		db, err := db.Connect()
-
-		if err != nil {
-			log.WithError(err).Fatal("error connecting to database")
-		}
-
-		defer db.Close()
-	*/
 }
