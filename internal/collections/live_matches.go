@@ -54,8 +54,8 @@ func (m *LiveMatches) Add(matches ...*models.LiveMatch) LiveMatchesSlice {
 	change := LiveMatchesSlice{}
 
 	for _, match := range matches {
-		if m.matches.Add(match) {
-			change.Push(match)
+		if addedIdx := m.matches.Add(match); addedIdx >= 0 {
+			change.Push(m.matches.At(addedIdx))
 		}
 	}
 
@@ -73,8 +73,8 @@ func (m *LiveMatches) Remove(matchIDs ...nspb.MatchID) MatchIDs {
 	var change MatchIDs
 
 	for _, matchID := range matchIDs {
-		if m.matches.Remove(matchID) {
-			change = append(change, matchID)
+		if removedMatchID := m.matches.Remove(matchID); removedMatchID != 0 {
+			change = append(change, removedMatchID)
 		}
 	}
 

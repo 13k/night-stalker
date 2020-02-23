@@ -10,124 +10,124 @@ import (
 
 func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 	testCases := []struct {
-		Matches  nscol.LiveMatchesSlice
+		Subject  nscol.LiveMatchesSlice
 		Match    *models.LiveMatch
 		Expected int
 	}{
 		{
-			Matches: nil,
+			Subject: nil,
 			Match: &models.LiveMatch{
-				MatchID:   nspb.MatchID(1),
+				MatchID:   1,
 				SortScore: float64(1.0),
 			},
 			Expected: 0,
 		},
 		// greater than all
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Match: &models.LiveMatch{
-				MatchID:   nspb.MatchID(4),
+				MatchID:   4,
 				SortScore: float64(4.0),
 			},
 			Expected: 0,
 		},
 		// less than all
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Match: &models.LiveMatch{
-				MatchID:   nspb.MatchID(4),
+				MatchID:   4,
 				SortScore: float64(0.0),
 			},
 			Expected: 3,
 		},
 		// equal 2
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Match: &models.LiveMatch{
-				MatchID:   nspb.MatchID(2),
+				MatchID:   2,
 				SortScore: float64(2.0),
 			},
 			Expected: 1,
 		},
 		// greater than 2
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Match: &models.LiveMatch{
-				MatchID:   nspb.MatchID(4),
+				MatchID:   4,
 				SortScore: float64(2.1),
 			},
 			Expected: 1,
 		},
 		// less than 2
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Match: &models.LiveMatch{
-				MatchID:   nspb.MatchID(4),
+				MatchID:   4,
 				SortScore: float64(1.9),
 			},
 			Expected: 2,
@@ -135,7 +135,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 	}
 
 	for testCaseIdx, testCase := range testCases {
-		subject := nscol.NewLiveMatchesByScore(testCase.Matches...)
+		subject := nscol.NewLiveMatchesByScore(testCase.Subject...)
 		actual := subject.SearchIndex(testCase.Match)
 
 		if actual != testCase.Expected {
@@ -144,174 +144,271 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 	}
 }
 
-func TestLiveMatchesByScore_Add(t *testing.T) {
-	type addCase struct {
-		Match    *models.LiveMatch
-		Expected bool
+func TestLiveMatchesByScore_FindIndex(t *testing.T) {
+	type findCase struct {
+		MatchID  nspb.MatchID
+		Expected int
 	}
 
 	testCases := []struct {
-		Matches  nscol.LiveMatchesSlice
+		Subject nscol.LiveMatchesSlice
+		Find    []*findCase
+	}{
+		{
+			Subject: nil,
+			Find: []*findCase{
+				{
+					MatchID:  1,
+					Expected: -1,
+				},
+			},
+		},
+		{
+			Subject: nscol.LiveMatchesSlice{},
+			Find: []*findCase{
+				{
+					MatchID:  1,
+					Expected: -1,
+				},
+			},
+		},
+		{
+			Subject: nscol.LiveMatchesSlice{
+				{
+					MatchID:   5,
+					SortScore: float64(5.0),
+				},
+				{
+					MatchID:   4,
+					SortScore: float64(1.0),
+				},
+				{
+					MatchID:   3,
+					SortScore: float64(1.0),
+				},
+				{
+					MatchID:   2,
+					SortScore: float64(1.0),
+				},
+				{
+					MatchID:   1,
+					SortScore: float64(0.0),
+				},
+			},
+			Find: []*findCase{
+				{
+					MatchID:  6,
+					Expected: -1,
+				},
+				{
+					MatchID:  0,
+					Expected: -1,
+				},
+				{
+					MatchID:  5,
+					Expected: 0,
+				},
+				{
+					MatchID:  4,
+					Expected: 1,
+				},
+				{
+					MatchID:  3,
+					Expected: 2,
+				},
+				{
+					MatchID:  2,
+					Expected: 3,
+				},
+				{
+					MatchID:  1,
+					Expected: 4,
+				},
+			},
+		},
+	}
+
+	for testCaseIdx, testCase := range testCases {
+		subject := nscol.NewLiveMatchesByScore(testCase.Subject...)
+
+		for findCaseIdx, findCase := range testCase.Find {
+			actual := subject.FindIndex(findCase.MatchID)
+
+			if actual != findCase.Expected {
+				t.Fatalf("case %d: findCase %d: expected %d, got %d", testCaseIdx, findCaseIdx, findCase.Expected, actual)
+			}
+		}
+	}
+}
+
+func TestLiveMatchesByScore_Add(t *testing.T) {
+	type addCase struct {
+		Match    *models.LiveMatch
+		Expected int
+	}
+
+	testCases := []struct {
+		Subject  nscol.LiveMatchesSlice
 		Add      []*addCase
 		Expected nscol.LiveMatchesSlice
 	}{
 		// insert
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Add: []*addCase{
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(2),
+						MatchID:   2,
 						SortScore: float64(2.0),
 					},
-					Expected: true,
+					Expected: 0,
 				},
 			},
 			Expected: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 		},
 		// noop
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Add: []*addCase{
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(1),
+						MatchID:   1,
 						SortScore: float64(1.0),
 					},
-					Expected: false,
+					Expected: -1,
 				},
 			},
 			Expected: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 		},
 		// update/reorder
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Add: []*addCase{
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(1),
+						MatchID:   1,
 						SortScore: float64(5.0),
 					},
-					Expected: true,
+					Expected: 0,
 				},
 			},
 			Expected: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(5.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 			},
 		},
 		// complex
 		{
-			Matches: nil,
+			Subject: nil,
 			Add: []*addCase{
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(1),
+						MatchID:   1,
 						SortScore: float64(1.0),
 					},
-					Expected: true,
+					Expected: 0,
 				},
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(2),
+						MatchID:   2,
 						SortScore: float64(2.0),
 					},
-					Expected: true,
+					Expected: 0,
 				},
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(1),
+						MatchID:   1,
 						SortScore: float64(1.0),
 					},
-					Expected: false,
+					Expected: -1,
 				},
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(3),
+						MatchID:   3,
 						SortScore: float64(3.0),
 					},
-					Expected: true,
+					Expected: 0,
 				},
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(1),
+						MatchID:   1,
 						SortScore: float64(5.0),
 					},
-					Expected: true,
+					Expected: 0,
 				},
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(2),
+						MatchID:   2,
 						SortScore: float64(2.0),
 					},
-					Expected: false,
+					Expected: -1,
 				},
 				{
 					Match: &models.LiveMatch{
-						MatchID:   nspb.MatchID(3),
+						MatchID:   3,
 						SortScore: float64(3.1),
 					},
-					Expected: true,
+					Expected: 1,
 				},
 			},
 			Expected: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(5.0),
 				},
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   3,
 					SortScore: float64(3.1),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
+					MatchID:   2,
 					SortScore: float64(2.0),
 				},
 			},
@@ -319,11 +416,44 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 	}
 
 	for testCaseIdx, testCase := range testCases {
-		subject := nscol.NewLiveMatchesByScore(testCase.Matches...)
+		subject := nscol.NewLiveMatchesByScore(testCase.Subject...)
 
 		for addCaseIdx, addCase := range testCase.Add {
-			if actual := subject.Add(addCase.Match); actual != addCase.Expected {
-				t.Fatalf("case %d: addCase %d: expected %v, got %v", testCaseIdx, addCaseIdx, addCase.Expected, actual)
+			actual := subject.Add(addCase.Match)
+
+			if actual != addCase.Expected {
+				t.Fatalf(
+					"case %d: addCase %d: expected index %d, got %d",
+					testCaseIdx,
+					addCaseIdx,
+					addCase.Expected,
+					actual,
+				)
+			}
+
+			if addCase.Expected >= 0 {
+				expectedMatch := addCase.Match
+				actualMatch := subject.At(actual)
+
+				if actualMatch.MatchID != expectedMatch.MatchID {
+					t.Fatalf(
+						"case %d: addCase %d: expected MatchID to be %d, got %d",
+						testCaseIdx,
+						addCaseIdx,
+						expectedMatch.MatchID,
+						actualMatch.MatchID,
+					)
+				}
+
+				if actualMatch.SortScore != expectedMatch.SortScore {
+					t.Fatalf(
+						"case %d: addCase %d: expected SortScore to be %f, got %f",
+						testCaseIdx,
+						addCaseIdx,
+						expectedMatch.SortScore,
+						actualMatch.SortScore,
+					)
+				}
 			}
 		}
 
@@ -364,7 +494,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 func TestLiveMatchesByScore_Remove(t *testing.T) {
 	type removeCase struct {
 		MatchID  nspb.MatchID
-		Expected bool
+		Expected nspb.MatchID
 	}
 
 	testCases := []struct {
@@ -376,31 +506,39 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 		{
 			Matches: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   4,
+					SortScore: float64(4.0),
+				},
+				{
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(2),
-					SortScore: float64(2.0),
+					MatchID:   2,
+					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Remove: []*removeCase{
 				{
-					MatchID:  nspb.MatchID(2),
-					Expected: true,
+					MatchID:  2,
+					Expected: 2,
 				},
 			},
 			Expected: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(3),
+					MatchID:   4,
+					SortScore: float64(4.0),
+				},
+				{
+					MatchID:   3,
 					SortScore: float64(3.0),
 				},
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
@@ -409,19 +547,19 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 		{
 			Matches: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
 			Remove: []*removeCase{
 				{
-					MatchID:  nspb.MatchID(2),
-					Expected: false,
+					MatchID:  2,
+					Expected: 0,
 				},
 			},
 			Expected: nscol.LiveMatchesSlice{
 				{
-					MatchID:   nspb.MatchID(1),
+					MatchID:   1,
 					SortScore: float64(1.0),
 				},
 			},
