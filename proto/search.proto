@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package protocol;
+
+message Search {
+  message Player {
+    uint32 account_id = 1;
+    string name = 2;
+    string persona_name = 3;
+    string avatar_url = 4;
+    string avatar_medium_url = 5;
+    string avatar_full_url = 6;
+    bool is_pro = 7;
+  }
+
+  repeated Player players = 1;
+  repeated uint64 hero_ids = 2;
+}
