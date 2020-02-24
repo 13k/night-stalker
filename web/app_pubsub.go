@@ -281,7 +281,6 @@ func (app *App) handleLiveMatchStatsChange(rmsg *redis.Message) {
 		l.Warn("ignoring live match stats change")
 		return
 	}
-
 }
 
 func (app *App) handleLiveMatchStatsAdd(matchIDs nscol.MatchIDs) {

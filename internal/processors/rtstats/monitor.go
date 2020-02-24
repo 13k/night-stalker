@@ -27,7 +27,10 @@ import (
 )
 
 const (
-	processorName = "rtstats"
+	processorName              = "rtstats"
+	resultsQueueSize           = 10
+	resultsBufferSize          = 10
+	resultsBufferFlushInterval = 5 * time.Second
 )
 
 type MonitorOptions struct {
@@ -54,6 +57,8 @@ type Monitor struct {
 	activeReqs            map[nspb.MatchID]bool
 	matchesMtx            sync.RWMutex
 	matches               nscol.LiveMatchesSlice
+	results               nscol.LiveMatchStatsSlice
+	resultsCh             chan *models.LiveMatchStats
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {
@@ -62,6 +67,7 @@ func NewMonitor(options MonitorOptions) *Monitor {
 		log:        options.Log.WithPackage(processorName),
 		bus:        options.Bus,
 		activeReqs: make(map[nspb.MatchID]bool),
+		resultsCh:  make(chan *models.LiveMatchStats, resultsQueueSize),
 	}
 
 	proc.busSubscribe()
@@ -175,6 +181,8 @@ func (p *Monitor) loop() error {
 		p.log.Warn("stop")
 	}()
 
+	go p.resultsLoop()
+
 	p.log.Info("start")
 
 	for {
@@ -190,6 +198,36 @@ func (p *Monitor) loop() error {
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
 				p.handleLiveMatchesChange(msg)
+			}
+		}
+	}
+}
+
+func (p *Monitor) resultsLoop() {
+	tick := time.NewTicker(resultsBufferFlushInterval)
+
+	defer func() {
+		tick.Stop()
+		p.log.Debug("stop results")
+	}()
+
+	p.log.Debug("start results")
+
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case <-tick.C:
+			p.flushResults()
+		case stats, ok := <-p.resultsCh:
+			if !ok {
+				return
+			}
+
+			p.results = append(p.results, stats)
+
+			if len(p.results) >= resultsBufferSize {
+				p.flushResults()
 			}
 		}
 	}
@@ -281,14 +319,23 @@ func (p *Monitor) work(match *models.LiveMatch) {
 		return
 	}
 
-	stats, err := p.createMatchStats(result)
+	stats, err := p.createLiveMatchStats(result)
 
 	if err != nil {
 		l.WithError(err).Error("error saving stats to database")
 		return
 	}
 
-	p.busPublishLiveMatchStatsAdd(stats)
+	p.resultsCh <- stats
+}
+
+func (p *Monitor) flushResults() {
+	if len(p.results) == 0 {
+		return
+	}
+
+	p.busPublishLiveMatchStatsAdd(p.results...)
+	p.results = nil
 }
 
 func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
@@ -329,7 +376,9 @@ func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTA
 	return result.ToProto(), nil
 }
 
-func (p *Monitor) createMatchStats(result *protocol.CMsgDOTARealtimeGameStatsTerse) (*models.LiveMatchStats, error) {
+func (p *Monitor) createLiveMatchStats(
+	result *protocol.CMsgDOTARealtimeGameStatsTerse,
+) (*models.LiveMatchStats, error) {
 	stats := models.LiveMatchStatsDotaProto(result)
 
 	for _, team := range result.GetTeams() {
