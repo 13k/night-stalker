@@ -15,10 +15,10 @@ func NewPlayer(
 	matchPlayers []*models.MatchPlayer,
 	statsPlayers []*models.LiveMatchStatsPlayer,
 ) (*nspb.Player, error) {
-	pb := &nspb.Player{}
-
-	pb.AccountId = followed.AccountID
-	pb.Name = followed.Label
+	pb := &nspb.Player{
+		AccountId: followed.AccountID,
+		Name:      followed.Label,
+	}
 
 	if player != nil {
 		if pb.AccountId == 0 {

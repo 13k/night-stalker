@@ -95,6 +95,7 @@ func (app *App) configureEngine() error { //nolint: unparam
 	api := root.Group("/api")
 
 	apiV1 := api.Group("/v1")
+	apiV1.GET("/search", app.serveSearch)
 	apiV1.GET("/heroes", app.serveHeroes)
 	apiV1.GET("/live_matches", app.serveLiveMatches)
 	apiV1.GET("/players/:account_id", app.servePlayer)
