@@ -26,7 +26,7 @@ func (app *App) loadHeroesView() ([]*nspb.Hero, error) {
 }
 
 func (app *App) serveHeroes(c echo.Context) error {
-	heroes, err := app.loadHeroesView()
+	view, err := app.loadHeroesView()
 
 	if err != nil {
 		return &echo.HTTPError{
@@ -36,5 +36,5 @@ func (app *App) serveHeroes(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, heroes)
+	return c.JSON(http.StatusOK, view)
 }

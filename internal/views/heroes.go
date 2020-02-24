@@ -9,7 +9,7 @@ func NewHeroes(heroes []*models.Hero) []*nspb.Hero {
 	view := make([]*nspb.Hero, len(heroes))
 
 	for i, hero := range heroes {
-		view[i] = HeroProto(hero)
+		view[i] = NewHero(hero)
 	}
 
 	return view

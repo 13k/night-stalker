@@ -5,9 +5,9 @@ import (
 	"github.com/13k/night-stalker/models"
 )
 
-func HeroProto(m *models.Hero) *nspb.Hero {
+func NewHero(m *models.Hero) *nspb.Hero {
 	return &nspb.Hero{
-		Id:               uint32(m.ID),
+		Id:               uint64(m.ID),
 		Name:             m.Name,
 		LocalizedName:    m.LocalizedName,
 		ImageFullUrl:     m.ImageFullURL,
