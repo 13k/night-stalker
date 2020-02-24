@@ -2349,6 +2349,591 @@ export const protocol = $root.protocol = (() => {
         return values;
     })();
 
+    protocol.Search = (function() {
+
+        /**
+         * Properties of a Search.
+         * @memberof protocol
+         * @interface ISearch
+         * @property {Array.<protocol.Search.IPlayer>|null} [players] Search players
+         * @property {Array.<Long>|null} [hero_ids] Search hero_ids
+         */
+
+        /**
+         * Constructs a new Search.
+         * @memberof protocol
+         * @classdesc Represents a Search.
+         * @implements ISearch
+         * @constructor
+         * @param {protocol.ISearch=} [properties] Properties to set
+         */
+        function Search(properties) {
+            this.players = [];
+            this.hero_ids = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Search players.
+         * @member {Array.<protocol.Search.IPlayer>} players
+         * @memberof protocol.Search
+         * @instance
+         */
+        Search.prototype.players = $util.emptyArray;
+
+        /**
+         * Search hero_ids.
+         * @member {Array.<Long>} hero_ids
+         * @memberof protocol.Search
+         * @instance
+         */
+        Search.prototype.hero_ids = $util.emptyArray;
+
+        /**
+         * Creates a new Search instance using the specified properties.
+         * @function create
+         * @memberof protocol.Search
+         * @static
+         * @param {protocol.ISearch=} [properties] Properties to set
+         * @returns {protocol.Search} Search instance
+         */
+        Search.create = function create(properties) {
+            return new Search(properties);
+        };
+
+        /**
+         * Encodes the specified Search message. Does not implicitly {@link protocol.Search.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.Search
+         * @static
+         * @param {protocol.ISearch} message Search message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Search.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.players != null && message.players.length)
+                for (let i = 0; i < message.players.length; ++i)
+                    $root.protocol.Search.Player.encode(message.players[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.hero_ids != null && message.hero_ids.length) {
+                writer.uint32(/* id 2, wireType 2 =*/18).fork();
+                for (let i = 0; i < message.hero_ids.length; ++i)
+                    writer.uint64(message.hero_ids[i]);
+                writer.ldelim();
+            }
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Search message, length delimited. Does not implicitly {@link protocol.Search.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.Search
+         * @static
+         * @param {protocol.ISearch} message Search message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Search.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Search message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.Search
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.Search} Search
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Search.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Search();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    if (!(message.players && message.players.length))
+                        message.players = [];
+                    message.players.push($root.protocol.Search.Player.decode(reader, reader.uint32()));
+                    break;
+                case 2:
+                    if (!(message.hero_ids && message.hero_ids.length))
+                        message.hero_ids = [];
+                    if ((tag & 7) === 2) {
+                        let end2 = reader.uint32() + reader.pos;
+                        while (reader.pos < end2)
+                            message.hero_ids.push(reader.uint64());
+                    } else
+                        message.hero_ids.push(reader.uint64());
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Search message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.Search
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.Search} Search
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Search.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Search message.
+         * @function verify
+         * @memberof protocol.Search
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Search.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.players != null && message.hasOwnProperty("players")) {
+                if (!Array.isArray(message.players))
+                    return "players: array expected";
+                for (let i = 0; i < message.players.length; ++i) {
+                    let error = $root.protocol.Search.Player.verify(message.players[i]);
+                    if (error)
+                        return "players." + error;
+                }
+            }
+            if (message.hero_ids != null && message.hasOwnProperty("hero_ids")) {
+                if (!Array.isArray(message.hero_ids))
+                    return "hero_ids: array expected";
+                for (let i = 0; i < message.hero_ids.length; ++i)
+                    if (!$util.isInteger(message.hero_ids[i]) && !(message.hero_ids[i] && $util.isInteger(message.hero_ids[i].low) && $util.isInteger(message.hero_ids[i].high)))
+                        return "hero_ids: integer|Long[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Search message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.Search
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.Search} Search
+         */
+        Search.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.Search)
+                return object;
+            let message = new $root.protocol.Search();
+            if (object.players) {
+                if (!Array.isArray(object.players))
+                    throw TypeError(".protocol.Search.players: array expected");
+                message.players = [];
+                for (let i = 0; i < object.players.length; ++i) {
+                    if (typeof object.players[i] !== "object")
+                        throw TypeError(".protocol.Search.players: object expected");
+                    message.players[i] = $root.protocol.Search.Player.fromObject(object.players[i]);
+                }
+            }
+            if (object.hero_ids) {
+                if (!Array.isArray(object.hero_ids))
+                    throw TypeError(".protocol.Search.hero_ids: array expected");
+                message.hero_ids = [];
+                for (let i = 0; i < object.hero_ids.length; ++i)
+                    if ($util.Long)
+                        (message.hero_ids[i] = $util.Long.fromValue(object.hero_ids[i])).unsigned = true;
+                    else if (typeof object.hero_ids[i] === "string")
+                        message.hero_ids[i] = parseInt(object.hero_ids[i], 10);
+                    else if (typeof object.hero_ids[i] === "number")
+                        message.hero_ids[i] = object.hero_ids[i];
+                    else if (typeof object.hero_ids[i] === "object")
+                        message.hero_ids[i] = new $util.LongBits(object.hero_ids[i].low >>> 0, object.hero_ids[i].high >>> 0).toNumber(true);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Search message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.Search
+         * @static
+         * @param {protocol.Search} message Search
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Search.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.players = [];
+                object.hero_ids = [];
+            }
+            if (message.players && message.players.length) {
+                object.players = [];
+                for (let j = 0; j < message.players.length; ++j)
+                    object.players[j] = $root.protocol.Search.Player.toObject(message.players[j], options);
+            }
+            if (message.hero_ids && message.hero_ids.length) {
+                object.hero_ids = [];
+                for (let j = 0; j < message.hero_ids.length; ++j)
+                    if (typeof message.hero_ids[j] === "number")
+                        object.hero_ids[j] = options.longs === String ? String(message.hero_ids[j]) : message.hero_ids[j];
+                    else
+                        object.hero_ids[j] = options.longs === String ? $util.Long.prototype.toString.call(message.hero_ids[j]) : options.longs === Number ? new $util.LongBits(message.hero_ids[j].low >>> 0, message.hero_ids[j].high >>> 0).toNumber(true) : message.hero_ids[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this Search to JSON.
+         * @function toJSON
+         * @memberof protocol.Search
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Search.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        Search.Player = (function() {
+
+            /**
+             * Properties of a Player.
+             * @memberof protocol.Search
+             * @interface IPlayer
+             * @property {number|null} [account_id] Player account_id
+             * @property {string|null} [name] Player name
+             * @property {string|null} [persona_name] Player persona_name
+             * @property {string|null} [avatar_url] Player avatar_url
+             * @property {string|null} [avatar_medium_url] Player avatar_medium_url
+             * @property {string|null} [avatar_full_url] Player avatar_full_url
+             * @property {boolean|null} [is_pro] Player is_pro
+             */
+
+            /**
+             * Constructs a new Player.
+             * @memberof protocol.Search
+             * @classdesc Represents a Player.
+             * @implements IPlayer
+             * @constructor
+             * @param {protocol.Search.IPlayer=} [properties] Properties to set
+             */
+            function Player(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Player account_id.
+             * @member {number} account_id
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.account_id = 0;
+
+            /**
+             * Player name.
+             * @member {string} name
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.name = "";
+
+            /**
+             * Player persona_name.
+             * @member {string} persona_name
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.persona_name = "";
+
+            /**
+             * Player avatar_url.
+             * @member {string} avatar_url
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.avatar_url = "";
+
+            /**
+             * Player avatar_medium_url.
+             * @member {string} avatar_medium_url
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.avatar_medium_url = "";
+
+            /**
+             * Player avatar_full_url.
+             * @member {string} avatar_full_url
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.avatar_full_url = "";
+
+            /**
+             * Player is_pro.
+             * @member {boolean} is_pro
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.is_pro = false;
+
+            /**
+             * Creates a new Player instance using the specified properties.
+             * @function create
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {protocol.Search.IPlayer=} [properties] Properties to set
+             * @returns {protocol.Search.Player} Player instance
+             */
+            Player.create = function create(properties) {
+                return new Player(properties);
+            };
+
+            /**
+             * Encodes the specified Player message. Does not implicitly {@link protocol.Search.Player.verify|verify} messages.
+             * @function encode
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {protocol.Search.IPlayer} message Player message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Player.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.account_id != null && message.hasOwnProperty("account_id"))
+                    writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.account_id);
+                if (message.name != null && message.hasOwnProperty("name"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
+                if (message.persona_name != null && message.hasOwnProperty("persona_name"))
+                    writer.uint32(/* id 3, wireType 2 =*/26).string(message.persona_name);
+                if (message.avatar_url != null && message.hasOwnProperty("avatar_url"))
+                    writer.uint32(/* id 4, wireType 2 =*/34).string(message.avatar_url);
+                if (message.avatar_medium_url != null && message.hasOwnProperty("avatar_medium_url"))
+                    writer.uint32(/* id 5, wireType 2 =*/42).string(message.avatar_medium_url);
+                if (message.avatar_full_url != null && message.hasOwnProperty("avatar_full_url"))
+                    writer.uint32(/* id 6, wireType 2 =*/50).string(message.avatar_full_url);
+                if (message.is_pro != null && message.hasOwnProperty("is_pro"))
+                    writer.uint32(/* id 7, wireType 0 =*/56).bool(message.is_pro);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Player message, length delimited. Does not implicitly {@link protocol.Search.Player.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {protocol.Search.IPlayer} message Player message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Player.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Player message from the specified reader or buffer.
+             * @function decode
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {protocol.Search.Player} Player
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Player.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Search.Player();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.account_id = reader.uint32();
+                        break;
+                    case 2:
+                        message.name = reader.string();
+                        break;
+                    case 3:
+                        message.persona_name = reader.string();
+                        break;
+                    case 4:
+                        message.avatar_url = reader.string();
+                        break;
+                    case 5:
+                        message.avatar_medium_url = reader.string();
+                        break;
+                    case 6:
+                        message.avatar_full_url = reader.string();
+                        break;
+                    case 7:
+                        message.is_pro = reader.bool();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Player message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {protocol.Search.Player} Player
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Player.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Player message.
+             * @function verify
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Player.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.account_id != null && message.hasOwnProperty("account_id"))
+                    if (!$util.isInteger(message.account_id))
+                        return "account_id: integer expected";
+                if (message.name != null && message.hasOwnProperty("name"))
+                    if (!$util.isString(message.name))
+                        return "name: string expected";
+                if (message.persona_name != null && message.hasOwnProperty("persona_name"))
+                    if (!$util.isString(message.persona_name))
+                        return "persona_name: string expected";
+                if (message.avatar_url != null && message.hasOwnProperty("avatar_url"))
+                    if (!$util.isString(message.avatar_url))
+                        return "avatar_url: string expected";
+                if (message.avatar_medium_url != null && message.hasOwnProperty("avatar_medium_url"))
+                    if (!$util.isString(message.avatar_medium_url))
+                        return "avatar_medium_url: string expected";
+                if (message.avatar_full_url != null && message.hasOwnProperty("avatar_full_url"))
+                    if (!$util.isString(message.avatar_full_url))
+                        return "avatar_full_url: string expected";
+                if (message.is_pro != null && message.hasOwnProperty("is_pro"))
+                    if (typeof message.is_pro !== "boolean")
+                        return "is_pro: boolean expected";
+                return null;
+            };
+
+            /**
+             * Creates a Player message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {protocol.Search.Player} Player
+             */
+            Player.fromObject = function fromObject(object) {
+                if (object instanceof $root.protocol.Search.Player)
+                    return object;
+                let message = new $root.protocol.Search.Player();
+                if (object.account_id != null)
+                    message.account_id = object.account_id >>> 0;
+                if (object.name != null)
+                    message.name = String(object.name);
+                if (object.persona_name != null)
+                    message.persona_name = String(object.persona_name);
+                if (object.avatar_url != null)
+                    message.avatar_url = String(object.avatar_url);
+                if (object.avatar_medium_url != null)
+                    message.avatar_medium_url = String(object.avatar_medium_url);
+                if (object.avatar_full_url != null)
+                    message.avatar_full_url = String(object.avatar_full_url);
+                if (object.is_pro != null)
+                    message.is_pro = Boolean(object.is_pro);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Player message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof protocol.Search.Player
+             * @static
+             * @param {protocol.Search.Player} message Player
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Player.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.account_id = 0;
+                    object.name = "";
+                    object.persona_name = "";
+                    object.avatar_url = "";
+                    object.avatar_medium_url = "";
+                    object.avatar_full_url = "";
+                    object.is_pro = false;
+                }
+                if (message.account_id != null && message.hasOwnProperty("account_id"))
+                    object.account_id = message.account_id;
+                if (message.name != null && message.hasOwnProperty("name"))
+                    object.name = message.name;
+                if (message.persona_name != null && message.hasOwnProperty("persona_name"))
+                    object.persona_name = message.persona_name;
+                if (message.avatar_url != null && message.hasOwnProperty("avatar_url"))
+                    object.avatar_url = message.avatar_url;
+                if (message.avatar_medium_url != null && message.hasOwnProperty("avatar_medium_url"))
+                    object.avatar_medium_url = message.avatar_medium_url;
+                if (message.avatar_full_url != null && message.hasOwnProperty("avatar_full_url"))
+                    object.avatar_full_url = message.avatar_full_url;
+                if (message.is_pro != null && message.hasOwnProperty("is_pro"))
+                    object.is_pro = message.is_pro;
+                return object;
+            };
+
+            /**
+             * Converts this Player to JSON.
+             * @function toJSON
+             * @memberof protocol.Search.Player
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Player.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Player;
+        })();
+
+        return Search;
+    })();
+
     protocol.Player = (function() {
 
         /**
@@ -4554,7 +5139,7 @@ export const protocol = $root.protocol = (() => {
          * Properties of a Hero.
          * @memberof protocol
          * @interface IHero
-         * @property {number|null} [id] Hero id
+         * @property {Long|null} [id] Hero id
          * @property {string|null} [name] Hero name
          * @property {string|null} [localized_name] Hero localized_name
          * @property {string|null} [image_full_url] Hero image_full_url
@@ -4580,11 +5165,11 @@ export const protocol = $root.protocol = (() => {
 
         /**
          * Hero id.
-         * @member {number} id
+         * @member {Long} id
          * @memberof protocol.Hero
          * @instance
          */
-        Hero.prototype.id = 0;
+        Hero.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
         /**
          * Hero name.
@@ -4659,7 +5244,7 @@ export const protocol = $root.protocol = (() => {
             if (!writer)
                 writer = $Writer.create();
             if (message.id != null && message.hasOwnProperty("id"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.id);
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
             if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
@@ -4707,7 +5292,7 @@ export const protocol = $root.protocol = (() => {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
-                    message.id = reader.uint32();
+                    message.id = reader.uint64();
                     break;
                 case 2:
                     message.name = reader.string();
@@ -4763,8 +5348,8 @@ export const protocol = $root.protocol = (() => {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.id != null && message.hasOwnProperty("id"))
-                if (!$util.isInteger(message.id))
-                    return "id: integer expected";
+                if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
+                    return "id: integer|Long expected";
             if (message.name != null && message.hasOwnProperty("name"))
                 if (!$util.isString(message.name))
                     return "name: string expected";
@@ -4799,7 +5384,14 @@ export const protocol = $root.protocol = (() => {
                 return object;
             let message = new $root.protocol.Hero();
             if (object.id != null)
-                message.id = object.id >>> 0;
+                if ($util.Long)
+                    (message.id = $util.Long.fromValue(object.id)).unsigned = true;
+                else if (typeof object.id === "string")
+                    message.id = parseInt(object.id, 10);
+                else if (typeof object.id === "number")
+                    message.id = object.id;
+                else if (typeof object.id === "object")
+                    message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
             if (object.name != null)
                 message.name = String(object.name);
             if (object.localized_name != null)
@@ -4829,7 +5421,11 @@ export const protocol = $root.protocol = (() => {
                 options = {};
             let object = {};
             if (options.defaults) {
-                object.id = 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.id = options.longs === String ? "0" : 0;
                 object.name = "";
                 object.localized_name = "";
                 object.image_full_url = "";
@@ -4838,7 +5434,10 @@ export const protocol = $root.protocol = (() => {
                 object.image_portrait_url = "";
             }
             if (message.id != null && message.hasOwnProperty("id"))
-                object.id = message.id;
+                if (typeof message.id === "number")
+                    object.id = options.longs === String ? String(message.id) : message.id;
+                else
+                    object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
             if (message.name != null && message.hasOwnProperty("name"))
                 object.name = message.name;
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
