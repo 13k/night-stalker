@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 pkgs="$(
   \grep '^'$'\t' go.mod |

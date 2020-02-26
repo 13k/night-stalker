@@ -14,10 +14,10 @@ TOOLS_PATH = bin
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS) FIND=$(FIND)
+	@$(MAKE) -C "$@" $(MAKECMDGOALS) FIND=$(FIND)
 
 $(PROTO_GOOUT)/%.pb.go: $(PROTO_SRC)/%.proto
-	$(PROTOC) -I "$(PROTO_SRC)" "--go_out=$(PROTO_GOOUT)" "$<"
+	PROTOC="$(PROTOC)" hack/go-gen-protobuf.sh "$(PROTO_SRC)" "$<" "$(PROTO_GOOUT)" "$@"
 
 .PHONY: proto-go
 proto-go: $(PROTOS_GO)
