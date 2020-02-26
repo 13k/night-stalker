@@ -30,15 +30,15 @@ func MarshalBytes(message proto.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *LiveMatchesChange) MarshalJSON() ([]byte, error) {
+func (m *Search) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
-func (m *LiveMatches) MarshalJSON() ([]byte, error) {
+func (m *Search_Player) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
-func (m *LiveMatch) MarshalJSON() ([]byte, error) {
+func (m *Team) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
@@ -46,14 +46,38 @@ func (m *Hero) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
+func (m *HeroMatches) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *LiveMatch) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
 func (m *Player) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
-func (m *Player_Match) MarshalJSON() ([]byte, error) {
+func (m *LiveMatches) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
 
-func (m *Player_Team) MarshalJSON() ([]byte, error) {
+func (m *LiveMatch_Player) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *PlayerMatches) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *LiveMatchesChange) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *Match) MarshalJSON() ([]byte, error) {
+	return MarshalBytes(m)
+}
+
+func (m *Match_Player) MarshalJSON() ([]byte, error) {
 	return MarshalBytes(m)
 }
