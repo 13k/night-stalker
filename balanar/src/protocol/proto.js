@@ -2934,6 +2934,274 @@ export const protocol = $root.protocol = (() => {
         return Search;
     })();
 
+    protocol.Team = (function() {
+
+        /**
+         * Properties of a Team.
+         * @memberof protocol
+         * @interface ITeam
+         * @property {Long|null} [id] Team id
+         * @property {string|null} [name] Team name
+         * @property {string|null} [tag] Team tag
+         * @property {string|null} [logo_url] Team logo_url
+         */
+
+        /**
+         * Constructs a new Team.
+         * @memberof protocol
+         * @classdesc Represents a Team.
+         * @implements ITeam
+         * @constructor
+         * @param {protocol.ITeam=} [properties] Properties to set
+         */
+        function Team(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Team id.
+         * @member {Long} id
+         * @memberof protocol.Team
+         * @instance
+         */
+        Team.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Team name.
+         * @member {string} name
+         * @memberof protocol.Team
+         * @instance
+         */
+        Team.prototype.name = "";
+
+        /**
+         * Team tag.
+         * @member {string} tag
+         * @memberof protocol.Team
+         * @instance
+         */
+        Team.prototype.tag = "";
+
+        /**
+         * Team logo_url.
+         * @member {string} logo_url
+         * @memberof protocol.Team
+         * @instance
+         */
+        Team.prototype.logo_url = "";
+
+        /**
+         * Creates a new Team instance using the specified properties.
+         * @function create
+         * @memberof protocol.Team
+         * @static
+         * @param {protocol.ITeam=} [properties] Properties to set
+         * @returns {protocol.Team} Team instance
+         */
+        Team.create = function create(properties) {
+            return new Team(properties);
+        };
+
+        /**
+         * Encodes the specified Team message. Does not implicitly {@link protocol.Team.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.Team
+         * @static
+         * @param {protocol.ITeam} message Team message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Team.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && message.hasOwnProperty("id"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
+            if (message.name != null && message.hasOwnProperty("name"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.tag);
+            if (message.logo_url != null && message.hasOwnProperty("logo_url"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.logo_url);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Team message, length delimited. Does not implicitly {@link protocol.Team.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.Team
+         * @static
+         * @param {protocol.ITeam} message Team message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Team.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Team message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.Team
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.Team} Team
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Team.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Team();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.id = reader.uint64();
+                    break;
+                case 2:
+                    message.name = reader.string();
+                    break;
+                case 3:
+                    message.tag = reader.string();
+                    break;
+                case 4:
+                    message.logo_url = reader.string();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Team message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.Team
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.Team} Team
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Team.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Team message.
+         * @function verify
+         * @memberof protocol.Team
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Team.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
+                    return "id: integer|Long expected";
+            if (message.name != null && message.hasOwnProperty("name"))
+                if (!$util.isString(message.name))
+                    return "name: string expected";
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                if (!$util.isString(message.tag))
+                    return "tag: string expected";
+            if (message.logo_url != null && message.hasOwnProperty("logo_url"))
+                if (!$util.isString(message.logo_url))
+                    return "logo_url: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a Team message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.Team
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.Team} Team
+         */
+        Team.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.Team)
+                return object;
+            let message = new $root.protocol.Team();
+            if (object.id != null)
+                if ($util.Long)
+                    (message.id = $util.Long.fromValue(object.id)).unsigned = true;
+                else if (typeof object.id === "string")
+                    message.id = parseInt(object.id, 10);
+                else if (typeof object.id === "number")
+                    message.id = object.id;
+                else if (typeof object.id === "object")
+                    message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
+            if (object.name != null)
+                message.name = String(object.name);
+            if (object.tag != null)
+                message.tag = String(object.tag);
+            if (object.logo_url != null)
+                message.logo_url = String(object.logo_url);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Team message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.Team
+         * @static
+         * @param {protocol.Team} message Team
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Team.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.id = options.longs === String ? "0" : 0;
+                object.name = "";
+                object.tag = "";
+                object.logo_url = "";
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (typeof message.id === "number")
+                    object.id = options.longs === String ? String(message.id) : message.id;
+                else
+                    object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
+            if (message.name != null && message.hasOwnProperty("name"))
+                object.name = message.name;
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                object.tag = message.tag;
+            if (message.logo_url != null && message.hasOwnProperty("logo_url"))
+                object.logo_url = message.logo_url;
+            return object;
+        };
+
+        /**
+         * Converts this Team to JSON.
+         * @function toJSON
+         * @memberof protocol.Team
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Team.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return Team;
+    })();
+
     protocol.Player = (function() {
 
         /**
@@ -2947,8 +3215,7 @@ export const protocol = $root.protocol = (() => {
          * @property {string|null} [avatar_medium_url] Player avatar_medium_url
          * @property {string|null} [avatar_full_url] Player avatar_full_url
          * @property {boolean|null} [is_pro] Player is_pro
-         * @property {protocol.Player.ITeam|null} [team] Player team
-         * @property {Array.<protocol.Player.IMatch>|null} [matches] Player matches
+         * @property {protocol.ITeam|null} [team] Player team
          */
 
         /**
@@ -2960,7 +3227,6 @@ export const protocol = $root.protocol = (() => {
          * @param {protocol.IPlayer=} [properties] Properties to set
          */
         function Player(properties) {
-            this.matches = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -3025,19 +3291,11 @@ export const protocol = $root.protocol = (() => {
 
         /**
          * Player team.
-         * @member {protocol.Player.ITeam|null|undefined} team
+         * @member {protocol.ITeam|null|undefined} team
          * @memberof protocol.Player
          * @instance
          */
         Player.prototype.team = null;
-
-        /**
-         * Player matches.
-         * @member {Array.<protocol.Player.IMatch>} matches
-         * @memberof protocol.Player
-         * @instance
-         */
-        Player.prototype.matches = $util.emptyArray;
 
         /**
          * Creates a new Player instance using the specified properties.
@@ -3078,10 +3336,7 @@ export const protocol = $root.protocol = (() => {
             if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                 writer.uint32(/* id 7, wireType 0 =*/56).bool(message.is_pro);
             if (message.team != null && message.hasOwnProperty("team"))
-                $root.protocol.Player.Team.encode(message.team, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
-            if (message.matches != null && message.matches.length)
-                for (let i = 0; i < message.matches.length; ++i)
-                    $root.protocol.Player.Match.encode(message.matches[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
+                $root.protocol.Team.encode(message.team, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
             return writer;
         };
 
@@ -3138,12 +3393,7 @@ export const protocol = $root.protocol = (() => {
                     message.is_pro = reader.bool();
                     break;
                 case 100:
-                    message.team = $root.protocol.Player.Team.decode(reader, reader.uint32());
-                    break;
-                case 101:
-                    if (!(message.matches && message.matches.length))
-                        message.matches = [];
-                    message.matches.push($root.protocol.Player.Match.decode(reader, reader.uint32()));
+                    message.team = $root.protocol.Team.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -3202,18 +3452,9 @@ export const protocol = $root.protocol = (() => {
                 if (typeof message.is_pro !== "boolean")
                     return "is_pro: boolean expected";
             if (message.team != null && message.hasOwnProperty("team")) {
-                let error = $root.protocol.Player.Team.verify(message.team);
+                let error = $root.protocol.Team.verify(message.team);
                 if (error)
                     return "team." + error;
-            }
-            if (message.matches != null && message.hasOwnProperty("matches")) {
-                if (!Array.isArray(message.matches))
-                    return "matches: array expected";
-                for (let i = 0; i < message.matches.length; ++i) {
-                    let error = $root.protocol.Player.Match.verify(message.matches[i]);
-                    if (error)
-                        return "matches." + error;
-                }
             }
             return null;
         };
@@ -3247,17 +3488,7 @@ export const protocol = $root.protocol = (() => {
             if (object.team != null) {
                 if (typeof object.team !== "object")
                     throw TypeError(".protocol.Player.team: object expected");
-                message.team = $root.protocol.Player.Team.fromObject(object.team);
-            }
-            if (object.matches) {
-                if (!Array.isArray(object.matches))
-                    throw TypeError(".protocol.Player.matches: array expected");
-                message.matches = [];
-                for (let i = 0; i < object.matches.length; ++i) {
-                    if (typeof object.matches[i] !== "object")
-                        throw TypeError(".protocol.Player.matches: object expected");
-                    message.matches[i] = $root.protocol.Player.Match.fromObject(object.matches[i]);
-                }
+                message.team = $root.protocol.Team.fromObject(object.team);
             }
             return message;
         };
@@ -3275,8 +3506,6 @@ export const protocol = $root.protocol = (() => {
             if (!options)
                 options = {};
             let object = {};
-            if (options.arrays || options.defaults)
-                object.matches = [];
             if (options.defaults) {
                 object.account_id = 0;
                 object.name = "";
@@ -3302,12 +3531,7 @@ export const protocol = $root.protocol = (() => {
             if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                 object.is_pro = message.is_pro;
             if (message.team != null && message.hasOwnProperty("team"))
-                object.team = $root.protocol.Player.Team.toObject(message.team, options);
-            if (message.matches && message.matches.length) {
-                object.matches = [];
-                for (let j = 0; j < message.matches.length; ++j)
-                    object.matches[j] = $root.protocol.Player.Match.toObject(message.matches[j], options);
-            }
+                object.team = $root.protocol.Team.toObject(message.team, options);
             return object;
         };
 
@@ -3322,1797 +3546,1848 @@ export const protocol = $root.protocol = (() => {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
-        Player.Match = (function() {
-
-            /**
-             * Properties of a Match.
-             * @memberof protocol.Player
-             * @interface IMatch
-             * @property {Long|null} [match_id] Match match_id
-             * @property {Long|null} [lobby_id] Match lobby_id
-             * @property {protocol.LobbyType|null} [lobby_type] Match lobby_type
-             * @property {Long|null} [league_id] Match league_id
-             * @property {Long|null} [series_id] Match series_id
-             * @property {protocol.GameMode|null} [game_mode] Match game_mode
-             * @property {number|null} [average_mmr] Match average_mmr
-             * @property {Long|null} [radiant_team_id] Match radiant_team_id
-             * @property {string|null} [radiant_team_name] Match radiant_team_name
-             * @property {string|null} [radiant_team_tag] Match radiant_team_tag
-             * @property {Long|null} [radiant_team_logo] Match radiant_team_logo
-             * @property {string|null} [radiant_team_logo_url] Match radiant_team_logo_url
-             * @property {Long|null} [dire_team_id] Match dire_team_id
-             * @property {string|null} [dire_team_name] Match dire_team_name
-             * @property {string|null} [dire_team_tag] Match dire_team_tag
-             * @property {Long|null} [dire_team_logo] Match dire_team_logo
-             * @property {string|null} [dire_team_logo_url] Match dire_team_logo_url
-             * @property {google.protobuf.ITimestamp|null} [activate_time] Match activate_time
-             * @property {google.protobuf.ITimestamp|null} [deactivate_time] Match deactivate_time
-             * @property {google.protobuf.ITimestamp|null} [last_update_time] Match last_update_time
-             * @property {google.protobuf.ITimestamp|null} [start_time] Match start_time
-             * @property {number|null} [series_type] Match series_type
-             * @property {number|null} [series_game] Match series_game
-             * @property {number|null} [duration] Match duration
-             * @property {number|null} [radiant_score] Match radiant_score
-             * @property {number|null} [dire_score] Match dire_score
-             * @property {protocol.MatchOutcome|null} [outcome] Match outcome
-             * @property {protocol.Player.Match.IPlayerDetails|null} [player_details] Match player_details
-             */
-
-            /**
-             * Constructs a new Match.
-             * @memberof protocol.Player
-             * @classdesc Represents a Match.
-             * @implements IMatch
-             * @constructor
-             * @param {protocol.Player.IMatch=} [properties] Properties to set
-             */
-            function Match(properties) {
-                if (properties)
-                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
-            }
-
-            /**
-             * Match match_id.
-             * @member {Long} match_id
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.match_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match lobby_id.
-             * @member {Long} lobby_id
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.lobby_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match lobby_type.
-             * @member {protocol.LobbyType} lobby_type
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.lobby_type = 0;
-
-            /**
-             * Match league_id.
-             * @member {Long} league_id
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.league_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match series_id.
-             * @member {Long} series_id
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.series_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match game_mode.
-             * @member {protocol.GameMode} game_mode
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.game_mode = 0;
-
-            /**
-             * Match average_mmr.
-             * @member {number} average_mmr
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.average_mmr = 0;
-
-            /**
-             * Match radiant_team_id.
-             * @member {Long} radiant_team_id
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.radiant_team_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match radiant_team_name.
-             * @member {string} radiant_team_name
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.radiant_team_name = "";
-
-            /**
-             * Match radiant_team_tag.
-             * @member {string} radiant_team_tag
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.radiant_team_tag = "";
-
-            /**
-             * Match radiant_team_logo.
-             * @member {Long} radiant_team_logo
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.radiant_team_logo = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match radiant_team_logo_url.
-             * @member {string} radiant_team_logo_url
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.radiant_team_logo_url = "";
-
-            /**
-             * Match dire_team_id.
-             * @member {Long} dire_team_id
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.dire_team_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match dire_team_name.
-             * @member {string} dire_team_name
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.dire_team_name = "";
-
-            /**
-             * Match dire_team_tag.
-             * @member {string} dire_team_tag
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.dire_team_tag = "";
-
-            /**
-             * Match dire_team_logo.
-             * @member {Long} dire_team_logo
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.dire_team_logo = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Match dire_team_logo_url.
-             * @member {string} dire_team_logo_url
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.dire_team_logo_url = "";
-
-            /**
-             * Match activate_time.
-             * @member {google.protobuf.ITimestamp|null|undefined} activate_time
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.activate_time = null;
-
-            /**
-             * Match deactivate_time.
-             * @member {google.protobuf.ITimestamp|null|undefined} deactivate_time
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.deactivate_time = null;
-
-            /**
-             * Match last_update_time.
-             * @member {google.protobuf.ITimestamp|null|undefined} last_update_time
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.last_update_time = null;
-
-            /**
-             * Match start_time.
-             * @member {google.protobuf.ITimestamp|null|undefined} start_time
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.start_time = null;
-
-            /**
-             * Match series_type.
-             * @member {number} series_type
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.series_type = 0;
-
-            /**
-             * Match series_game.
-             * @member {number} series_game
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.series_game = 0;
-
-            /**
-             * Match duration.
-             * @member {number} duration
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.duration = 0;
-
-            /**
-             * Match radiant_score.
-             * @member {number} radiant_score
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.radiant_score = 0;
-
-            /**
-             * Match dire_score.
-             * @member {number} dire_score
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.dire_score = 0;
-
-            /**
-             * Match outcome.
-             * @member {protocol.MatchOutcome} outcome
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.outcome = 0;
-
-            /**
-             * Match player_details.
-             * @member {protocol.Player.Match.IPlayerDetails|null|undefined} player_details
-             * @memberof protocol.Player.Match
-             * @instance
-             */
-            Match.prototype.player_details = null;
-
-            /**
-             * Creates a new Match instance using the specified properties.
-             * @function create
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {protocol.Player.IMatch=} [properties] Properties to set
-             * @returns {protocol.Player.Match} Match instance
-             */
-            Match.create = function create(properties) {
-                return new Match(properties);
-            };
-
-            /**
-             * Encodes the specified Match message. Does not implicitly {@link protocol.Player.Match.verify|verify} messages.
-             * @function encode
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {protocol.Player.IMatch} message Match message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            Match.encode = function encode(message, writer) {
-                if (!writer)
-                    writer = $Writer.create();
-                if (message.match_id != null && message.hasOwnProperty("match_id"))
-                    writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.match_id);
-                if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
-                    writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.lobby_id);
-                if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
-                    writer.uint32(/* id 3, wireType 0 =*/24).int32(message.lobby_type);
-                if (message.league_id != null && message.hasOwnProperty("league_id"))
-                    writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.league_id);
-                if (message.series_id != null && message.hasOwnProperty("series_id"))
-                    writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.series_id);
-                if (message.game_mode != null && message.hasOwnProperty("game_mode"))
-                    writer.uint32(/* id 6, wireType 0 =*/48).int32(message.game_mode);
-                if (message.average_mmr != null && message.hasOwnProperty("average_mmr"))
-                    writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.average_mmr);
-                if (message.radiant_team_id != null && message.hasOwnProperty("radiant_team_id"))
-                    writer.uint32(/* id 8, wireType 0 =*/64).uint64(message.radiant_team_id);
-                if (message.radiant_team_name != null && message.hasOwnProperty("radiant_team_name"))
-                    writer.uint32(/* id 9, wireType 2 =*/74).string(message.radiant_team_name);
-                if (message.radiant_team_tag != null && message.hasOwnProperty("radiant_team_tag"))
-                    writer.uint32(/* id 10, wireType 2 =*/82).string(message.radiant_team_tag);
-                if (message.radiant_team_logo != null && message.hasOwnProperty("radiant_team_logo"))
-                    writer.uint32(/* id 11, wireType 0 =*/88).uint64(message.radiant_team_logo);
-                if (message.radiant_team_logo_url != null && message.hasOwnProperty("radiant_team_logo_url"))
-                    writer.uint32(/* id 12, wireType 2 =*/98).string(message.radiant_team_logo_url);
-                if (message.dire_team_id != null && message.hasOwnProperty("dire_team_id"))
-                    writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.dire_team_id);
-                if (message.dire_team_name != null && message.hasOwnProperty("dire_team_name"))
-                    writer.uint32(/* id 14, wireType 2 =*/114).string(message.dire_team_name);
-                if (message.dire_team_tag != null && message.hasOwnProperty("dire_team_tag"))
-                    writer.uint32(/* id 15, wireType 2 =*/122).string(message.dire_team_tag);
-                if (message.dire_team_logo != null && message.hasOwnProperty("dire_team_logo"))
-                    writer.uint32(/* id 16, wireType 0 =*/128).uint64(message.dire_team_logo);
-                if (message.dire_team_logo_url != null && message.hasOwnProperty("dire_team_logo_url"))
-                    writer.uint32(/* id 17, wireType 2 =*/138).string(message.dire_team_logo_url);
-                if (message.activate_time != null && message.hasOwnProperty("activate_time"))
-                    $root.google.protobuf.Timestamp.encode(message.activate_time, writer.uint32(/* id 18, wireType 2 =*/146).fork()).ldelim();
-                if (message.deactivate_time != null && message.hasOwnProperty("deactivate_time"))
-                    $root.google.protobuf.Timestamp.encode(message.deactivate_time, writer.uint32(/* id 19, wireType 2 =*/154).fork()).ldelim();
-                if (message.last_update_time != null && message.hasOwnProperty("last_update_time"))
-                    $root.google.protobuf.Timestamp.encode(message.last_update_time, writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
-                if (message.start_time != null && message.hasOwnProperty("start_time"))
-                    $root.google.protobuf.Timestamp.encode(message.start_time, writer.uint32(/* id 21, wireType 2 =*/170).fork()).ldelim();
-                if (message.series_type != null && message.hasOwnProperty("series_type"))
-                    writer.uint32(/* id 22, wireType 0 =*/176).uint32(message.series_type);
-                if (message.series_game != null && message.hasOwnProperty("series_game"))
-                    writer.uint32(/* id 23, wireType 0 =*/184).uint32(message.series_game);
-                if (message.duration != null && message.hasOwnProperty("duration"))
-                    writer.uint32(/* id 24, wireType 0 =*/192).uint32(message.duration);
-                if (message.radiant_score != null && message.hasOwnProperty("radiant_score"))
-                    writer.uint32(/* id 25, wireType 0 =*/200).uint32(message.radiant_score);
-                if (message.dire_score != null && message.hasOwnProperty("dire_score"))
-                    writer.uint32(/* id 26, wireType 0 =*/208).uint32(message.dire_score);
-                if (message.outcome != null && message.hasOwnProperty("outcome"))
-                    writer.uint32(/* id 27, wireType 0 =*/216).int32(message.outcome);
-                if (message.player_details != null && message.hasOwnProperty("player_details"))
-                    $root.protocol.Player.Match.PlayerDetails.encode(message.player_details, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
-                return writer;
-            };
-
-            /**
-             * Encodes the specified Match message, length delimited. Does not implicitly {@link protocol.Player.Match.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {protocol.Player.IMatch} message Match message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            Match.encodeDelimited = function encodeDelimited(message, writer) {
-                return this.encode(message, writer).ldelim();
-            };
-
-            /**
-             * Decodes a Match message from the specified reader or buffer.
-             * @function decode
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @param {number} [length] Message length if known beforehand
-             * @returns {protocol.Player.Match} Match
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            Match.decode = function decode(reader, length) {
-                if (!(reader instanceof $Reader))
-                    reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Player.Match();
-                while (reader.pos < end) {
-                    let tag = reader.uint32();
-                    switch (tag >>> 3) {
-                    case 1:
-                        message.match_id = reader.uint64();
-                        break;
-                    case 2:
-                        message.lobby_id = reader.uint64();
-                        break;
-                    case 3:
-                        message.lobby_type = reader.int32();
-                        break;
-                    case 4:
-                        message.league_id = reader.uint64();
-                        break;
-                    case 5:
-                        message.series_id = reader.uint64();
-                        break;
-                    case 6:
-                        message.game_mode = reader.int32();
-                        break;
-                    case 7:
-                        message.average_mmr = reader.uint32();
-                        break;
-                    case 8:
-                        message.radiant_team_id = reader.uint64();
-                        break;
-                    case 9:
-                        message.radiant_team_name = reader.string();
-                        break;
-                    case 10:
-                        message.radiant_team_tag = reader.string();
-                        break;
-                    case 11:
-                        message.radiant_team_logo = reader.uint64();
-                        break;
-                    case 12:
-                        message.radiant_team_logo_url = reader.string();
-                        break;
-                    case 13:
-                        message.dire_team_id = reader.uint64();
-                        break;
-                    case 14:
-                        message.dire_team_name = reader.string();
-                        break;
-                    case 15:
-                        message.dire_team_tag = reader.string();
-                        break;
-                    case 16:
-                        message.dire_team_logo = reader.uint64();
-                        break;
-                    case 17:
-                        message.dire_team_logo_url = reader.string();
-                        break;
-                    case 18:
-                        message.activate_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                        break;
-                    case 19:
-                        message.deactivate_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                        break;
-                    case 20:
-                        message.last_update_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                        break;
-                    case 21:
-                        message.start_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                        break;
-                    case 22:
-                        message.series_type = reader.uint32();
-                        break;
-                    case 23:
-                        message.series_game = reader.uint32();
-                        break;
-                    case 24:
-                        message.duration = reader.uint32();
-                        break;
-                    case 25:
-                        message.radiant_score = reader.uint32();
-                        break;
-                    case 26:
-                        message.dire_score = reader.uint32();
-                        break;
-                    case 27:
-                        message.outcome = reader.int32();
-                        break;
-                    case 100:
-                        message.player_details = $root.protocol.Player.Match.PlayerDetails.decode(reader, reader.uint32());
-                        break;
-                    default:
-                        reader.skipType(tag & 7);
-                        break;
-                    }
-                }
-                return message;
-            };
-
-            /**
-             * Decodes a Match message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {protocol.Player.Match} Match
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            Match.decodeDelimited = function decodeDelimited(reader) {
-                if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
-                return this.decode(reader, reader.uint32());
-            };
-
-            /**
-             * Verifies a Match message.
-             * @function verify
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
-             */
-            Match.verify = function verify(message) {
-                if (typeof message !== "object" || message === null)
-                    return "object expected";
-                if (message.match_id != null && message.hasOwnProperty("match_id"))
-                    if (!$util.isInteger(message.match_id) && !(message.match_id && $util.isInteger(message.match_id.low) && $util.isInteger(message.match_id.high)))
-                        return "match_id: integer|Long expected";
-                if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
-                    if (!$util.isInteger(message.lobby_id) && !(message.lobby_id && $util.isInteger(message.lobby_id.low) && $util.isInteger(message.lobby_id.high)))
-                        return "lobby_id: integer|Long expected";
-                if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
-                    switch (message.lobby_type) {
-                    default:
-                        return "lobby_type: enum value expected";
-                    case 0:
-                    case 1:
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    case 8:
-                    case 9:
-                    case 10:
-                    case 11:
-                    case 12:
-                        break;
-                    }
-                if (message.league_id != null && message.hasOwnProperty("league_id"))
-                    if (!$util.isInteger(message.league_id) && !(message.league_id && $util.isInteger(message.league_id.low) && $util.isInteger(message.league_id.high)))
-                        return "league_id: integer|Long expected";
-                if (message.series_id != null && message.hasOwnProperty("series_id"))
-                    if (!$util.isInteger(message.series_id) && !(message.series_id && $util.isInteger(message.series_id.low) && $util.isInteger(message.series_id.high)))
-                        return "series_id: integer|Long expected";
-                if (message.game_mode != null && message.hasOwnProperty("game_mode"))
-                    switch (message.game_mode) {
-                    default:
-                        return "game_mode: enum value expected";
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    case 8:
-                    case 9:
-                    case 10:
-                    case 11:
-                    case 12:
-                    case 13:
-                    case 14:
-                    case 15:
-                    case 16:
-                    case 17:
-                    case 18:
-                    case 19:
-                    case 20:
-                    case 21:
-                    case 22:
-                    case 23:
-                    case 24:
-                    case 25:
-                        break;
-                    }
-                if (message.average_mmr != null && message.hasOwnProperty("average_mmr"))
-                    if (!$util.isInteger(message.average_mmr))
-                        return "average_mmr: integer expected";
-                if (message.radiant_team_id != null && message.hasOwnProperty("radiant_team_id"))
-                    if (!$util.isInteger(message.radiant_team_id) && !(message.radiant_team_id && $util.isInteger(message.radiant_team_id.low) && $util.isInteger(message.radiant_team_id.high)))
-                        return "radiant_team_id: integer|Long expected";
-                if (message.radiant_team_name != null && message.hasOwnProperty("radiant_team_name"))
-                    if (!$util.isString(message.radiant_team_name))
-                        return "radiant_team_name: string expected";
-                if (message.radiant_team_tag != null && message.hasOwnProperty("radiant_team_tag"))
-                    if (!$util.isString(message.radiant_team_tag))
-                        return "radiant_team_tag: string expected";
-                if (message.radiant_team_logo != null && message.hasOwnProperty("radiant_team_logo"))
-                    if (!$util.isInteger(message.radiant_team_logo) && !(message.radiant_team_logo && $util.isInteger(message.radiant_team_logo.low) && $util.isInteger(message.radiant_team_logo.high)))
-                        return "radiant_team_logo: integer|Long expected";
-                if (message.radiant_team_logo_url != null && message.hasOwnProperty("radiant_team_logo_url"))
-                    if (!$util.isString(message.radiant_team_logo_url))
-                        return "radiant_team_logo_url: string expected";
-                if (message.dire_team_id != null && message.hasOwnProperty("dire_team_id"))
-                    if (!$util.isInteger(message.dire_team_id) && !(message.dire_team_id && $util.isInteger(message.dire_team_id.low) && $util.isInteger(message.dire_team_id.high)))
-                        return "dire_team_id: integer|Long expected";
-                if (message.dire_team_name != null && message.hasOwnProperty("dire_team_name"))
-                    if (!$util.isString(message.dire_team_name))
-                        return "dire_team_name: string expected";
-                if (message.dire_team_tag != null && message.hasOwnProperty("dire_team_tag"))
-                    if (!$util.isString(message.dire_team_tag))
-                        return "dire_team_tag: string expected";
-                if (message.dire_team_logo != null && message.hasOwnProperty("dire_team_logo"))
-                    if (!$util.isInteger(message.dire_team_logo) && !(message.dire_team_logo && $util.isInteger(message.dire_team_logo.low) && $util.isInteger(message.dire_team_logo.high)))
-                        return "dire_team_logo: integer|Long expected";
-                if (message.dire_team_logo_url != null && message.hasOwnProperty("dire_team_logo_url"))
-                    if (!$util.isString(message.dire_team_logo_url))
-                        return "dire_team_logo_url: string expected";
-                if (message.activate_time != null && message.hasOwnProperty("activate_time")) {
-                    let error = $root.google.protobuf.Timestamp.verify(message.activate_time);
-                    if (error)
-                        return "activate_time." + error;
-                }
-                if (message.deactivate_time != null && message.hasOwnProperty("deactivate_time")) {
-                    let error = $root.google.protobuf.Timestamp.verify(message.deactivate_time);
-                    if (error)
-                        return "deactivate_time." + error;
-                }
-                if (message.last_update_time != null && message.hasOwnProperty("last_update_time")) {
-                    let error = $root.google.protobuf.Timestamp.verify(message.last_update_time);
-                    if (error)
-                        return "last_update_time." + error;
-                }
-                if (message.start_time != null && message.hasOwnProperty("start_time")) {
-                    let error = $root.google.protobuf.Timestamp.verify(message.start_time);
-                    if (error)
-                        return "start_time." + error;
-                }
-                if (message.series_type != null && message.hasOwnProperty("series_type"))
-                    if (!$util.isInteger(message.series_type))
-                        return "series_type: integer expected";
-                if (message.series_game != null && message.hasOwnProperty("series_game"))
-                    if (!$util.isInteger(message.series_game))
-                        return "series_game: integer expected";
-                if (message.duration != null && message.hasOwnProperty("duration"))
-                    if (!$util.isInteger(message.duration))
-                        return "duration: integer expected";
-                if (message.radiant_score != null && message.hasOwnProperty("radiant_score"))
-                    if (!$util.isInteger(message.radiant_score))
-                        return "radiant_score: integer expected";
-                if (message.dire_score != null && message.hasOwnProperty("dire_score"))
-                    if (!$util.isInteger(message.dire_score))
-                        return "dire_score: integer expected";
-                if (message.outcome != null && message.hasOwnProperty("outcome"))
-                    switch (message.outcome) {
-                    default:
-                        return "outcome: enum value expected";
-                    case 0:
-                    case 2:
-                    case 3:
-                    case 64:
-                    case 65:
-                    case 66:
-                    case 67:
-                    case 68:
-                        break;
-                    }
-                if (message.player_details != null && message.hasOwnProperty("player_details")) {
-                    let error = $root.protocol.Player.Match.PlayerDetails.verify(message.player_details);
-                    if (error)
-                        return "player_details." + error;
-                }
-                return null;
-            };
-
-            /**
-             * Creates a Match message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {Object.<string,*>} object Plain object
-             * @returns {protocol.Player.Match} Match
-             */
-            Match.fromObject = function fromObject(object) {
-                if (object instanceof $root.protocol.Player.Match)
-                    return object;
-                let message = new $root.protocol.Player.Match();
-                if (object.match_id != null)
-                    if ($util.Long)
-                        (message.match_id = $util.Long.fromValue(object.match_id)).unsigned = true;
-                    else if (typeof object.match_id === "string")
-                        message.match_id = parseInt(object.match_id, 10);
-                    else if (typeof object.match_id === "number")
-                        message.match_id = object.match_id;
-                    else if (typeof object.match_id === "object")
-                        message.match_id = new $util.LongBits(object.match_id.low >>> 0, object.match_id.high >>> 0).toNumber(true);
-                if (object.lobby_id != null)
-                    if ($util.Long)
-                        (message.lobby_id = $util.Long.fromValue(object.lobby_id)).unsigned = true;
-                    else if (typeof object.lobby_id === "string")
-                        message.lobby_id = parseInt(object.lobby_id, 10);
-                    else if (typeof object.lobby_id === "number")
-                        message.lobby_id = object.lobby_id;
-                    else if (typeof object.lobby_id === "object")
-                        message.lobby_id = new $util.LongBits(object.lobby_id.low >>> 0, object.lobby_id.high >>> 0).toNumber(true);
-                switch (object.lobby_type) {
-                case "LOBBY_TYPE_CASUAL_MATCH":
-                case 0:
-                    message.lobby_type = 0;
-                    break;
-                case "LOBBY_TYPE_PRACTICE":
-                case 1:
-                    message.lobby_type = 1;
-                    break;
-                case "LOBBY_TYPE_COOP_BOT_MATCH":
-                case 4:
-                    message.lobby_type = 4;
-                    break;
-                case "LOBBY_TYPE_LEGACY_TEAM_MATCH":
-                case 5:
-                    message.lobby_type = 5;
-                    break;
-                case "LOBBY_TYPE_LEGACY_SOLO_QUEUE_MATCH":
-                case 6:
-                    message.lobby_type = 6;
-                    break;
-                case "LOBBY_TYPE_COMPETITIVE_MATCH":
-                case 7:
-                    message.lobby_type = 7;
-                    break;
-                case "LOBBY_TYPE_CASUAL_1V1_MATCH":
-                case 8:
-                    message.lobby_type = 8;
-                    break;
-                case "LOBBY_TYPE_WEEKEND_TOURNEY":
-                case 9:
-                    message.lobby_type = 9;
-                    break;
-                case "LOBBY_TYPE_LOCAL_BOT_MATCH":
-                case 10:
-                    message.lobby_type = 10;
-                    break;
-                case "LOBBY_TYPE_SPECTATOR":
-                case 11:
-                    message.lobby_type = 11;
-                    break;
-                case "LOBBY_TYPE_EVENT_MATCH":
-                case 12:
-                    message.lobby_type = 12;
-                    break;
-                }
-                if (object.league_id != null)
-                    if ($util.Long)
-                        (message.league_id = $util.Long.fromValue(object.league_id)).unsigned = true;
-                    else if (typeof object.league_id === "string")
-                        message.league_id = parseInt(object.league_id, 10);
-                    else if (typeof object.league_id === "number")
-                        message.league_id = object.league_id;
-                    else if (typeof object.league_id === "object")
-                        message.league_id = new $util.LongBits(object.league_id.low >>> 0, object.league_id.high >>> 0).toNumber(true);
-                if (object.series_id != null)
-                    if ($util.Long)
-                        (message.series_id = $util.Long.fromValue(object.series_id)).unsigned = true;
-                    else if (typeof object.series_id === "string")
-                        message.series_id = parseInt(object.series_id, 10);
-                    else if (typeof object.series_id === "number")
-                        message.series_id = object.series_id;
-                    else if (typeof object.series_id === "object")
-                        message.series_id = new $util.LongBits(object.series_id.low >>> 0, object.series_id.high >>> 0).toNumber(true);
-                switch (object.game_mode) {
-                case "GAME_MODE_NONE":
-                case 0:
-                    message.game_mode = 0;
-                    break;
-                case "GAME_MODE_AP":
-                case 1:
-                    message.game_mode = 1;
-                    break;
-                case "GAME_MODE_CM":
-                case 2:
-                    message.game_mode = 2;
-                    break;
-                case "GAME_MODE_RD":
-                case 3:
-                    message.game_mode = 3;
-                    break;
-                case "GAME_MODE_SD":
-                case 4:
-                    message.game_mode = 4;
-                    break;
-                case "GAME_MODE_AR":
-                case 5:
-                    message.game_mode = 5;
-                    break;
-                case "GAME_MODE_INTRO":
-                case 6:
-                    message.game_mode = 6;
-                    break;
-                case "GAME_MODE_HW":
-                case 7:
-                    message.game_mode = 7;
-                    break;
-                case "GAME_MODE_REVERSE_CM":
-                case 8:
-                    message.game_mode = 8;
-                    break;
-                case "GAME_MODE_XMAS":
-                case 9:
-                    message.game_mode = 9;
-                    break;
-                case "GAME_MODE_TUTORIAL":
-                case 10:
-                    message.game_mode = 10;
-                    break;
-                case "GAME_MODE_MO":
-                case 11:
-                    message.game_mode = 11;
-                    break;
-                case "GAME_MODE_LP":
-                case 12:
-                    message.game_mode = 12;
-                    break;
-                case "GAME_MODE_POOL1":
-                case 13:
-                    message.game_mode = 13;
-                    break;
-                case "GAME_MODE_FH":
-                case 14:
-                    message.game_mode = 14;
-                    break;
-                case "GAME_MODE_CUSTOM":
-                case 15:
-                    message.game_mode = 15;
-                    break;
-                case "GAME_MODE_CD":
-                case 16:
-                    message.game_mode = 16;
-                    break;
-                case "GAME_MODE_BD":
-                case 17:
-                    message.game_mode = 17;
-                    break;
-                case "GAME_MODE_ABILITY_DRAFT":
-                case 18:
-                    message.game_mode = 18;
-                    break;
-                case "GAME_MODE_EVENT":
-                case 19:
-                    message.game_mode = 19;
-                    break;
-                case "GAME_MODE_ARDM":
-                case 20:
-                    message.game_mode = 20;
-                    break;
-                case "GAME_MODE_1V1_MID":
-                case 21:
-                    message.game_mode = 21;
-                    break;
-                case "GAME_MODE_ALL_DRAFT":
-                case 22:
-                    message.game_mode = 22;
-                    break;
-                case "GAME_MODE_TURBO":
-                case 23:
-                    message.game_mode = 23;
-                    break;
-                case "GAME_MODE_MUTATION":
-                case 24:
-                    message.game_mode = 24;
-                    break;
-                case "GAME_MODE_COACHES_CHALLENGE":
-                case 25:
-                    message.game_mode = 25;
-                    break;
-                }
-                if (object.average_mmr != null)
-                    message.average_mmr = object.average_mmr >>> 0;
-                if (object.radiant_team_id != null)
-                    if ($util.Long)
-                        (message.radiant_team_id = $util.Long.fromValue(object.radiant_team_id)).unsigned = true;
-                    else if (typeof object.radiant_team_id === "string")
-                        message.radiant_team_id = parseInt(object.radiant_team_id, 10);
-                    else if (typeof object.radiant_team_id === "number")
-                        message.radiant_team_id = object.radiant_team_id;
-                    else if (typeof object.radiant_team_id === "object")
-                        message.radiant_team_id = new $util.LongBits(object.radiant_team_id.low >>> 0, object.radiant_team_id.high >>> 0).toNumber(true);
-                if (object.radiant_team_name != null)
-                    message.radiant_team_name = String(object.radiant_team_name);
-                if (object.radiant_team_tag != null)
-                    message.radiant_team_tag = String(object.radiant_team_tag);
-                if (object.radiant_team_logo != null)
-                    if ($util.Long)
-                        (message.radiant_team_logo = $util.Long.fromValue(object.radiant_team_logo)).unsigned = true;
-                    else if (typeof object.radiant_team_logo === "string")
-                        message.radiant_team_logo = parseInt(object.radiant_team_logo, 10);
-                    else if (typeof object.radiant_team_logo === "number")
-                        message.radiant_team_logo = object.radiant_team_logo;
-                    else if (typeof object.radiant_team_logo === "object")
-                        message.radiant_team_logo = new $util.LongBits(object.radiant_team_logo.low >>> 0, object.radiant_team_logo.high >>> 0).toNumber(true);
-                if (object.radiant_team_logo_url != null)
-                    message.radiant_team_logo_url = String(object.radiant_team_logo_url);
-                if (object.dire_team_id != null)
-                    if ($util.Long)
-                        (message.dire_team_id = $util.Long.fromValue(object.dire_team_id)).unsigned = true;
-                    else if (typeof object.dire_team_id === "string")
-                        message.dire_team_id = parseInt(object.dire_team_id, 10);
-                    else if (typeof object.dire_team_id === "number")
-                        message.dire_team_id = object.dire_team_id;
-                    else if (typeof object.dire_team_id === "object")
-                        message.dire_team_id = new $util.LongBits(object.dire_team_id.low >>> 0, object.dire_team_id.high >>> 0).toNumber(true);
-                if (object.dire_team_name != null)
-                    message.dire_team_name = String(object.dire_team_name);
-                if (object.dire_team_tag != null)
-                    message.dire_team_tag = String(object.dire_team_tag);
-                if (object.dire_team_logo != null)
-                    if ($util.Long)
-                        (message.dire_team_logo = $util.Long.fromValue(object.dire_team_logo)).unsigned = true;
-                    else if (typeof object.dire_team_logo === "string")
-                        message.dire_team_logo = parseInt(object.dire_team_logo, 10);
-                    else if (typeof object.dire_team_logo === "number")
-                        message.dire_team_logo = object.dire_team_logo;
-                    else if (typeof object.dire_team_logo === "object")
-                        message.dire_team_logo = new $util.LongBits(object.dire_team_logo.low >>> 0, object.dire_team_logo.high >>> 0).toNumber(true);
-                if (object.dire_team_logo_url != null)
-                    message.dire_team_logo_url = String(object.dire_team_logo_url);
-                if (object.activate_time != null) {
-                    if (typeof object.activate_time !== "object")
-                        throw TypeError(".protocol.Player.Match.activate_time: object expected");
-                    message.activate_time = $root.google.protobuf.Timestamp.fromObject(object.activate_time);
-                }
-                if (object.deactivate_time != null) {
-                    if (typeof object.deactivate_time !== "object")
-                        throw TypeError(".protocol.Player.Match.deactivate_time: object expected");
-                    message.deactivate_time = $root.google.protobuf.Timestamp.fromObject(object.deactivate_time);
-                }
-                if (object.last_update_time != null) {
-                    if (typeof object.last_update_time !== "object")
-                        throw TypeError(".protocol.Player.Match.last_update_time: object expected");
-                    message.last_update_time = $root.google.protobuf.Timestamp.fromObject(object.last_update_time);
-                }
-                if (object.start_time != null) {
-                    if (typeof object.start_time !== "object")
-                        throw TypeError(".protocol.Player.Match.start_time: object expected");
-                    message.start_time = $root.google.protobuf.Timestamp.fromObject(object.start_time);
-                }
-                if (object.series_type != null)
-                    message.series_type = object.series_type >>> 0;
-                if (object.series_game != null)
-                    message.series_game = object.series_game >>> 0;
-                if (object.duration != null)
-                    message.duration = object.duration >>> 0;
-                if (object.radiant_score != null)
-                    message.radiant_score = object.radiant_score >>> 0;
-                if (object.dire_score != null)
-                    message.dire_score = object.dire_score >>> 0;
-                switch (object.outcome) {
-                case "MATCH_OUTCOME_UNKNOWN":
-                case 0:
-                    message.outcome = 0;
-                    break;
-                case "MATCH_OUTCOME_RAD_VICTORY":
-                case 2:
-                    message.outcome = 2;
-                    break;
-                case "MATCH_OUTCOME_DIRE_VICTORY":
-                case 3:
-                    message.outcome = 3;
-                    break;
-                case "MATCH_OUTCOME_NOT_SCORED_POOR_NETWORK_CONDITIONS":
-                case 64:
-                    message.outcome = 64;
-                    break;
-                case "MATCH_OUTCOME_NOT_SCORED_LEAVER":
-                case 65:
-                    message.outcome = 65;
-                    break;
-                case "MATCH_OUTCOME_NOT_SCORED_SERVER_CRASH":
-                case 66:
-                    message.outcome = 66;
-                    break;
-                case "MATCH_OUTCOME_NOT_SCORED_NEVER_STARTED":
-                case 67:
-                    message.outcome = 67;
-                    break;
-                case "MATCH_OUTCOME_NOT_SCORED_CANCELED":
-                case 68:
-                    message.outcome = 68;
-                    break;
-                }
-                if (object.player_details != null) {
-                    if (typeof object.player_details !== "object")
-                        throw TypeError(".protocol.Player.Match.player_details: object expected");
-                    message.player_details = $root.protocol.Player.Match.PlayerDetails.fromObject(object.player_details);
-                }
-                return message;
-            };
-
-            /**
-             * Creates a plain object from a Match message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof protocol.Player.Match
-             * @static
-             * @param {protocol.Player.Match} message Match
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
-             * @returns {Object.<string,*>} Plain object
-             */
-            Match.toObject = function toObject(message, options) {
-                if (!options)
-                    options = {};
-                let object = {};
-                if (options.defaults) {
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.match_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.match_id = options.longs === String ? "0" : 0;
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.lobby_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.lobby_id = options.longs === String ? "0" : 0;
-                    object.lobby_type = options.enums === String ? "LOBBY_TYPE_CASUAL_MATCH" : 0;
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.league_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.league_id = options.longs === String ? "0" : 0;
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.series_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.series_id = options.longs === String ? "0" : 0;
-                    object.game_mode = options.enums === String ? "GAME_MODE_NONE" : 0;
-                    object.average_mmr = 0;
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.radiant_team_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.radiant_team_id = options.longs === String ? "0" : 0;
-                    object.radiant_team_name = "";
-                    object.radiant_team_tag = "";
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.radiant_team_logo = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.radiant_team_logo = options.longs === String ? "0" : 0;
-                    object.radiant_team_logo_url = "";
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.dire_team_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.dire_team_id = options.longs === String ? "0" : 0;
-                    object.dire_team_name = "";
-                    object.dire_team_tag = "";
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.dire_team_logo = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.dire_team_logo = options.longs === String ? "0" : 0;
-                    object.dire_team_logo_url = "";
-                    object.activate_time = null;
-                    object.deactivate_time = null;
-                    object.last_update_time = null;
-                    object.start_time = null;
-                    object.series_type = 0;
-                    object.series_game = 0;
-                    object.duration = 0;
-                    object.radiant_score = 0;
-                    object.dire_score = 0;
-                    object.outcome = options.enums === String ? "MATCH_OUTCOME_UNKNOWN" : 0;
-                    object.player_details = null;
-                }
-                if (message.match_id != null && message.hasOwnProperty("match_id"))
-                    if (typeof message.match_id === "number")
-                        object.match_id = options.longs === String ? String(message.match_id) : message.match_id;
-                    else
-                        object.match_id = options.longs === String ? $util.Long.prototype.toString.call(message.match_id) : options.longs === Number ? new $util.LongBits(message.match_id.low >>> 0, message.match_id.high >>> 0).toNumber(true) : message.match_id;
-                if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
-                    if (typeof message.lobby_id === "number")
-                        object.lobby_id = options.longs === String ? String(message.lobby_id) : message.lobby_id;
-                    else
-                        object.lobby_id = options.longs === String ? $util.Long.prototype.toString.call(message.lobby_id) : options.longs === Number ? new $util.LongBits(message.lobby_id.low >>> 0, message.lobby_id.high >>> 0).toNumber(true) : message.lobby_id;
-                if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
-                    object.lobby_type = options.enums === String ? $root.protocol.LobbyType[message.lobby_type] : message.lobby_type;
-                if (message.league_id != null && message.hasOwnProperty("league_id"))
-                    if (typeof message.league_id === "number")
-                        object.league_id = options.longs === String ? String(message.league_id) : message.league_id;
-                    else
-                        object.league_id = options.longs === String ? $util.Long.prototype.toString.call(message.league_id) : options.longs === Number ? new $util.LongBits(message.league_id.low >>> 0, message.league_id.high >>> 0).toNumber(true) : message.league_id;
-                if (message.series_id != null && message.hasOwnProperty("series_id"))
-                    if (typeof message.series_id === "number")
-                        object.series_id = options.longs === String ? String(message.series_id) : message.series_id;
-                    else
-                        object.series_id = options.longs === String ? $util.Long.prototype.toString.call(message.series_id) : options.longs === Number ? new $util.LongBits(message.series_id.low >>> 0, message.series_id.high >>> 0).toNumber(true) : message.series_id;
-                if (message.game_mode != null && message.hasOwnProperty("game_mode"))
-                    object.game_mode = options.enums === String ? $root.protocol.GameMode[message.game_mode] : message.game_mode;
-                if (message.average_mmr != null && message.hasOwnProperty("average_mmr"))
-                    object.average_mmr = message.average_mmr;
-                if (message.radiant_team_id != null && message.hasOwnProperty("radiant_team_id"))
-                    if (typeof message.radiant_team_id === "number")
-                        object.radiant_team_id = options.longs === String ? String(message.radiant_team_id) : message.radiant_team_id;
-                    else
-                        object.radiant_team_id = options.longs === String ? $util.Long.prototype.toString.call(message.radiant_team_id) : options.longs === Number ? new $util.LongBits(message.radiant_team_id.low >>> 0, message.radiant_team_id.high >>> 0).toNumber(true) : message.radiant_team_id;
-                if (message.radiant_team_name != null && message.hasOwnProperty("radiant_team_name"))
-                    object.radiant_team_name = message.radiant_team_name;
-                if (message.radiant_team_tag != null && message.hasOwnProperty("radiant_team_tag"))
-                    object.radiant_team_tag = message.radiant_team_tag;
-                if (message.radiant_team_logo != null && message.hasOwnProperty("radiant_team_logo"))
-                    if (typeof message.radiant_team_logo === "number")
-                        object.radiant_team_logo = options.longs === String ? String(message.radiant_team_logo) : message.radiant_team_logo;
-                    else
-                        object.radiant_team_logo = options.longs === String ? $util.Long.prototype.toString.call(message.radiant_team_logo) : options.longs === Number ? new $util.LongBits(message.radiant_team_logo.low >>> 0, message.radiant_team_logo.high >>> 0).toNumber(true) : message.radiant_team_logo;
-                if (message.radiant_team_logo_url != null && message.hasOwnProperty("radiant_team_logo_url"))
-                    object.radiant_team_logo_url = message.radiant_team_logo_url;
-                if (message.dire_team_id != null && message.hasOwnProperty("dire_team_id"))
-                    if (typeof message.dire_team_id === "number")
-                        object.dire_team_id = options.longs === String ? String(message.dire_team_id) : message.dire_team_id;
-                    else
-                        object.dire_team_id = options.longs === String ? $util.Long.prototype.toString.call(message.dire_team_id) : options.longs === Number ? new $util.LongBits(message.dire_team_id.low >>> 0, message.dire_team_id.high >>> 0).toNumber(true) : message.dire_team_id;
-                if (message.dire_team_name != null && message.hasOwnProperty("dire_team_name"))
-                    object.dire_team_name = message.dire_team_name;
-                if (message.dire_team_tag != null && message.hasOwnProperty("dire_team_tag"))
-                    object.dire_team_tag = message.dire_team_tag;
-                if (message.dire_team_logo != null && message.hasOwnProperty("dire_team_logo"))
-                    if (typeof message.dire_team_logo === "number")
-                        object.dire_team_logo = options.longs === String ? String(message.dire_team_logo) : message.dire_team_logo;
-                    else
-                        object.dire_team_logo = options.longs === String ? $util.Long.prototype.toString.call(message.dire_team_logo) : options.longs === Number ? new $util.LongBits(message.dire_team_logo.low >>> 0, message.dire_team_logo.high >>> 0).toNumber(true) : message.dire_team_logo;
-                if (message.dire_team_logo_url != null && message.hasOwnProperty("dire_team_logo_url"))
-                    object.dire_team_logo_url = message.dire_team_logo_url;
-                if (message.activate_time != null && message.hasOwnProperty("activate_time"))
-                    object.activate_time = $root.google.protobuf.Timestamp.toObject(message.activate_time, options);
-                if (message.deactivate_time != null && message.hasOwnProperty("deactivate_time"))
-                    object.deactivate_time = $root.google.protobuf.Timestamp.toObject(message.deactivate_time, options);
-                if (message.last_update_time != null && message.hasOwnProperty("last_update_time"))
-                    object.last_update_time = $root.google.protobuf.Timestamp.toObject(message.last_update_time, options);
-                if (message.start_time != null && message.hasOwnProperty("start_time"))
-                    object.start_time = $root.google.protobuf.Timestamp.toObject(message.start_time, options);
-                if (message.series_type != null && message.hasOwnProperty("series_type"))
-                    object.series_type = message.series_type;
-                if (message.series_game != null && message.hasOwnProperty("series_game"))
-                    object.series_game = message.series_game;
-                if (message.duration != null && message.hasOwnProperty("duration"))
-                    object.duration = message.duration;
-                if (message.radiant_score != null && message.hasOwnProperty("radiant_score"))
-                    object.radiant_score = message.radiant_score;
-                if (message.dire_score != null && message.hasOwnProperty("dire_score"))
-                    object.dire_score = message.dire_score;
-                if (message.outcome != null && message.hasOwnProperty("outcome"))
-                    object.outcome = options.enums === String ? $root.protocol.MatchOutcome[message.outcome] : message.outcome;
-                if (message.player_details != null && message.hasOwnProperty("player_details"))
-                    object.player_details = $root.protocol.Player.Match.PlayerDetails.toObject(message.player_details, options);
-                return object;
-            };
-
-            /**
-             * Converts this Match to JSON.
-             * @function toJSON
-             * @memberof protocol.Player.Match
-             * @instance
-             * @returns {Object.<string,*>} JSON object
-             */
-            Match.prototype.toJSON = function toJSON() {
-                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-            };
-
-            Match.PlayerDetails = (function() {
-
-                /**
-                 * Properties of a PlayerDetails.
-                 * @memberof protocol.Player.Match
-                 * @interface IPlayerDetails
-                 * @property {Long|null} [hero_id] PlayerDetails hero_id
-                 * @property {number|null} [player_slot] PlayerDetails player_slot
-                 * @property {string|null} [pro_name] PlayerDetails pro_name
-                 * @property {number|null} [kills] PlayerDetails kills
-                 * @property {number|null} [deaths] PlayerDetails deaths
-                 * @property {number|null} [assists] PlayerDetails assists
-                 * @property {Array.<Long>|null} [items] PlayerDetails items
-                 */
-
-                /**
-                 * Constructs a new PlayerDetails.
-                 * @memberof protocol.Player.Match
-                 * @classdesc Represents a PlayerDetails.
-                 * @implements IPlayerDetails
-                 * @constructor
-                 * @param {protocol.Player.Match.IPlayerDetails=} [properties] Properties to set
-                 */
-                function PlayerDetails(properties) {
-                    this.items = [];
-                    if (properties)
-                        for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                            if (properties[keys[i]] != null)
-                                this[keys[i]] = properties[keys[i]];
-                }
-
-                /**
-                 * PlayerDetails hero_id.
-                 * @member {Long} hero_id
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.hero_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-                /**
-                 * PlayerDetails player_slot.
-                 * @member {number} player_slot
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.player_slot = 0;
-
-                /**
-                 * PlayerDetails pro_name.
-                 * @member {string} pro_name
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.pro_name = "";
-
-                /**
-                 * PlayerDetails kills.
-                 * @member {number} kills
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.kills = 0;
-
-                /**
-                 * PlayerDetails deaths.
-                 * @member {number} deaths
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.deaths = 0;
-
-                /**
-                 * PlayerDetails assists.
-                 * @member {number} assists
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.assists = 0;
-
-                /**
-                 * PlayerDetails items.
-                 * @member {Array.<Long>} items
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 */
-                PlayerDetails.prototype.items = $util.emptyArray;
-
-                /**
-                 * Creates a new PlayerDetails instance using the specified properties.
-                 * @function create
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {protocol.Player.Match.IPlayerDetails=} [properties] Properties to set
-                 * @returns {protocol.Player.Match.PlayerDetails} PlayerDetails instance
-                 */
-                PlayerDetails.create = function create(properties) {
-                    return new PlayerDetails(properties);
-                };
-
-                /**
-                 * Encodes the specified PlayerDetails message. Does not implicitly {@link protocol.Player.Match.PlayerDetails.verify|verify} messages.
-                 * @function encode
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {protocol.Player.Match.IPlayerDetails} message PlayerDetails message or plain object to encode
-                 * @param {$protobuf.Writer} [writer] Writer to encode to
-                 * @returns {$protobuf.Writer} Writer
-                 */
-                PlayerDetails.encode = function encode(message, writer) {
-                    if (!writer)
-                        writer = $Writer.create();
-                    if (message.hero_id != null && message.hasOwnProperty("hero_id"))
-                        writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.hero_id);
-                    if (message.player_slot != null && message.hasOwnProperty("player_slot"))
-                        writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.player_slot);
-                    if (message.pro_name != null && message.hasOwnProperty("pro_name"))
-                        writer.uint32(/* id 3, wireType 2 =*/26).string(message.pro_name);
-                    if (message.kills != null && message.hasOwnProperty("kills"))
-                        writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.kills);
-                    if (message.deaths != null && message.hasOwnProperty("deaths"))
-                        writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.deaths);
-                    if (message.assists != null && message.hasOwnProperty("assists"))
-                        writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.assists);
-                    if (message.items != null && message.items.length) {
-                        writer.uint32(/* id 7, wireType 2 =*/58).fork();
-                        for (let i = 0; i < message.items.length; ++i)
-                            writer.int64(message.items[i]);
-                        writer.ldelim();
-                    }
-                    return writer;
-                };
-
-                /**
-                 * Encodes the specified PlayerDetails message, length delimited. Does not implicitly {@link protocol.Player.Match.PlayerDetails.verify|verify} messages.
-                 * @function encodeDelimited
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {protocol.Player.Match.IPlayerDetails} message PlayerDetails message or plain object to encode
-                 * @param {$protobuf.Writer} [writer] Writer to encode to
-                 * @returns {$protobuf.Writer} Writer
-                 */
-                PlayerDetails.encodeDelimited = function encodeDelimited(message, writer) {
-                    return this.encode(message, writer).ldelim();
-                };
-
-                /**
-                 * Decodes a PlayerDetails message from the specified reader or buffer.
-                 * @function decode
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-                 * @param {number} [length] Message length if known beforehand
-                 * @returns {protocol.Player.Match.PlayerDetails} PlayerDetails
-                 * @throws {Error} If the payload is not a reader or valid buffer
-                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
-                 */
-                PlayerDetails.decode = function decode(reader, length) {
-                    if (!(reader instanceof $Reader))
-                        reader = $Reader.create(reader);
-                    let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Player.Match.PlayerDetails();
-                    while (reader.pos < end) {
-                        let tag = reader.uint32();
-                        switch (tag >>> 3) {
-                        case 1:
-                            message.hero_id = reader.uint64();
-                            break;
-                        case 2:
-                            message.player_slot = reader.uint32();
-                            break;
-                        case 3:
-                            message.pro_name = reader.string();
-                            break;
-                        case 4:
-                            message.kills = reader.uint32();
-                            break;
-                        case 5:
-                            message.deaths = reader.uint32();
-                            break;
-                        case 6:
-                            message.assists = reader.uint32();
-                            break;
-                        case 7:
-                            if (!(message.items && message.items.length))
-                                message.items = [];
-                            if ((tag & 7) === 2) {
-                                let end2 = reader.uint32() + reader.pos;
-                                while (reader.pos < end2)
-                                    message.items.push(reader.int64());
-                            } else
-                                message.items.push(reader.int64());
-                            break;
-                        default:
-                            reader.skipType(tag & 7);
-                            break;
-                        }
-                    }
-                    return message;
-                };
-
-                /**
-                 * Decodes a PlayerDetails message from the specified reader or buffer, length delimited.
-                 * @function decodeDelimited
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-                 * @returns {protocol.Player.Match.PlayerDetails} PlayerDetails
-                 * @throws {Error} If the payload is not a reader or valid buffer
-                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
-                 */
-                PlayerDetails.decodeDelimited = function decodeDelimited(reader) {
-                    if (!(reader instanceof $Reader))
-                        reader = new $Reader(reader);
-                    return this.decode(reader, reader.uint32());
-                };
-
-                /**
-                 * Verifies a PlayerDetails message.
-                 * @function verify
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {Object.<string,*>} message Plain object to verify
-                 * @returns {string|null} `null` if valid, otherwise the reason why it is not
-                 */
-                PlayerDetails.verify = function verify(message) {
-                    if (typeof message !== "object" || message === null)
-                        return "object expected";
-                    if (message.hero_id != null && message.hasOwnProperty("hero_id"))
-                        if (!$util.isInteger(message.hero_id) && !(message.hero_id && $util.isInteger(message.hero_id.low) && $util.isInteger(message.hero_id.high)))
-                            return "hero_id: integer|Long expected";
-                    if (message.player_slot != null && message.hasOwnProperty("player_slot"))
-                        if (!$util.isInteger(message.player_slot))
-                            return "player_slot: integer expected";
-                    if (message.pro_name != null && message.hasOwnProperty("pro_name"))
-                        if (!$util.isString(message.pro_name))
-                            return "pro_name: string expected";
-                    if (message.kills != null && message.hasOwnProperty("kills"))
-                        if (!$util.isInteger(message.kills))
-                            return "kills: integer expected";
-                    if (message.deaths != null && message.hasOwnProperty("deaths"))
-                        if (!$util.isInteger(message.deaths))
-                            return "deaths: integer expected";
-                    if (message.assists != null && message.hasOwnProperty("assists"))
-                        if (!$util.isInteger(message.assists))
-                            return "assists: integer expected";
-                    if (message.items != null && message.hasOwnProperty("items")) {
-                        if (!Array.isArray(message.items))
-                            return "items: array expected";
-                        for (let i = 0; i < message.items.length; ++i)
-                            if (!$util.isInteger(message.items[i]) && !(message.items[i] && $util.isInteger(message.items[i].low) && $util.isInteger(message.items[i].high)))
-                                return "items: integer|Long[] expected";
-                    }
-                    return null;
-                };
-
-                /**
-                 * Creates a PlayerDetails message from a plain object. Also converts values to their respective internal types.
-                 * @function fromObject
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {Object.<string,*>} object Plain object
-                 * @returns {protocol.Player.Match.PlayerDetails} PlayerDetails
-                 */
-                PlayerDetails.fromObject = function fromObject(object) {
-                    if (object instanceof $root.protocol.Player.Match.PlayerDetails)
-                        return object;
-                    let message = new $root.protocol.Player.Match.PlayerDetails();
-                    if (object.hero_id != null)
-                        if ($util.Long)
-                            (message.hero_id = $util.Long.fromValue(object.hero_id)).unsigned = true;
-                        else if (typeof object.hero_id === "string")
-                            message.hero_id = parseInt(object.hero_id, 10);
-                        else if (typeof object.hero_id === "number")
-                            message.hero_id = object.hero_id;
-                        else if (typeof object.hero_id === "object")
-                            message.hero_id = new $util.LongBits(object.hero_id.low >>> 0, object.hero_id.high >>> 0).toNumber(true);
-                    if (object.player_slot != null)
-                        message.player_slot = object.player_slot >>> 0;
-                    if (object.pro_name != null)
-                        message.pro_name = String(object.pro_name);
-                    if (object.kills != null)
-                        message.kills = object.kills >>> 0;
-                    if (object.deaths != null)
-                        message.deaths = object.deaths >>> 0;
-                    if (object.assists != null)
-                        message.assists = object.assists >>> 0;
-                    if (object.items) {
-                        if (!Array.isArray(object.items))
-                            throw TypeError(".protocol.Player.Match.PlayerDetails.items: array expected");
-                        message.items = [];
-                        for (let i = 0; i < object.items.length; ++i)
-                            if ($util.Long)
-                                (message.items[i] = $util.Long.fromValue(object.items[i])).unsigned = false;
-                            else if (typeof object.items[i] === "string")
-                                message.items[i] = parseInt(object.items[i], 10);
-                            else if (typeof object.items[i] === "number")
-                                message.items[i] = object.items[i];
-                            else if (typeof object.items[i] === "object")
-                                message.items[i] = new $util.LongBits(object.items[i].low >>> 0, object.items[i].high >>> 0).toNumber();
-                    }
-                    return message;
-                };
-
-                /**
-                 * Creates a plain object from a PlayerDetails message. Also converts values to other types if specified.
-                 * @function toObject
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @static
-                 * @param {protocol.Player.Match.PlayerDetails} message PlayerDetails
-                 * @param {$protobuf.IConversionOptions} [options] Conversion options
-                 * @returns {Object.<string,*>} Plain object
-                 */
-                PlayerDetails.toObject = function toObject(message, options) {
-                    if (!options)
-                        options = {};
-                    let object = {};
-                    if (options.arrays || options.defaults)
-                        object.items = [];
-                    if (options.defaults) {
-                        if ($util.Long) {
-                            let long = new $util.Long(0, 0, true);
-                            object.hero_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                        } else
-                            object.hero_id = options.longs === String ? "0" : 0;
-                        object.player_slot = 0;
-                        object.pro_name = "";
-                        object.kills = 0;
-                        object.deaths = 0;
-                        object.assists = 0;
-                    }
-                    if (message.hero_id != null && message.hasOwnProperty("hero_id"))
-                        if (typeof message.hero_id === "number")
-                            object.hero_id = options.longs === String ? String(message.hero_id) : message.hero_id;
-                        else
-                            object.hero_id = options.longs === String ? $util.Long.prototype.toString.call(message.hero_id) : options.longs === Number ? new $util.LongBits(message.hero_id.low >>> 0, message.hero_id.high >>> 0).toNumber(true) : message.hero_id;
-                    if (message.player_slot != null && message.hasOwnProperty("player_slot"))
-                        object.player_slot = message.player_slot;
-                    if (message.pro_name != null && message.hasOwnProperty("pro_name"))
-                        object.pro_name = message.pro_name;
-                    if (message.kills != null && message.hasOwnProperty("kills"))
-                        object.kills = message.kills;
-                    if (message.deaths != null && message.hasOwnProperty("deaths"))
-                        object.deaths = message.deaths;
-                    if (message.assists != null && message.hasOwnProperty("assists"))
-                        object.assists = message.assists;
-                    if (message.items && message.items.length) {
-                        object.items = [];
-                        for (let j = 0; j < message.items.length; ++j)
-                            if (typeof message.items[j] === "number")
-                                object.items[j] = options.longs === String ? String(message.items[j]) : message.items[j];
-                            else
-                                object.items[j] = options.longs === String ? $util.Long.prototype.toString.call(message.items[j]) : options.longs === Number ? new $util.LongBits(message.items[j].low >>> 0, message.items[j].high >>> 0).toNumber() : message.items[j];
-                    }
-                    return object;
-                };
-
-                /**
-                 * Converts this PlayerDetails to JSON.
-                 * @function toJSON
-                 * @memberof protocol.Player.Match.PlayerDetails
-                 * @instance
-                 * @returns {Object.<string,*>} JSON object
-                 */
-                PlayerDetails.prototype.toJSON = function toJSON() {
-                    return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-                };
-
-                return PlayerDetails;
-            })();
-
-            return Match;
-        })();
-
-        Player.Team = (function() {
-
-            /**
-             * Properties of a Team.
-             * @memberof protocol.Player
-             * @interface ITeam
-             * @property {Long|null} [id] Team id
-             * @property {string|null} [name] Team name
-             * @property {string|null} [tag] Team tag
-             * @property {string|null} [logo_url] Team logo_url
-             */
-
-            /**
-             * Constructs a new Team.
-             * @memberof protocol.Player
-             * @classdesc Represents a Team.
-             * @implements ITeam
-             * @constructor
-             * @param {protocol.Player.ITeam=} [properties] Properties to set
-             */
-            function Team(properties) {
-                if (properties)
-                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
-            }
-
-            /**
-             * Team id.
-             * @member {Long} id
-             * @memberof protocol.Player.Team
-             * @instance
-             */
-            Team.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-            /**
-             * Team name.
-             * @member {string} name
-             * @memberof protocol.Player.Team
-             * @instance
-             */
-            Team.prototype.name = "";
-
-            /**
-             * Team tag.
-             * @member {string} tag
-             * @memberof protocol.Player.Team
-             * @instance
-             */
-            Team.prototype.tag = "";
-
-            /**
-             * Team logo_url.
-             * @member {string} logo_url
-             * @memberof protocol.Player.Team
-             * @instance
-             */
-            Team.prototype.logo_url = "";
-
-            /**
-             * Creates a new Team instance using the specified properties.
-             * @function create
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {protocol.Player.ITeam=} [properties] Properties to set
-             * @returns {protocol.Player.Team} Team instance
-             */
-            Team.create = function create(properties) {
-                return new Team(properties);
-            };
-
-            /**
-             * Encodes the specified Team message. Does not implicitly {@link protocol.Player.Team.verify|verify} messages.
-             * @function encode
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {protocol.Player.ITeam} message Team message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            Team.encode = function encode(message, writer) {
-                if (!writer)
-                    writer = $Writer.create();
-                if (message.id != null && message.hasOwnProperty("id"))
-                    writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
-                if (message.name != null && message.hasOwnProperty("name"))
-                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
-                if (message.tag != null && message.hasOwnProperty("tag"))
-                    writer.uint32(/* id 3, wireType 2 =*/26).string(message.tag);
-                if (message.logo_url != null && message.hasOwnProperty("logo_url"))
-                    writer.uint32(/* id 4, wireType 2 =*/34).string(message.logo_url);
-                return writer;
-            };
-
-            /**
-             * Encodes the specified Team message, length delimited. Does not implicitly {@link protocol.Player.Team.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {protocol.Player.ITeam} message Team message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            Team.encodeDelimited = function encodeDelimited(message, writer) {
-                return this.encode(message, writer).ldelim();
-            };
-
-            /**
-             * Decodes a Team message from the specified reader or buffer.
-             * @function decode
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @param {number} [length] Message length if known beforehand
-             * @returns {protocol.Player.Team} Team
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            Team.decode = function decode(reader, length) {
-                if (!(reader instanceof $Reader))
-                    reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Player.Team();
-                while (reader.pos < end) {
-                    let tag = reader.uint32();
-                    switch (tag >>> 3) {
-                    case 1:
-                        message.id = reader.uint64();
-                        break;
-                    case 2:
-                        message.name = reader.string();
-                        break;
-                    case 3:
-                        message.tag = reader.string();
-                        break;
-                    case 4:
-                        message.logo_url = reader.string();
-                        break;
-                    default:
-                        reader.skipType(tag & 7);
-                        break;
-                    }
-                }
-                return message;
-            };
-
-            /**
-             * Decodes a Team message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {protocol.Player.Team} Team
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            Team.decodeDelimited = function decodeDelimited(reader) {
-                if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
-                return this.decode(reader, reader.uint32());
-            };
-
-            /**
-             * Verifies a Team message.
-             * @function verify
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
-             */
-            Team.verify = function verify(message) {
-                if (typeof message !== "object" || message === null)
-                    return "object expected";
-                if (message.id != null && message.hasOwnProperty("id"))
-                    if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
-                        return "id: integer|Long expected";
-                if (message.name != null && message.hasOwnProperty("name"))
-                    if (!$util.isString(message.name))
-                        return "name: string expected";
-                if (message.tag != null && message.hasOwnProperty("tag"))
-                    if (!$util.isString(message.tag))
-                        return "tag: string expected";
-                if (message.logo_url != null && message.hasOwnProperty("logo_url"))
-                    if (!$util.isString(message.logo_url))
-                        return "logo_url: string expected";
-                return null;
-            };
-
-            /**
-             * Creates a Team message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {Object.<string,*>} object Plain object
-             * @returns {protocol.Player.Team} Team
-             */
-            Team.fromObject = function fromObject(object) {
-                if (object instanceof $root.protocol.Player.Team)
-                    return object;
-                let message = new $root.protocol.Player.Team();
-                if (object.id != null)
-                    if ($util.Long)
-                        (message.id = $util.Long.fromValue(object.id)).unsigned = true;
-                    else if (typeof object.id === "string")
-                        message.id = parseInt(object.id, 10);
-                    else if (typeof object.id === "number")
-                        message.id = object.id;
-                    else if (typeof object.id === "object")
-                        message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
-                if (object.name != null)
-                    message.name = String(object.name);
-                if (object.tag != null)
-                    message.tag = String(object.tag);
-                if (object.logo_url != null)
-                    message.logo_url = String(object.logo_url);
-                return message;
-            };
-
-            /**
-             * Creates a plain object from a Team message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof protocol.Player.Team
-             * @static
-             * @param {protocol.Player.Team} message Team
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
-             * @returns {Object.<string,*>} Plain object
-             */
-            Team.toObject = function toObject(message, options) {
-                if (!options)
-                    options = {};
-                let object = {};
-                if (options.defaults) {
-                    if ($util.Long) {
-                        let long = new $util.Long(0, 0, true);
-                        object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                    } else
-                        object.id = options.longs === String ? "0" : 0;
-                    object.name = "";
-                    object.tag = "";
-                    object.logo_url = "";
-                }
-                if (message.id != null && message.hasOwnProperty("id"))
-                    if (typeof message.id === "number")
-                        object.id = options.longs === String ? String(message.id) : message.id;
-                    else
-                        object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
-                if (message.name != null && message.hasOwnProperty("name"))
-                    object.name = message.name;
-                if (message.tag != null && message.hasOwnProperty("tag"))
-                    object.tag = message.tag;
-                if (message.logo_url != null && message.hasOwnProperty("logo_url"))
-                    object.logo_url = message.logo_url;
-                return object;
-            };
-
-            /**
-             * Converts this Team to JSON.
-             * @function toJSON
-             * @memberof protocol.Player.Team
-             * @instance
-             * @returns {Object.<string,*>} JSON object
-             */
-            Team.prototype.toJSON = function toJSON() {
-                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-            };
-
-            return Team;
-        })();
-
         return Player;
+    })();
+
+    protocol.PlayerMatches = (function() {
+
+        /**
+         * Properties of a PlayerMatches.
+         * @memberof protocol
+         * @interface IPlayerMatches
+         * @property {protocol.IPlayer|null} [player] PlayerMatches player
+         * @property {Array.<protocol.IMatch>|null} [matches] PlayerMatches matches
+         * @property {Array.<protocol.IPlayer>|null} [known_players] PlayerMatches known_players
+         */
+
+        /**
+         * Constructs a new PlayerMatches.
+         * @memberof protocol
+         * @classdesc Represents a PlayerMatches.
+         * @implements IPlayerMatches
+         * @constructor
+         * @param {protocol.IPlayerMatches=} [properties] Properties to set
+         */
+        function PlayerMatches(properties) {
+            this.matches = [];
+            this.known_players = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PlayerMatches player.
+         * @member {protocol.IPlayer|null|undefined} player
+         * @memberof protocol.PlayerMatches
+         * @instance
+         */
+        PlayerMatches.prototype.player = null;
+
+        /**
+         * PlayerMatches matches.
+         * @member {Array.<protocol.IMatch>} matches
+         * @memberof protocol.PlayerMatches
+         * @instance
+         */
+        PlayerMatches.prototype.matches = $util.emptyArray;
+
+        /**
+         * PlayerMatches known_players.
+         * @member {Array.<protocol.IPlayer>} known_players
+         * @memberof protocol.PlayerMatches
+         * @instance
+         */
+        PlayerMatches.prototype.known_players = $util.emptyArray;
+
+        /**
+         * Creates a new PlayerMatches instance using the specified properties.
+         * @function create
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {protocol.IPlayerMatches=} [properties] Properties to set
+         * @returns {protocol.PlayerMatches} PlayerMatches instance
+         */
+        PlayerMatches.create = function create(properties) {
+            return new PlayerMatches(properties);
+        };
+
+        /**
+         * Encodes the specified PlayerMatches message. Does not implicitly {@link protocol.PlayerMatches.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {protocol.IPlayerMatches} message PlayerMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PlayerMatches.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.player != null && message.hasOwnProperty("player"))
+                $root.protocol.Player.encode(message.player, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            if (message.matches != null && message.matches.length)
+                for (let i = 0; i < message.matches.length; ++i)
+                    $root.protocol.Match.encode(message.matches[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
+            if (message.known_players != null && message.known_players.length)
+                for (let i = 0; i < message.known_players.length; ++i)
+                    $root.protocol.Player.encode(message.known_players[i], writer.uint32(/* id 102, wireType 2 =*/818).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PlayerMatches message, length delimited. Does not implicitly {@link protocol.PlayerMatches.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {protocol.IPlayerMatches} message PlayerMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PlayerMatches.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PlayerMatches message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.PlayerMatches} PlayerMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PlayerMatches.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.PlayerMatches();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 100:
+                    message.player = $root.protocol.Player.decode(reader, reader.uint32());
+                    break;
+                case 101:
+                    if (!(message.matches && message.matches.length))
+                        message.matches = [];
+                    message.matches.push($root.protocol.Match.decode(reader, reader.uint32()));
+                    break;
+                case 102:
+                    if (!(message.known_players && message.known_players.length))
+                        message.known_players = [];
+                    message.known_players.push($root.protocol.Player.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PlayerMatches message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.PlayerMatches} PlayerMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PlayerMatches.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PlayerMatches message.
+         * @function verify
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PlayerMatches.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.player != null && message.hasOwnProperty("player")) {
+                let error = $root.protocol.Player.verify(message.player);
+                if (error)
+                    return "player." + error;
+            }
+            if (message.matches != null && message.hasOwnProperty("matches")) {
+                if (!Array.isArray(message.matches))
+                    return "matches: array expected";
+                for (let i = 0; i < message.matches.length; ++i) {
+                    let error = $root.protocol.Match.verify(message.matches[i]);
+                    if (error)
+                        return "matches." + error;
+                }
+            }
+            if (message.known_players != null && message.hasOwnProperty("known_players")) {
+                if (!Array.isArray(message.known_players))
+                    return "known_players: array expected";
+                for (let i = 0; i < message.known_players.length; ++i) {
+                    let error = $root.protocol.Player.verify(message.known_players[i]);
+                    if (error)
+                        return "known_players." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a PlayerMatches message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.PlayerMatches} PlayerMatches
+         */
+        PlayerMatches.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.PlayerMatches)
+                return object;
+            let message = new $root.protocol.PlayerMatches();
+            if (object.player != null) {
+                if (typeof object.player !== "object")
+                    throw TypeError(".protocol.PlayerMatches.player: object expected");
+                message.player = $root.protocol.Player.fromObject(object.player);
+            }
+            if (object.matches) {
+                if (!Array.isArray(object.matches))
+                    throw TypeError(".protocol.PlayerMatches.matches: array expected");
+                message.matches = [];
+                for (let i = 0; i < object.matches.length; ++i) {
+                    if (typeof object.matches[i] !== "object")
+                        throw TypeError(".protocol.PlayerMatches.matches: object expected");
+                    message.matches[i] = $root.protocol.Match.fromObject(object.matches[i]);
+                }
+            }
+            if (object.known_players) {
+                if (!Array.isArray(object.known_players))
+                    throw TypeError(".protocol.PlayerMatches.known_players: array expected");
+                message.known_players = [];
+                for (let i = 0; i < object.known_players.length; ++i) {
+                    if (typeof object.known_players[i] !== "object")
+                        throw TypeError(".protocol.PlayerMatches.known_players: object expected");
+                    message.known_players[i] = $root.protocol.Player.fromObject(object.known_players[i]);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PlayerMatches message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.PlayerMatches
+         * @static
+         * @param {protocol.PlayerMatches} message PlayerMatches
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PlayerMatches.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.matches = [];
+                object.known_players = [];
+            }
+            if (options.defaults)
+                object.player = null;
+            if (message.player != null && message.hasOwnProperty("player"))
+                object.player = $root.protocol.Player.toObject(message.player, options);
+            if (message.matches && message.matches.length) {
+                object.matches = [];
+                for (let j = 0; j < message.matches.length; ++j)
+                    object.matches[j] = $root.protocol.Match.toObject(message.matches[j], options);
+            }
+            if (message.known_players && message.known_players.length) {
+                object.known_players = [];
+                for (let j = 0; j < message.known_players.length; ++j)
+                    object.known_players[j] = $root.protocol.Player.toObject(message.known_players[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this PlayerMatches to JSON.
+         * @function toJSON
+         * @memberof protocol.PlayerMatches
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PlayerMatches.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return PlayerMatches;
+    })();
+
+    protocol.Match = (function() {
+
+        /**
+         * Properties of a Match.
+         * @memberof protocol
+         * @interface IMatch
+         * @property {Long|null} [match_id] Match match_id
+         * @property {Long|null} [lobby_id] Match lobby_id
+         * @property {protocol.LobbyType|null} [lobby_type] Match lobby_type
+         * @property {Long|null} [league_id] Match league_id
+         * @property {Long|null} [series_id] Match series_id
+         * @property {protocol.GameMode|null} [game_mode] Match game_mode
+         * @property {number|null} [average_mmr] Match average_mmr
+         * @property {Long|null} [radiant_team_id] Match radiant_team_id
+         * @property {string|null} [radiant_team_name] Match radiant_team_name
+         * @property {string|null} [radiant_team_tag] Match radiant_team_tag
+         * @property {Long|null} [radiant_team_logo] Match radiant_team_logo
+         * @property {string|null} [radiant_team_logo_url] Match radiant_team_logo_url
+         * @property {Long|null} [dire_team_id] Match dire_team_id
+         * @property {string|null} [dire_team_name] Match dire_team_name
+         * @property {string|null} [dire_team_tag] Match dire_team_tag
+         * @property {Long|null} [dire_team_logo] Match dire_team_logo
+         * @property {string|null} [dire_team_logo_url] Match dire_team_logo_url
+         * @property {google.protobuf.ITimestamp|null} [activate_time] Match activate_time
+         * @property {google.protobuf.ITimestamp|null} [deactivate_time] Match deactivate_time
+         * @property {google.protobuf.ITimestamp|null} [last_update_time] Match last_update_time
+         * @property {google.protobuf.ITimestamp|null} [start_time] Match start_time
+         * @property {number|null} [series_type] Match series_type
+         * @property {number|null} [series_game] Match series_game
+         * @property {number|null} [duration] Match duration
+         * @property {number|null} [radiant_score] Match radiant_score
+         * @property {number|null} [dire_score] Match dire_score
+         * @property {protocol.MatchOutcome|null} [outcome] Match outcome
+         * @property {Array.<protocol.Match.IPlayer>|null} [players] Match players
+         */
+
+        /**
+         * Constructs a new Match.
+         * @memberof protocol
+         * @classdesc Represents a Match.
+         * @implements IMatch
+         * @constructor
+         * @param {protocol.IMatch=} [properties] Properties to set
+         */
+        function Match(properties) {
+            this.players = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Match match_id.
+         * @member {Long} match_id
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.match_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match lobby_id.
+         * @member {Long} lobby_id
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.lobby_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match lobby_type.
+         * @member {protocol.LobbyType} lobby_type
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.lobby_type = 0;
+
+        /**
+         * Match league_id.
+         * @member {Long} league_id
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.league_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match series_id.
+         * @member {Long} series_id
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.series_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match game_mode.
+         * @member {protocol.GameMode} game_mode
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.game_mode = 0;
+
+        /**
+         * Match average_mmr.
+         * @member {number} average_mmr
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.average_mmr = 0;
+
+        /**
+         * Match radiant_team_id.
+         * @member {Long} radiant_team_id
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.radiant_team_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match radiant_team_name.
+         * @member {string} radiant_team_name
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.radiant_team_name = "";
+
+        /**
+         * Match radiant_team_tag.
+         * @member {string} radiant_team_tag
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.radiant_team_tag = "";
+
+        /**
+         * Match radiant_team_logo.
+         * @member {Long} radiant_team_logo
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.radiant_team_logo = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match radiant_team_logo_url.
+         * @member {string} radiant_team_logo_url
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.radiant_team_logo_url = "";
+
+        /**
+         * Match dire_team_id.
+         * @member {Long} dire_team_id
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.dire_team_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match dire_team_name.
+         * @member {string} dire_team_name
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.dire_team_name = "";
+
+        /**
+         * Match dire_team_tag.
+         * @member {string} dire_team_tag
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.dire_team_tag = "";
+
+        /**
+         * Match dire_team_logo.
+         * @member {Long} dire_team_logo
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.dire_team_logo = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Match dire_team_logo_url.
+         * @member {string} dire_team_logo_url
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.dire_team_logo_url = "";
+
+        /**
+         * Match activate_time.
+         * @member {google.protobuf.ITimestamp|null|undefined} activate_time
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.activate_time = null;
+
+        /**
+         * Match deactivate_time.
+         * @member {google.protobuf.ITimestamp|null|undefined} deactivate_time
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.deactivate_time = null;
+
+        /**
+         * Match last_update_time.
+         * @member {google.protobuf.ITimestamp|null|undefined} last_update_time
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.last_update_time = null;
+
+        /**
+         * Match start_time.
+         * @member {google.protobuf.ITimestamp|null|undefined} start_time
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.start_time = null;
+
+        /**
+         * Match series_type.
+         * @member {number} series_type
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.series_type = 0;
+
+        /**
+         * Match series_game.
+         * @member {number} series_game
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.series_game = 0;
+
+        /**
+         * Match duration.
+         * @member {number} duration
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.duration = 0;
+
+        /**
+         * Match radiant_score.
+         * @member {number} radiant_score
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.radiant_score = 0;
+
+        /**
+         * Match dire_score.
+         * @member {number} dire_score
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.dire_score = 0;
+
+        /**
+         * Match outcome.
+         * @member {protocol.MatchOutcome} outcome
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.outcome = 0;
+
+        /**
+         * Match players.
+         * @member {Array.<protocol.Match.IPlayer>} players
+         * @memberof protocol.Match
+         * @instance
+         */
+        Match.prototype.players = $util.emptyArray;
+
+        /**
+         * Creates a new Match instance using the specified properties.
+         * @function create
+         * @memberof protocol.Match
+         * @static
+         * @param {protocol.IMatch=} [properties] Properties to set
+         * @returns {protocol.Match} Match instance
+         */
+        Match.create = function create(properties) {
+            return new Match(properties);
+        };
+
+        /**
+         * Encodes the specified Match message. Does not implicitly {@link protocol.Match.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.Match
+         * @static
+         * @param {protocol.IMatch} message Match message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Match.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.match_id != null && message.hasOwnProperty("match_id"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.match_id);
+            if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.lobby_id);
+            if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.lobby_type);
+            if (message.league_id != null && message.hasOwnProperty("league_id"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.league_id);
+            if (message.series_id != null && message.hasOwnProperty("series_id"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.series_id);
+            if (message.game_mode != null && message.hasOwnProperty("game_mode"))
+                writer.uint32(/* id 6, wireType 0 =*/48).int32(message.game_mode);
+            if (message.average_mmr != null && message.hasOwnProperty("average_mmr"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.average_mmr);
+            if (message.radiant_team_id != null && message.hasOwnProperty("radiant_team_id"))
+                writer.uint32(/* id 8, wireType 0 =*/64).uint64(message.radiant_team_id);
+            if (message.radiant_team_name != null && message.hasOwnProperty("radiant_team_name"))
+                writer.uint32(/* id 9, wireType 2 =*/74).string(message.radiant_team_name);
+            if (message.radiant_team_tag != null && message.hasOwnProperty("radiant_team_tag"))
+                writer.uint32(/* id 10, wireType 2 =*/82).string(message.radiant_team_tag);
+            if (message.radiant_team_logo != null && message.hasOwnProperty("radiant_team_logo"))
+                writer.uint32(/* id 11, wireType 0 =*/88).uint64(message.radiant_team_logo);
+            if (message.radiant_team_logo_url != null && message.hasOwnProperty("radiant_team_logo_url"))
+                writer.uint32(/* id 12, wireType 2 =*/98).string(message.radiant_team_logo_url);
+            if (message.dire_team_id != null && message.hasOwnProperty("dire_team_id"))
+                writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.dire_team_id);
+            if (message.dire_team_name != null && message.hasOwnProperty("dire_team_name"))
+                writer.uint32(/* id 14, wireType 2 =*/114).string(message.dire_team_name);
+            if (message.dire_team_tag != null && message.hasOwnProperty("dire_team_tag"))
+                writer.uint32(/* id 15, wireType 2 =*/122).string(message.dire_team_tag);
+            if (message.dire_team_logo != null && message.hasOwnProperty("dire_team_logo"))
+                writer.uint32(/* id 16, wireType 0 =*/128).uint64(message.dire_team_logo);
+            if (message.dire_team_logo_url != null && message.hasOwnProperty("dire_team_logo_url"))
+                writer.uint32(/* id 17, wireType 2 =*/138).string(message.dire_team_logo_url);
+            if (message.activate_time != null && message.hasOwnProperty("activate_time"))
+                $root.google.protobuf.Timestamp.encode(message.activate_time, writer.uint32(/* id 18, wireType 2 =*/146).fork()).ldelim();
+            if (message.deactivate_time != null && message.hasOwnProperty("deactivate_time"))
+                $root.google.protobuf.Timestamp.encode(message.deactivate_time, writer.uint32(/* id 19, wireType 2 =*/154).fork()).ldelim();
+            if (message.last_update_time != null && message.hasOwnProperty("last_update_time"))
+                $root.google.protobuf.Timestamp.encode(message.last_update_time, writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.start_time != null && message.hasOwnProperty("start_time"))
+                $root.google.protobuf.Timestamp.encode(message.start_time, writer.uint32(/* id 21, wireType 2 =*/170).fork()).ldelim();
+            if (message.series_type != null && message.hasOwnProperty("series_type"))
+                writer.uint32(/* id 22, wireType 0 =*/176).uint32(message.series_type);
+            if (message.series_game != null && message.hasOwnProperty("series_game"))
+                writer.uint32(/* id 23, wireType 0 =*/184).uint32(message.series_game);
+            if (message.duration != null && message.hasOwnProperty("duration"))
+                writer.uint32(/* id 24, wireType 0 =*/192).uint32(message.duration);
+            if (message.radiant_score != null && message.hasOwnProperty("radiant_score"))
+                writer.uint32(/* id 25, wireType 0 =*/200).uint32(message.radiant_score);
+            if (message.dire_score != null && message.hasOwnProperty("dire_score"))
+                writer.uint32(/* id 26, wireType 0 =*/208).uint32(message.dire_score);
+            if (message.outcome != null && message.hasOwnProperty("outcome"))
+                writer.uint32(/* id 27, wireType 0 =*/216).int32(message.outcome);
+            if (message.players != null && message.players.length)
+                for (let i = 0; i < message.players.length; ++i)
+                    $root.protocol.Match.Player.encode(message.players[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Match message, length delimited. Does not implicitly {@link protocol.Match.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.Match
+         * @static
+         * @param {protocol.IMatch} message Match message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Match.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Match message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.Match
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.Match} Match
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Match.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Match();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.match_id = reader.uint64();
+                    break;
+                case 2:
+                    message.lobby_id = reader.uint64();
+                    break;
+                case 3:
+                    message.lobby_type = reader.int32();
+                    break;
+                case 4:
+                    message.league_id = reader.uint64();
+                    break;
+                case 5:
+                    message.series_id = reader.uint64();
+                    break;
+                case 6:
+                    message.game_mode = reader.int32();
+                    break;
+                case 7:
+                    message.average_mmr = reader.uint32();
+                    break;
+                case 8:
+                    message.radiant_team_id = reader.uint64();
+                    break;
+                case 9:
+                    message.radiant_team_name = reader.string();
+                    break;
+                case 10:
+                    message.radiant_team_tag = reader.string();
+                    break;
+                case 11:
+                    message.radiant_team_logo = reader.uint64();
+                    break;
+                case 12:
+                    message.radiant_team_logo_url = reader.string();
+                    break;
+                case 13:
+                    message.dire_team_id = reader.uint64();
+                    break;
+                case 14:
+                    message.dire_team_name = reader.string();
+                    break;
+                case 15:
+                    message.dire_team_tag = reader.string();
+                    break;
+                case 16:
+                    message.dire_team_logo = reader.uint64();
+                    break;
+                case 17:
+                    message.dire_team_logo_url = reader.string();
+                    break;
+                case 18:
+                    message.activate_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                case 19:
+                    message.deactivate_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                case 20:
+                    message.last_update_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                case 21:
+                    message.start_time = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                case 22:
+                    message.series_type = reader.uint32();
+                    break;
+                case 23:
+                    message.series_game = reader.uint32();
+                    break;
+                case 24:
+                    message.duration = reader.uint32();
+                    break;
+                case 25:
+                    message.radiant_score = reader.uint32();
+                    break;
+                case 26:
+                    message.dire_score = reader.uint32();
+                    break;
+                case 27:
+                    message.outcome = reader.int32();
+                    break;
+                case 100:
+                    if (!(message.players && message.players.length))
+                        message.players = [];
+                    message.players.push($root.protocol.Match.Player.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Match message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.Match
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.Match} Match
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Match.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Match message.
+         * @function verify
+         * @memberof protocol.Match
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Match.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.match_id != null && message.hasOwnProperty("match_id"))
+                if (!$util.isInteger(message.match_id) && !(message.match_id && $util.isInteger(message.match_id.low) && $util.isInteger(message.match_id.high)))
+                    return "match_id: integer|Long expected";
+            if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
+                if (!$util.isInteger(message.lobby_id) && !(message.lobby_id && $util.isInteger(message.lobby_id.low) && $util.isInteger(message.lobby_id.high)))
+                    return "lobby_id: integer|Long expected";
+            if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
+                switch (message.lobby_type) {
+                default:
+                    return "lobby_type: enum value expected";
+                case 0:
+                case 1:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                    break;
+                }
+            if (message.league_id != null && message.hasOwnProperty("league_id"))
+                if (!$util.isInteger(message.league_id) && !(message.league_id && $util.isInteger(message.league_id.low) && $util.isInteger(message.league_id.high)))
+                    return "league_id: integer|Long expected";
+            if (message.series_id != null && message.hasOwnProperty("series_id"))
+                if (!$util.isInteger(message.series_id) && !(message.series_id && $util.isInteger(message.series_id.low) && $util.isInteger(message.series_id.high)))
+                    return "series_id: integer|Long expected";
+            if (message.game_mode != null && message.hasOwnProperty("game_mode"))
+                switch (message.game_mode) {
+                default:
+                    return "game_mode: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 15:
+                case 16:
+                case 17:
+                case 18:
+                case 19:
+                case 20:
+                case 21:
+                case 22:
+                case 23:
+                case 24:
+                case 25:
+                    break;
+                }
+            if (message.average_mmr != null && message.hasOwnProperty("average_mmr"))
+                if (!$util.isInteger(message.average_mmr))
+                    return "average_mmr: integer expected";
+            if (message.radiant_team_id != null && message.hasOwnProperty("radiant_team_id"))
+                if (!$util.isInteger(message.radiant_team_id) && !(message.radiant_team_id && $util.isInteger(message.radiant_team_id.low) && $util.isInteger(message.radiant_team_id.high)))
+                    return "radiant_team_id: integer|Long expected";
+            if (message.radiant_team_name != null && message.hasOwnProperty("radiant_team_name"))
+                if (!$util.isString(message.radiant_team_name))
+                    return "radiant_team_name: string expected";
+            if (message.radiant_team_tag != null && message.hasOwnProperty("radiant_team_tag"))
+                if (!$util.isString(message.radiant_team_tag))
+                    return "radiant_team_tag: string expected";
+            if (message.radiant_team_logo != null && message.hasOwnProperty("radiant_team_logo"))
+                if (!$util.isInteger(message.radiant_team_logo) && !(message.radiant_team_logo && $util.isInteger(message.radiant_team_logo.low) && $util.isInteger(message.radiant_team_logo.high)))
+                    return "radiant_team_logo: integer|Long expected";
+            if (message.radiant_team_logo_url != null && message.hasOwnProperty("radiant_team_logo_url"))
+                if (!$util.isString(message.radiant_team_logo_url))
+                    return "radiant_team_logo_url: string expected";
+            if (message.dire_team_id != null && message.hasOwnProperty("dire_team_id"))
+                if (!$util.isInteger(message.dire_team_id) && !(message.dire_team_id && $util.isInteger(message.dire_team_id.low) && $util.isInteger(message.dire_team_id.high)))
+                    return "dire_team_id: integer|Long expected";
+            if (message.dire_team_name != null && message.hasOwnProperty("dire_team_name"))
+                if (!$util.isString(message.dire_team_name))
+                    return "dire_team_name: string expected";
+            if (message.dire_team_tag != null && message.hasOwnProperty("dire_team_tag"))
+                if (!$util.isString(message.dire_team_tag))
+                    return "dire_team_tag: string expected";
+            if (message.dire_team_logo != null && message.hasOwnProperty("dire_team_logo"))
+                if (!$util.isInteger(message.dire_team_logo) && !(message.dire_team_logo && $util.isInteger(message.dire_team_logo.low) && $util.isInteger(message.dire_team_logo.high)))
+                    return "dire_team_logo: integer|Long expected";
+            if (message.dire_team_logo_url != null && message.hasOwnProperty("dire_team_logo_url"))
+                if (!$util.isString(message.dire_team_logo_url))
+                    return "dire_team_logo_url: string expected";
+            if (message.activate_time != null && message.hasOwnProperty("activate_time")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.activate_time);
+                if (error)
+                    return "activate_time." + error;
+            }
+            if (message.deactivate_time != null && message.hasOwnProperty("deactivate_time")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.deactivate_time);
+                if (error)
+                    return "deactivate_time." + error;
+            }
+            if (message.last_update_time != null && message.hasOwnProperty("last_update_time")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.last_update_time);
+                if (error)
+                    return "last_update_time." + error;
+            }
+            if (message.start_time != null && message.hasOwnProperty("start_time")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.start_time);
+                if (error)
+                    return "start_time." + error;
+            }
+            if (message.series_type != null && message.hasOwnProperty("series_type"))
+                if (!$util.isInteger(message.series_type))
+                    return "series_type: integer expected";
+            if (message.series_game != null && message.hasOwnProperty("series_game"))
+                if (!$util.isInteger(message.series_game))
+                    return "series_game: integer expected";
+            if (message.duration != null && message.hasOwnProperty("duration"))
+                if (!$util.isInteger(message.duration))
+                    return "duration: integer expected";
+            if (message.radiant_score != null && message.hasOwnProperty("radiant_score"))
+                if (!$util.isInteger(message.radiant_score))
+                    return "radiant_score: integer expected";
+            if (message.dire_score != null && message.hasOwnProperty("dire_score"))
+                if (!$util.isInteger(message.dire_score))
+                    return "dire_score: integer expected";
+            if (message.outcome != null && message.hasOwnProperty("outcome"))
+                switch (message.outcome) {
+                default:
+                    return "outcome: enum value expected";
+                case 0:
+                case 2:
+                case 3:
+                case 64:
+                case 65:
+                case 66:
+                case 67:
+                case 68:
+                    break;
+                }
+            if (message.players != null && message.hasOwnProperty("players")) {
+                if (!Array.isArray(message.players))
+                    return "players: array expected";
+                for (let i = 0; i < message.players.length; ++i) {
+                    let error = $root.protocol.Match.Player.verify(message.players[i]);
+                    if (error)
+                        return "players." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Match message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.Match
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.Match} Match
+         */
+        Match.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.Match)
+                return object;
+            let message = new $root.protocol.Match();
+            if (object.match_id != null)
+                if ($util.Long)
+                    (message.match_id = $util.Long.fromValue(object.match_id)).unsigned = true;
+                else if (typeof object.match_id === "string")
+                    message.match_id = parseInt(object.match_id, 10);
+                else if (typeof object.match_id === "number")
+                    message.match_id = object.match_id;
+                else if (typeof object.match_id === "object")
+                    message.match_id = new $util.LongBits(object.match_id.low >>> 0, object.match_id.high >>> 0).toNumber(true);
+            if (object.lobby_id != null)
+                if ($util.Long)
+                    (message.lobby_id = $util.Long.fromValue(object.lobby_id)).unsigned = true;
+                else if (typeof object.lobby_id === "string")
+                    message.lobby_id = parseInt(object.lobby_id, 10);
+                else if (typeof object.lobby_id === "number")
+                    message.lobby_id = object.lobby_id;
+                else if (typeof object.lobby_id === "object")
+                    message.lobby_id = new $util.LongBits(object.lobby_id.low >>> 0, object.lobby_id.high >>> 0).toNumber(true);
+            switch (object.lobby_type) {
+            case "LOBBY_TYPE_CASUAL_MATCH":
+            case 0:
+                message.lobby_type = 0;
+                break;
+            case "LOBBY_TYPE_PRACTICE":
+            case 1:
+                message.lobby_type = 1;
+                break;
+            case "LOBBY_TYPE_COOP_BOT_MATCH":
+            case 4:
+                message.lobby_type = 4;
+                break;
+            case "LOBBY_TYPE_LEGACY_TEAM_MATCH":
+            case 5:
+                message.lobby_type = 5;
+                break;
+            case "LOBBY_TYPE_LEGACY_SOLO_QUEUE_MATCH":
+            case 6:
+                message.lobby_type = 6;
+                break;
+            case "LOBBY_TYPE_COMPETITIVE_MATCH":
+            case 7:
+                message.lobby_type = 7;
+                break;
+            case "LOBBY_TYPE_CASUAL_1V1_MATCH":
+            case 8:
+                message.lobby_type = 8;
+                break;
+            case "LOBBY_TYPE_WEEKEND_TOURNEY":
+            case 9:
+                message.lobby_type = 9;
+                break;
+            case "LOBBY_TYPE_LOCAL_BOT_MATCH":
+            case 10:
+                message.lobby_type = 10;
+                break;
+            case "LOBBY_TYPE_SPECTATOR":
+            case 11:
+                message.lobby_type = 11;
+                break;
+            case "LOBBY_TYPE_EVENT_MATCH":
+            case 12:
+                message.lobby_type = 12;
+                break;
+            }
+            if (object.league_id != null)
+                if ($util.Long)
+                    (message.league_id = $util.Long.fromValue(object.league_id)).unsigned = true;
+                else if (typeof object.league_id === "string")
+                    message.league_id = parseInt(object.league_id, 10);
+                else if (typeof object.league_id === "number")
+                    message.league_id = object.league_id;
+                else if (typeof object.league_id === "object")
+                    message.league_id = new $util.LongBits(object.league_id.low >>> 0, object.league_id.high >>> 0).toNumber(true);
+            if (object.series_id != null)
+                if ($util.Long)
+                    (message.series_id = $util.Long.fromValue(object.series_id)).unsigned = true;
+                else if (typeof object.series_id === "string")
+                    message.series_id = parseInt(object.series_id, 10);
+                else if (typeof object.series_id === "number")
+                    message.series_id = object.series_id;
+                else if (typeof object.series_id === "object")
+                    message.series_id = new $util.LongBits(object.series_id.low >>> 0, object.series_id.high >>> 0).toNumber(true);
+            switch (object.game_mode) {
+            case "GAME_MODE_NONE":
+            case 0:
+                message.game_mode = 0;
+                break;
+            case "GAME_MODE_AP":
+            case 1:
+                message.game_mode = 1;
+                break;
+            case "GAME_MODE_CM":
+            case 2:
+                message.game_mode = 2;
+                break;
+            case "GAME_MODE_RD":
+            case 3:
+                message.game_mode = 3;
+                break;
+            case "GAME_MODE_SD":
+            case 4:
+                message.game_mode = 4;
+                break;
+            case "GAME_MODE_AR":
+            case 5:
+                message.game_mode = 5;
+                break;
+            case "GAME_MODE_INTRO":
+            case 6:
+                message.game_mode = 6;
+                break;
+            case "GAME_MODE_HW":
+            case 7:
+                message.game_mode = 7;
+                break;
+            case "GAME_MODE_REVERSE_CM":
+            case 8:
+                message.game_mode = 8;
+                break;
+            case "GAME_MODE_XMAS":
+            case 9:
+                message.game_mode = 9;
+                break;
+            case "GAME_MODE_TUTORIAL":
+            case 10:
+                message.game_mode = 10;
+                break;
+            case "GAME_MODE_MO":
+            case 11:
+                message.game_mode = 11;
+                break;
+            case "GAME_MODE_LP":
+            case 12:
+                message.game_mode = 12;
+                break;
+            case "GAME_MODE_POOL1":
+            case 13:
+                message.game_mode = 13;
+                break;
+            case "GAME_MODE_FH":
+            case 14:
+                message.game_mode = 14;
+                break;
+            case "GAME_MODE_CUSTOM":
+            case 15:
+                message.game_mode = 15;
+                break;
+            case "GAME_MODE_CD":
+            case 16:
+                message.game_mode = 16;
+                break;
+            case "GAME_MODE_BD":
+            case 17:
+                message.game_mode = 17;
+                break;
+            case "GAME_MODE_ABILITY_DRAFT":
+            case 18:
+                message.game_mode = 18;
+                break;
+            case "GAME_MODE_EVENT":
+            case 19:
+                message.game_mode = 19;
+                break;
+            case "GAME_MODE_ARDM":
+            case 20:
+                message.game_mode = 20;
+                break;
+            case "GAME_MODE_1V1_MID":
+            case 21:
+                message.game_mode = 21;
+                break;
+            case "GAME_MODE_ALL_DRAFT":
+            case 22:
+                message.game_mode = 22;
+                break;
+            case "GAME_MODE_TURBO":
+            case 23:
+                message.game_mode = 23;
+                break;
+            case "GAME_MODE_MUTATION":
+            case 24:
+                message.game_mode = 24;
+                break;
+            case "GAME_MODE_COACHES_CHALLENGE":
+            case 25:
+                message.game_mode = 25;
+                break;
+            }
+            if (object.average_mmr != null)
+                message.average_mmr = object.average_mmr >>> 0;
+            if (object.radiant_team_id != null)
+                if ($util.Long)
+                    (message.radiant_team_id = $util.Long.fromValue(object.radiant_team_id)).unsigned = true;
+                else if (typeof object.radiant_team_id === "string")
+                    message.radiant_team_id = parseInt(object.radiant_team_id, 10);
+                else if (typeof object.radiant_team_id === "number")
+                    message.radiant_team_id = object.radiant_team_id;
+                else if (typeof object.radiant_team_id === "object")
+                    message.radiant_team_id = new $util.LongBits(object.radiant_team_id.low >>> 0, object.radiant_team_id.high >>> 0).toNumber(true);
+            if (object.radiant_team_name != null)
+                message.radiant_team_name = String(object.radiant_team_name);
+            if (object.radiant_team_tag != null)
+                message.radiant_team_tag = String(object.radiant_team_tag);
+            if (object.radiant_team_logo != null)
+                if ($util.Long)
+                    (message.radiant_team_logo = $util.Long.fromValue(object.radiant_team_logo)).unsigned = true;
+                else if (typeof object.radiant_team_logo === "string")
+                    message.radiant_team_logo = parseInt(object.radiant_team_logo, 10);
+                else if (typeof object.radiant_team_logo === "number")
+                    message.radiant_team_logo = object.radiant_team_logo;
+                else if (typeof object.radiant_team_logo === "object")
+                    message.radiant_team_logo = new $util.LongBits(object.radiant_team_logo.low >>> 0, object.radiant_team_logo.high >>> 0).toNumber(true);
+            if (object.radiant_team_logo_url != null)
+                message.radiant_team_logo_url = String(object.radiant_team_logo_url);
+            if (object.dire_team_id != null)
+                if ($util.Long)
+                    (message.dire_team_id = $util.Long.fromValue(object.dire_team_id)).unsigned = true;
+                else if (typeof object.dire_team_id === "string")
+                    message.dire_team_id = parseInt(object.dire_team_id, 10);
+                else if (typeof object.dire_team_id === "number")
+                    message.dire_team_id = object.dire_team_id;
+                else if (typeof object.dire_team_id === "object")
+                    message.dire_team_id = new $util.LongBits(object.dire_team_id.low >>> 0, object.dire_team_id.high >>> 0).toNumber(true);
+            if (object.dire_team_name != null)
+                message.dire_team_name = String(object.dire_team_name);
+            if (object.dire_team_tag != null)
+                message.dire_team_tag = String(object.dire_team_tag);
+            if (object.dire_team_logo != null)
+                if ($util.Long)
+                    (message.dire_team_logo = $util.Long.fromValue(object.dire_team_logo)).unsigned = true;
+                else if (typeof object.dire_team_logo === "string")
+                    message.dire_team_logo = parseInt(object.dire_team_logo, 10);
+                else if (typeof object.dire_team_logo === "number")
+                    message.dire_team_logo = object.dire_team_logo;
+                else if (typeof object.dire_team_logo === "object")
+                    message.dire_team_logo = new $util.LongBits(object.dire_team_logo.low >>> 0, object.dire_team_logo.high >>> 0).toNumber(true);
+            if (object.dire_team_logo_url != null)
+                message.dire_team_logo_url = String(object.dire_team_logo_url);
+            if (object.activate_time != null) {
+                if (typeof object.activate_time !== "object")
+                    throw TypeError(".protocol.Match.activate_time: object expected");
+                message.activate_time = $root.google.protobuf.Timestamp.fromObject(object.activate_time);
+            }
+            if (object.deactivate_time != null) {
+                if (typeof object.deactivate_time !== "object")
+                    throw TypeError(".protocol.Match.deactivate_time: object expected");
+                message.deactivate_time = $root.google.protobuf.Timestamp.fromObject(object.deactivate_time);
+            }
+            if (object.last_update_time != null) {
+                if (typeof object.last_update_time !== "object")
+                    throw TypeError(".protocol.Match.last_update_time: object expected");
+                message.last_update_time = $root.google.protobuf.Timestamp.fromObject(object.last_update_time);
+            }
+            if (object.start_time != null) {
+                if (typeof object.start_time !== "object")
+                    throw TypeError(".protocol.Match.start_time: object expected");
+                message.start_time = $root.google.protobuf.Timestamp.fromObject(object.start_time);
+            }
+            if (object.series_type != null)
+                message.series_type = object.series_type >>> 0;
+            if (object.series_game != null)
+                message.series_game = object.series_game >>> 0;
+            if (object.duration != null)
+                message.duration = object.duration >>> 0;
+            if (object.radiant_score != null)
+                message.radiant_score = object.radiant_score >>> 0;
+            if (object.dire_score != null)
+                message.dire_score = object.dire_score >>> 0;
+            switch (object.outcome) {
+            case "MATCH_OUTCOME_UNKNOWN":
+            case 0:
+                message.outcome = 0;
+                break;
+            case "MATCH_OUTCOME_RAD_VICTORY":
+            case 2:
+                message.outcome = 2;
+                break;
+            case "MATCH_OUTCOME_DIRE_VICTORY":
+            case 3:
+                message.outcome = 3;
+                break;
+            case "MATCH_OUTCOME_NOT_SCORED_POOR_NETWORK_CONDITIONS":
+            case 64:
+                message.outcome = 64;
+                break;
+            case "MATCH_OUTCOME_NOT_SCORED_LEAVER":
+            case 65:
+                message.outcome = 65;
+                break;
+            case "MATCH_OUTCOME_NOT_SCORED_SERVER_CRASH":
+            case 66:
+                message.outcome = 66;
+                break;
+            case "MATCH_OUTCOME_NOT_SCORED_NEVER_STARTED":
+            case 67:
+                message.outcome = 67;
+                break;
+            case "MATCH_OUTCOME_NOT_SCORED_CANCELED":
+            case 68:
+                message.outcome = 68;
+                break;
+            }
+            if (object.players) {
+                if (!Array.isArray(object.players))
+                    throw TypeError(".protocol.Match.players: array expected");
+                message.players = [];
+                for (let i = 0; i < object.players.length; ++i) {
+                    if (typeof object.players[i] !== "object")
+                        throw TypeError(".protocol.Match.players: object expected");
+                    message.players[i] = $root.protocol.Match.Player.fromObject(object.players[i]);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Match message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.Match
+         * @static
+         * @param {protocol.Match} message Match
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Match.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.players = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.match_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.match_id = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.lobby_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.lobby_id = options.longs === String ? "0" : 0;
+                object.lobby_type = options.enums === String ? "LOBBY_TYPE_CASUAL_MATCH" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.league_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.league_id = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.series_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.series_id = options.longs === String ? "0" : 0;
+                object.game_mode = options.enums === String ? "GAME_MODE_NONE" : 0;
+                object.average_mmr = 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.radiant_team_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.radiant_team_id = options.longs === String ? "0" : 0;
+                object.radiant_team_name = "";
+                object.radiant_team_tag = "";
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.radiant_team_logo = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.radiant_team_logo = options.longs === String ? "0" : 0;
+                object.radiant_team_logo_url = "";
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.dire_team_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.dire_team_id = options.longs === String ? "0" : 0;
+                object.dire_team_name = "";
+                object.dire_team_tag = "";
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.dire_team_logo = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.dire_team_logo = options.longs === String ? "0" : 0;
+                object.dire_team_logo_url = "";
+                object.activate_time = null;
+                object.deactivate_time = null;
+                object.last_update_time = null;
+                object.start_time = null;
+                object.series_type = 0;
+                object.series_game = 0;
+                object.duration = 0;
+                object.radiant_score = 0;
+                object.dire_score = 0;
+                object.outcome = options.enums === String ? "MATCH_OUTCOME_UNKNOWN" : 0;
+            }
+            if (message.match_id != null && message.hasOwnProperty("match_id"))
+                if (typeof message.match_id === "number")
+                    object.match_id = options.longs === String ? String(message.match_id) : message.match_id;
+                else
+                    object.match_id = options.longs === String ? $util.Long.prototype.toString.call(message.match_id) : options.longs === Number ? new $util.LongBits(message.match_id.low >>> 0, message.match_id.high >>> 0).toNumber(true) : message.match_id;
+            if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
+                if (typeof message.lobby_id === "number")
+                    object.lobby_id = options.longs === String ? String(message.lobby_id) : message.lobby_id;
+                else
+                    object.lobby_id = options.longs === String ? $util.Long.prototype.toString.call(message.lobby_id) : options.longs === Number ? new $util.LongBits(message.lobby_id.low >>> 0, message.lobby_id.high >>> 0).toNumber(true) : message.lobby_id;
+            if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
+                object.lobby_type = options.enums === String ? $root.protocol.LobbyType[message.lobby_type] : message.lobby_type;
+            if (message.league_id != null && message.hasOwnProperty("league_id"))
+                if (typeof message.league_id === "number")
+                    object.league_id = options.longs === String ? String(message.league_id) : message.league_id;
+                else
+                    object.league_id = options.longs === String ? $util.Long.prototype.toString.call(message.league_id) : options.longs === Number ? new $util.LongBits(message.league_id.low >>> 0, message.league_id.high >>> 0).toNumber(true) : message.league_id;
+            if (message.series_id != null && message.hasOwnProperty("series_id"))
+                if (typeof message.series_id === "number")
+                    object.series_id = options.longs === String ? String(message.series_id) : message.series_id;
+                else
+                    object.series_id = options.longs === String ? $util.Long.prototype.toString.call(message.series_id) : options.longs === Number ? new $util.LongBits(message.series_id.low >>> 0, message.series_id.high >>> 0).toNumber(true) : message.series_id;
+            if (message.game_mode != null && message.hasOwnProperty("game_mode"))
+                object.game_mode = options.enums === String ? $root.protocol.GameMode[message.game_mode] : message.game_mode;
+            if (message.average_mmr != null && message.hasOwnProperty("average_mmr"))
+                object.average_mmr = message.average_mmr;
+            if (message.radiant_team_id != null && message.hasOwnProperty("radiant_team_id"))
+                if (typeof message.radiant_team_id === "number")
+                    object.radiant_team_id = options.longs === String ? String(message.radiant_team_id) : message.radiant_team_id;
+                else
+                    object.radiant_team_id = options.longs === String ? $util.Long.prototype.toString.call(message.radiant_team_id) : options.longs === Number ? new $util.LongBits(message.radiant_team_id.low >>> 0, message.radiant_team_id.high >>> 0).toNumber(true) : message.radiant_team_id;
+            if (message.radiant_team_name != null && message.hasOwnProperty("radiant_team_name"))
+                object.radiant_team_name = message.radiant_team_name;
+            if (message.radiant_team_tag != null && message.hasOwnProperty("radiant_team_tag"))
+                object.radiant_team_tag = message.radiant_team_tag;
+            if (message.radiant_team_logo != null && message.hasOwnProperty("radiant_team_logo"))
+                if (typeof message.radiant_team_logo === "number")
+                    object.radiant_team_logo = options.longs === String ? String(message.radiant_team_logo) : message.radiant_team_logo;
+                else
+                    object.radiant_team_logo = options.longs === String ? $util.Long.prototype.toString.call(message.radiant_team_logo) : options.longs === Number ? new $util.LongBits(message.radiant_team_logo.low >>> 0, message.radiant_team_logo.high >>> 0).toNumber(true) : message.radiant_team_logo;
+            if (message.radiant_team_logo_url != null && message.hasOwnProperty("radiant_team_logo_url"))
+                object.radiant_team_logo_url = message.radiant_team_logo_url;
+            if (message.dire_team_id != null && message.hasOwnProperty("dire_team_id"))
+                if (typeof message.dire_team_id === "number")
+                    object.dire_team_id = options.longs === String ? String(message.dire_team_id) : message.dire_team_id;
+                else
+                    object.dire_team_id = options.longs === String ? $util.Long.prototype.toString.call(message.dire_team_id) : options.longs === Number ? new $util.LongBits(message.dire_team_id.low >>> 0, message.dire_team_id.high >>> 0).toNumber(true) : message.dire_team_id;
+            if (message.dire_team_name != null && message.hasOwnProperty("dire_team_name"))
+                object.dire_team_name = message.dire_team_name;
+            if (message.dire_team_tag != null && message.hasOwnProperty("dire_team_tag"))
+                object.dire_team_tag = message.dire_team_tag;
+            if (message.dire_team_logo != null && message.hasOwnProperty("dire_team_logo"))
+                if (typeof message.dire_team_logo === "number")
+                    object.dire_team_logo = options.longs === String ? String(message.dire_team_logo) : message.dire_team_logo;
+                else
+                    object.dire_team_logo = options.longs === String ? $util.Long.prototype.toString.call(message.dire_team_logo) : options.longs === Number ? new $util.LongBits(message.dire_team_logo.low >>> 0, message.dire_team_logo.high >>> 0).toNumber(true) : message.dire_team_logo;
+            if (message.dire_team_logo_url != null && message.hasOwnProperty("dire_team_logo_url"))
+                object.dire_team_logo_url = message.dire_team_logo_url;
+            if (message.activate_time != null && message.hasOwnProperty("activate_time"))
+                object.activate_time = $root.google.protobuf.Timestamp.toObject(message.activate_time, options);
+            if (message.deactivate_time != null && message.hasOwnProperty("deactivate_time"))
+                object.deactivate_time = $root.google.protobuf.Timestamp.toObject(message.deactivate_time, options);
+            if (message.last_update_time != null && message.hasOwnProperty("last_update_time"))
+                object.last_update_time = $root.google.protobuf.Timestamp.toObject(message.last_update_time, options);
+            if (message.start_time != null && message.hasOwnProperty("start_time"))
+                object.start_time = $root.google.protobuf.Timestamp.toObject(message.start_time, options);
+            if (message.series_type != null && message.hasOwnProperty("series_type"))
+                object.series_type = message.series_type;
+            if (message.series_game != null && message.hasOwnProperty("series_game"))
+                object.series_game = message.series_game;
+            if (message.duration != null && message.hasOwnProperty("duration"))
+                object.duration = message.duration;
+            if (message.radiant_score != null && message.hasOwnProperty("radiant_score"))
+                object.radiant_score = message.radiant_score;
+            if (message.dire_score != null && message.hasOwnProperty("dire_score"))
+                object.dire_score = message.dire_score;
+            if (message.outcome != null && message.hasOwnProperty("outcome"))
+                object.outcome = options.enums === String ? $root.protocol.MatchOutcome[message.outcome] : message.outcome;
+            if (message.players && message.players.length) {
+                object.players = [];
+                for (let j = 0; j < message.players.length; ++j)
+                    object.players[j] = $root.protocol.Match.Player.toObject(message.players[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this Match to JSON.
+         * @function toJSON
+         * @memberof protocol.Match
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Match.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        Match.Player = (function() {
+
+            /**
+             * Properties of a Player.
+             * @memberof protocol.Match
+             * @interface IPlayer
+             * @property {number|null} [account_id] Player account_id
+             * @property {Long|null} [hero_id] Player hero_id
+             * @property {number|null} [player_slot] Player player_slot
+             * @property {string|null} [pro_name] Player pro_name
+             * @property {number|null} [kills] Player kills
+             * @property {number|null} [deaths] Player deaths
+             * @property {number|null} [assists] Player assists
+             * @property {Array.<Long>|null} [items] Player items
+             */
+
+            /**
+             * Constructs a new Player.
+             * @memberof protocol.Match
+             * @classdesc Represents a Player.
+             * @implements IPlayer
+             * @constructor
+             * @param {protocol.Match.IPlayer=} [properties] Properties to set
+             */
+            function Player(properties) {
+                this.items = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Player account_id.
+             * @member {number} account_id
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.account_id = 0;
+
+            /**
+             * Player hero_id.
+             * @member {Long} hero_id
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.hero_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * Player player_slot.
+             * @member {number} player_slot
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.player_slot = 0;
+
+            /**
+             * Player pro_name.
+             * @member {string} pro_name
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.pro_name = "";
+
+            /**
+             * Player kills.
+             * @member {number} kills
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.kills = 0;
+
+            /**
+             * Player deaths.
+             * @member {number} deaths
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.deaths = 0;
+
+            /**
+             * Player assists.
+             * @member {number} assists
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.assists = 0;
+
+            /**
+             * Player items.
+             * @member {Array.<Long>} items
+             * @memberof protocol.Match.Player
+             * @instance
+             */
+            Player.prototype.items = $util.emptyArray;
+
+            /**
+             * Creates a new Player instance using the specified properties.
+             * @function create
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {protocol.Match.IPlayer=} [properties] Properties to set
+             * @returns {protocol.Match.Player} Player instance
+             */
+            Player.create = function create(properties) {
+                return new Player(properties);
+            };
+
+            /**
+             * Encodes the specified Player message. Does not implicitly {@link protocol.Match.Player.verify|verify} messages.
+             * @function encode
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {protocol.Match.IPlayer} message Player message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Player.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.account_id != null && message.hasOwnProperty("account_id"))
+                    writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.account_id);
+                if (message.hero_id != null && message.hasOwnProperty("hero_id"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.hero_id);
+                if (message.player_slot != null && message.hasOwnProperty("player_slot"))
+                    writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.player_slot);
+                if (message.pro_name != null && message.hasOwnProperty("pro_name"))
+                    writer.uint32(/* id 4, wireType 2 =*/34).string(message.pro_name);
+                if (message.kills != null && message.hasOwnProperty("kills"))
+                    writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.kills);
+                if (message.deaths != null && message.hasOwnProperty("deaths"))
+                    writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.deaths);
+                if (message.assists != null && message.hasOwnProperty("assists"))
+                    writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.assists);
+                if (message.items != null && message.items.length) {
+                    writer.uint32(/* id 8, wireType 2 =*/66).fork();
+                    for (let i = 0; i < message.items.length; ++i)
+                        writer.int64(message.items[i]);
+                    writer.ldelim();
+                }
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Player message, length delimited. Does not implicitly {@link protocol.Match.Player.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {protocol.Match.IPlayer} message Player message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Player.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Player message from the specified reader or buffer.
+             * @function decode
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {protocol.Match.Player} Player
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Player.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Match.Player();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.account_id = reader.uint32();
+                        break;
+                    case 2:
+                        message.hero_id = reader.uint64();
+                        break;
+                    case 3:
+                        message.player_slot = reader.uint32();
+                        break;
+                    case 4:
+                        message.pro_name = reader.string();
+                        break;
+                    case 5:
+                        message.kills = reader.uint32();
+                        break;
+                    case 6:
+                        message.deaths = reader.uint32();
+                        break;
+                    case 7:
+                        message.assists = reader.uint32();
+                        break;
+                    case 8:
+                        if (!(message.items && message.items.length))
+                            message.items = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.items.push(reader.int64());
+                        } else
+                            message.items.push(reader.int64());
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Player message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {protocol.Match.Player} Player
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Player.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Player message.
+             * @function verify
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Player.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.account_id != null && message.hasOwnProperty("account_id"))
+                    if (!$util.isInteger(message.account_id))
+                        return "account_id: integer expected";
+                if (message.hero_id != null && message.hasOwnProperty("hero_id"))
+                    if (!$util.isInteger(message.hero_id) && !(message.hero_id && $util.isInteger(message.hero_id.low) && $util.isInteger(message.hero_id.high)))
+                        return "hero_id: integer|Long expected";
+                if (message.player_slot != null && message.hasOwnProperty("player_slot"))
+                    if (!$util.isInteger(message.player_slot))
+                        return "player_slot: integer expected";
+                if (message.pro_name != null && message.hasOwnProperty("pro_name"))
+                    if (!$util.isString(message.pro_name))
+                        return "pro_name: string expected";
+                if (message.kills != null && message.hasOwnProperty("kills"))
+                    if (!$util.isInteger(message.kills))
+                        return "kills: integer expected";
+                if (message.deaths != null && message.hasOwnProperty("deaths"))
+                    if (!$util.isInteger(message.deaths))
+                        return "deaths: integer expected";
+                if (message.assists != null && message.hasOwnProperty("assists"))
+                    if (!$util.isInteger(message.assists))
+                        return "assists: integer expected";
+                if (message.items != null && message.hasOwnProperty("items")) {
+                    if (!Array.isArray(message.items))
+                        return "items: array expected";
+                    for (let i = 0; i < message.items.length; ++i)
+                        if (!$util.isInteger(message.items[i]) && !(message.items[i] && $util.isInteger(message.items[i].low) && $util.isInteger(message.items[i].high)))
+                            return "items: integer|Long[] expected";
+                }
+                return null;
+            };
+
+            /**
+             * Creates a Player message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {protocol.Match.Player} Player
+             */
+            Player.fromObject = function fromObject(object) {
+                if (object instanceof $root.protocol.Match.Player)
+                    return object;
+                let message = new $root.protocol.Match.Player();
+                if (object.account_id != null)
+                    message.account_id = object.account_id >>> 0;
+                if (object.hero_id != null)
+                    if ($util.Long)
+                        (message.hero_id = $util.Long.fromValue(object.hero_id)).unsigned = true;
+                    else if (typeof object.hero_id === "string")
+                        message.hero_id = parseInt(object.hero_id, 10);
+                    else if (typeof object.hero_id === "number")
+                        message.hero_id = object.hero_id;
+                    else if (typeof object.hero_id === "object")
+                        message.hero_id = new $util.LongBits(object.hero_id.low >>> 0, object.hero_id.high >>> 0).toNumber(true);
+                if (object.player_slot != null)
+                    message.player_slot = object.player_slot >>> 0;
+                if (object.pro_name != null)
+                    message.pro_name = String(object.pro_name);
+                if (object.kills != null)
+                    message.kills = object.kills >>> 0;
+                if (object.deaths != null)
+                    message.deaths = object.deaths >>> 0;
+                if (object.assists != null)
+                    message.assists = object.assists >>> 0;
+                if (object.items) {
+                    if (!Array.isArray(object.items))
+                        throw TypeError(".protocol.Match.Player.items: array expected");
+                    message.items = [];
+                    for (let i = 0; i < object.items.length; ++i)
+                        if ($util.Long)
+                            (message.items[i] = $util.Long.fromValue(object.items[i])).unsigned = false;
+                        else if (typeof object.items[i] === "string")
+                            message.items[i] = parseInt(object.items[i], 10);
+                        else if (typeof object.items[i] === "number")
+                            message.items[i] = object.items[i];
+                        else if (typeof object.items[i] === "object")
+                            message.items[i] = new $util.LongBits(object.items[i].low >>> 0, object.items[i].high >>> 0).toNumber();
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Player message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof protocol.Match.Player
+             * @static
+             * @param {protocol.Match.Player} message Player
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Player.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.items = [];
+                if (options.defaults) {
+                    object.account_id = 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.hero_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.hero_id = options.longs === String ? "0" : 0;
+                    object.player_slot = 0;
+                    object.pro_name = "";
+                    object.kills = 0;
+                    object.deaths = 0;
+                    object.assists = 0;
+                }
+                if (message.account_id != null && message.hasOwnProperty("account_id"))
+                    object.account_id = message.account_id;
+                if (message.hero_id != null && message.hasOwnProperty("hero_id"))
+                    if (typeof message.hero_id === "number")
+                        object.hero_id = options.longs === String ? String(message.hero_id) : message.hero_id;
+                    else
+                        object.hero_id = options.longs === String ? $util.Long.prototype.toString.call(message.hero_id) : options.longs === Number ? new $util.LongBits(message.hero_id.low >>> 0, message.hero_id.high >>> 0).toNumber(true) : message.hero_id;
+                if (message.player_slot != null && message.hasOwnProperty("player_slot"))
+                    object.player_slot = message.player_slot;
+                if (message.pro_name != null && message.hasOwnProperty("pro_name"))
+                    object.pro_name = message.pro_name;
+                if (message.kills != null && message.hasOwnProperty("kills"))
+                    object.kills = message.kills;
+                if (message.deaths != null && message.hasOwnProperty("deaths"))
+                    object.deaths = message.deaths;
+                if (message.assists != null && message.hasOwnProperty("assists"))
+                    object.assists = message.assists;
+                if (message.items && message.items.length) {
+                    object.items = [];
+                    for (let j = 0; j < message.items.length; ++j)
+                        if (typeof message.items[j] === "number")
+                            object.items[j] = options.longs === String ? String(message.items[j]) : message.items[j];
+                        else
+                            object.items[j] = options.longs === String ? $util.Long.prototype.toString.call(message.items[j]) : options.longs === Number ? new $util.LongBits(message.items[j].low >>> 0, message.items[j].high >>> 0).toNumber() : message.items[j];
+                }
+                return object;
+            };
+
+            /**
+             * Converts this Player to JSON.
+             * @function toJSON
+             * @memberof protocol.Match.Player
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Player.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Player;
+        })();
+
+        return Match;
     })();
 
     /**
@@ -5465,6 +5740,286 @@ export const protocol = $root.protocol = (() => {
         };
 
         return Hero;
+    })();
+
+    protocol.HeroMatches = (function() {
+
+        /**
+         * Properties of a HeroMatches.
+         * @memberof protocol
+         * @interface IHeroMatches
+         * @property {protocol.IHero|null} [hero] HeroMatches hero
+         * @property {Array.<protocol.IMatch>|null} [matches] HeroMatches matches
+         * @property {Array.<protocol.IPlayer>|null} [known_players] HeroMatches known_players
+         */
+
+        /**
+         * Constructs a new HeroMatches.
+         * @memberof protocol
+         * @classdesc Represents a HeroMatches.
+         * @implements IHeroMatches
+         * @constructor
+         * @param {protocol.IHeroMatches=} [properties] Properties to set
+         */
+        function HeroMatches(properties) {
+            this.matches = [];
+            this.known_players = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * HeroMatches hero.
+         * @member {protocol.IHero|null|undefined} hero
+         * @memberof protocol.HeroMatches
+         * @instance
+         */
+        HeroMatches.prototype.hero = null;
+
+        /**
+         * HeroMatches matches.
+         * @member {Array.<protocol.IMatch>} matches
+         * @memberof protocol.HeroMatches
+         * @instance
+         */
+        HeroMatches.prototype.matches = $util.emptyArray;
+
+        /**
+         * HeroMatches known_players.
+         * @member {Array.<protocol.IPlayer>} known_players
+         * @memberof protocol.HeroMatches
+         * @instance
+         */
+        HeroMatches.prototype.known_players = $util.emptyArray;
+
+        /**
+         * Creates a new HeroMatches instance using the specified properties.
+         * @function create
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.IHeroMatches=} [properties] Properties to set
+         * @returns {protocol.HeroMatches} HeroMatches instance
+         */
+        HeroMatches.create = function create(properties) {
+            return new HeroMatches(properties);
+        };
+
+        /**
+         * Encodes the specified HeroMatches message. Does not implicitly {@link protocol.HeroMatches.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.IHeroMatches} message HeroMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        HeroMatches.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.hero != null && message.hasOwnProperty("hero"))
+                $root.protocol.Hero.encode(message.hero, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            if (message.matches != null && message.matches.length)
+                for (let i = 0; i < message.matches.length; ++i)
+                    $root.protocol.Match.encode(message.matches[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
+            if (message.known_players != null && message.known_players.length)
+                for (let i = 0; i < message.known_players.length; ++i)
+                    $root.protocol.Player.encode(message.known_players[i], writer.uint32(/* id 102, wireType 2 =*/818).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified HeroMatches message, length delimited. Does not implicitly {@link protocol.HeroMatches.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.IHeroMatches} message HeroMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        HeroMatches.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a HeroMatches message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.HeroMatches} HeroMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        HeroMatches.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.HeroMatches();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 100:
+                    message.hero = $root.protocol.Hero.decode(reader, reader.uint32());
+                    break;
+                case 101:
+                    if (!(message.matches && message.matches.length))
+                        message.matches = [];
+                    message.matches.push($root.protocol.Match.decode(reader, reader.uint32()));
+                    break;
+                case 102:
+                    if (!(message.known_players && message.known_players.length))
+                        message.known_players = [];
+                    message.known_players.push($root.protocol.Player.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a HeroMatches message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.HeroMatches} HeroMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        HeroMatches.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a HeroMatches message.
+         * @function verify
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        HeroMatches.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.hero != null && message.hasOwnProperty("hero")) {
+                let error = $root.protocol.Hero.verify(message.hero);
+                if (error)
+                    return "hero." + error;
+            }
+            if (message.matches != null && message.hasOwnProperty("matches")) {
+                if (!Array.isArray(message.matches))
+                    return "matches: array expected";
+                for (let i = 0; i < message.matches.length; ++i) {
+                    let error = $root.protocol.Match.verify(message.matches[i]);
+                    if (error)
+                        return "matches." + error;
+                }
+            }
+            if (message.known_players != null && message.hasOwnProperty("known_players")) {
+                if (!Array.isArray(message.known_players))
+                    return "known_players: array expected";
+                for (let i = 0; i < message.known_players.length; ++i) {
+                    let error = $root.protocol.Player.verify(message.known_players[i]);
+                    if (error)
+                        return "known_players." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a HeroMatches message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.HeroMatches} HeroMatches
+         */
+        HeroMatches.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.HeroMatches)
+                return object;
+            let message = new $root.protocol.HeroMatches();
+            if (object.hero != null) {
+                if (typeof object.hero !== "object")
+                    throw TypeError(".protocol.HeroMatches.hero: object expected");
+                message.hero = $root.protocol.Hero.fromObject(object.hero);
+            }
+            if (object.matches) {
+                if (!Array.isArray(object.matches))
+                    throw TypeError(".protocol.HeroMatches.matches: array expected");
+                message.matches = [];
+                for (let i = 0; i < object.matches.length; ++i) {
+                    if (typeof object.matches[i] !== "object")
+                        throw TypeError(".protocol.HeroMatches.matches: object expected");
+                    message.matches[i] = $root.protocol.Match.fromObject(object.matches[i]);
+                }
+            }
+            if (object.known_players) {
+                if (!Array.isArray(object.known_players))
+                    throw TypeError(".protocol.HeroMatches.known_players: array expected");
+                message.known_players = [];
+                for (let i = 0; i < object.known_players.length; ++i) {
+                    if (typeof object.known_players[i] !== "object")
+                        throw TypeError(".protocol.HeroMatches.known_players: object expected");
+                    message.known_players[i] = $root.protocol.Player.fromObject(object.known_players[i]);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a HeroMatches message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.HeroMatches} message HeroMatches
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        HeroMatches.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.matches = [];
+                object.known_players = [];
+            }
+            if (options.defaults)
+                object.hero = null;
+            if (message.hero != null && message.hasOwnProperty("hero"))
+                object.hero = $root.protocol.Hero.toObject(message.hero, options);
+            if (message.matches && message.matches.length) {
+                object.matches = [];
+                for (let j = 0; j < message.matches.length; ++j)
+                    object.matches[j] = $root.protocol.Match.toObject(message.matches[j], options);
+            }
+            if (message.known_players && message.known_players.length) {
+                object.known_players = [];
+                for (let j = 0; j < message.known_players.length; ++j)
+                    object.known_players[j] = $root.protocol.Player.toObject(message.known_players[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this HeroMatches to JSON.
+         * @function toJSON
+         * @memberof protocol.HeroMatches
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        HeroMatches.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return HeroMatches;
     })();
 
     protocol.LiveMatches = (function() {
