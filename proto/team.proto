@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package protocol;
+
+message Team {
+  uint64 id = 1;
+  string name = 2;
+  string tag = 3;
+  string logo_url = 4;
+}

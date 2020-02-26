@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package protocol;
+
+import "google/protobuf/timestamp.proto";
+import "enums.proto";
+
+message Match {
+  message Player {
+    uint32 account_id = 1;
+    uint64 hero_id = 2;
+    uint32 player_slot = 3;
+    string pro_name = 4;
+    uint32 kills = 5;
+    uint32 deaths = 6;
+    uint32 assists = 7;
+    repeated int64 items = 8;
+  }
+
+  uint64 match_id = 1;
+  uint64 lobby_id = 2;
+  LobbyType lobby_type = 3;
+  uint64 league_id = 4;
+  uint64 series_id = 5;
+  GameMode game_mode = 6;
+  uint32 average_mmr = 7;
+  uint64 radiant_team_id = 8;
+  string radiant_team_name = 9;
+  string radiant_team_tag = 10;
+  uint64 radiant_team_logo = 11;
+  string radiant_team_logo_url = 12;
+  uint64 dire_team_id = 13;
+  string dire_team_name = 14;
+  string dire_team_tag = 15;
+  uint64 dire_team_logo = 16;
+  string dire_team_logo_url = 17;
+  google.protobuf.Timestamp activate_time = 18;
+  google.protobuf.Timestamp deactivate_time = 19;
+  google.protobuf.Timestamp last_update_time = 20;
+  google.protobuf.Timestamp start_time = 21;
+  uint32 series_type = 22;
+  uint32 series_game = 23;
+  uint32 duration = 24;
+  uint32 radiant_score = 25;
+  uint32 dire_score = 26;
+  MatchOutcome outcome = 27;
+
+  repeated Player players = 100;
+}

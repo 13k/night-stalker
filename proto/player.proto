@@ -2,59 +2,10 @@ syntax = "proto3";
 
 package protocol;
 
-import "google/protobuf/timestamp.proto";
-import "enums.proto";
+import "match.proto";
+import "team.proto";
 
 message Player {
-  message Match {
-    message PlayerDetails {
-      uint64 hero_id = 1;
-      uint32 player_slot = 2;
-      string pro_name = 3;
-      uint32 kills = 4;
-      uint32 deaths = 5;
-      uint32 assists = 6;
-      repeated int64 items = 7;
-    }
-
-    uint64 match_id = 1;
-    uint64 lobby_id = 2;
-    LobbyType lobby_type = 3;
-    uint64 league_id = 4;
-    uint64 series_id = 5;
-    GameMode game_mode = 6;
-    uint32 average_mmr = 7;
-    uint64 radiant_team_id = 8;
-    string radiant_team_name = 9;
-    string radiant_team_tag = 10;
-    uint64 radiant_team_logo = 11;
-    string radiant_team_logo_url = 12;
-    uint64 dire_team_id = 13;
-    string dire_team_name = 14;
-    string dire_team_tag = 15;
-    uint64 dire_team_logo = 16;
-    string dire_team_logo_url = 17;
-    google.protobuf.Timestamp activate_time = 18;
-    google.protobuf.Timestamp deactivate_time = 19;
-    google.protobuf.Timestamp last_update_time = 20;
-    google.protobuf.Timestamp start_time = 21;
-    uint32 series_type = 22;
-    uint32 series_game = 23;
-    uint32 duration = 24;
-    uint32 radiant_score = 25;
-    uint32 dire_score = 26;
-    MatchOutcome outcome = 27;
-
-    PlayerDetails player_details = 100;
-  }
-
-  message Team {
-    uint64 id = 1;
-    string name = 2;
-    string tag = 3;
-    string logo_url = 4;
-  }
-
   uint32 account_id = 1;
   string name = 2;
   string persona_name = 3;
@@ -63,6 +14,11 @@ message Player {
   string avatar_full_url = 6;
   bool is_pro = 7;
 
-  Team team = 100;
-  repeated Match matches = 101;
+  protocol.Team team = 100;
+}
+
+message PlayerMatches {
+  protocol.Player player = 100;
+  repeated protocol.Match matches = 101;
+  repeated protocol.Player known_players = 102;
 }

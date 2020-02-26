@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package protocol;
 
+import "match.proto";
+import "player.proto";
+
 message Hero {
   uint64 id = 1;
   string name = 2;
@@ -10,4 +13,10 @@ message Hero {
   string image_large_url = 5;
   string image_small_url = 6;
   string image_portrait_url = 7;
+}
+
+message HeroMatches {
+  protocol.Hero hero = 100;
+  repeated protocol.Match matches = 101;
+  repeated protocol.Player known_players = 102;
 }
