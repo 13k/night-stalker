@@ -385,7 +385,7 @@ func (p *Monitor) createLiveMatchStats(
 		stats.Teams = append(stats.Teams, models.LiveMatchStatsTeamDotaProto(team))
 
 		for _, player := range team.GetPlayers() {
-			stats.Players = append(stats.Players, models.LiveMatchStatsPlayerDotaProto(player))
+			stats.Players = append(stats.Players, models.NewLiveMatchStatsPlayer(stats, player))
 		}
 	}
 

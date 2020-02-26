@@ -296,8 +296,7 @@ func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) (nscol.LiveMat
 				return nil, p.ctx.Err()
 			}
 
-			livePlayer := models.LiveMatchPlayerDotaProto(gamePlayer)
-			livePlayer.LiveMatchID = liveMatch.ID
+			livePlayer := models.NewLiveMatchPlayer(liveMatch, gamePlayer)
 
 			criteria := &models.LiveMatchPlayer{
 				LiveMatchID: livePlayer.LiveMatchID,

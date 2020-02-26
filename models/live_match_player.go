@@ -13,6 +13,7 @@ type LiveMatchPlayerID uint64
 type LiveMatchPlayer struct {
 	ID          LiveMatchPlayerID `gorm:"column:id;primary_key"`
 	LiveMatchID LiveMatchID       `gorm:"column:live_match_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"` //nolint: lll
+	MatchID     nspb.MatchID      `gorm:"column:match_id;unique_index:uix_live_match_players_match_id_account_id;not null"`           //nolint: lll
 	AccountID   nspb.AccountID    `gorm:"column:account_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"`    //nolint: lll
 	HeroID      HeroID            `gorm:"column:hero_id"`
 	Timestamps
@@ -23,6 +24,13 @@ type LiveMatchPlayer struct {
 
 func (*LiveMatchPlayer) TableName() string {
 	return "live_match_players"
+}
+
+func NewLiveMatchPlayer(liveMatch *LiveMatch, pb *protocol.CSourceTVGameSmall_Player) *LiveMatchPlayer {
+	p := LiveMatchPlayerDotaProto(pb)
+	p.LiveMatchID = liveMatch.ID
+	p.MatchID = liveMatch.MatchID
+	return p
 }
 
 func LiveMatchPlayerDotaProto(pb *protocol.CSourceTVGameSmall_Player) *LiveMatchPlayer {

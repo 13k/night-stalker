@@ -13,8 +13,9 @@ type LiveMatchStatsPlayerID uint64
 // LiveMatchStatsPlayer ...
 type LiveMatchStatsPlayer struct {
 	ID               LiveMatchStatsPlayerID `gorm:"column:id;primary_key"`
-	LiveMatchStatsID LiveMatchStatsID       `gorm:"column:live_match_stats_id"`
-	AccountID        nspb.AccountID         `gorm:"column:account_id"`
+	LiveMatchStatsID LiveMatchStatsID       `gorm:"column:live_match_stats_id;unique_index:uix_live_match_stats_players_live_match_stats_id_account_id;not null"` //nolint: lll
+	MatchID          nspb.MatchID           `gorm:"column:match_id;index;not null"`                                                                               //nolint: lll
+	AccountID        nspb.AccountID         `gorm:"column:account_id;unique_index:uix_live_match_stats_players_live_match_stats_id_account_id;not null"`          //nolint: lll
 	PlayerSlot       nspb.GamePlayerSlot    `gorm:"column:player_slot"`
 	Name             string                 `gorm:"column:name;size:255"`
 	GameTeam         nspb.GameTeam          `gorm:"column:game_team"`
@@ -39,6 +40,16 @@ type LiveMatchStatsPlayer struct {
 
 func (*LiveMatchStatsPlayer) TableName() string {
 	return "live_match_stats_players"
+}
+
+func NewLiveMatchStatsPlayer(
+	liveMatchStats *LiveMatchStats,
+	pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails,
+) *LiveMatchStatsPlayer {
+	p := LiveMatchStatsPlayerDotaProto(pb)
+	p.LiveMatchStatsID = liveMatchStats.ID
+	p.MatchID = liveMatchStats.MatchID
+	return p
 }
 
 func LiveMatchStatsPlayerDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
