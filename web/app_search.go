@@ -1,14 +1,32 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/xerrors"
 
 	nspb "github.com/13k/night-stalker/internal/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
 )
+
+func (app *App) serveSearch(c echo.Context) error {
+	view, err := app.loadSearchView(c.QueryParam("q"))
+
+	if err != nil {
+		app.log.Error(fmt.Sprintf("%+v", err))
+
+		return &echo.HTTPError{
+			Code:     http.StatusInternalServerError,
+			Message:  err.Error(),
+			Internal: err,
+		}
+	}
+
+	return c.JSON(http.StatusOK, view)
+}
 
 func (app *App) loadSearchView(query string) (*nspb.Search, error) {
 	var heroes []*models.Hero
@@ -21,7 +39,7 @@ func (app *App) loadSearchView(query string) (*nspb.Search, error) {
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database heroes")
+		err = xerrors.Errorf("error loading heroes: %w", err)
 		return nil, err
 	}
 
@@ -33,7 +51,7 @@ func (app *App) loadSearchView(query string) (*nspb.Search, error) {
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database followed players")
+		err = xerrors.Errorf("error loading followed players: %w", err)
 		return nil, err
 	}
 
@@ -51,7 +69,7 @@ func (app *App) loadSearchView(query string) (*nspb.Search, error) {
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database players")
+		err = xerrors.Errorf("error loading players: %w", err)
 		return nil, err
 	}
 
@@ -63,23 +81,11 @@ func (app *App) loadSearchView(query string) (*nspb.Search, error) {
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database pro players")
+		err = xerrors.Errorf("error loading pro players: %w", err)
 		return nil, err
 	}
 
-	return nsviews.NewSearch(heroes, followed, players, proPlayers)
-}
+	view := nsviews.NewSearch(heroes, followed, players, proPlayers)
 
-func (app *App) serveSearch(c echo.Context) error {
-	view, err := app.loadSearchView(c.QueryParam("q"))
-
-	if err != nil {
-		return &echo.HTTPError{
-			Code:     http.StatusInternalServerError,
-			Message:  err.Error(),
-			Internal: err,
-		}
-	}
-
-	return c.JSON(http.StatusOK, view)
+	return view, nil
 }

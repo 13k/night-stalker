@@ -47,7 +47,7 @@ type App struct {
 	rds                     *redis.Client
 	rdsSubLiveMatchesAll    *redis.PubSub
 	rdsSubLiveMatchStatsAll *redis.PubSub
-	matches                 *nscol.LiveMatches
+	matches                 *nscol.LiveMatchesContainer
 }
 
 func New(options AppOptions) (*App, error) {
@@ -97,8 +97,9 @@ func (app *App) configureEngine() error { //nolint: unparam
 	apiV1 := api.Group("/v1")
 	apiV1.GET("/search", app.serveSearch)
 	apiV1.GET("/heroes", app.serveHeroes)
+	apiV1.GET("/heroes/:id/matches", app.serveHeroMatches)
 	apiV1.GET("/live_matches", app.serveLiveMatches)
-	apiV1.GET("/players/:account_id", app.servePlayer)
+	apiV1.GET("/players/:account_id/matches", app.servePlayerMatches)
 
 	root.GET("/ws", app.serveWS)
 

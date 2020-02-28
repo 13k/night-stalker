@@ -1,10 +1,11 @@
 package web
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/xerrors"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protocol"
@@ -12,9 +13,33 @@ import (
 	"github.com/13k/night-stalker/models"
 )
 
-var (
-	errRedisPubSubSubscription = errors.New("Redis pubsub subscription failed")
-)
+func (app *App) serveLiveMatches(c echo.Context) error {
+	matchIDs, err := app.rdsLiveMatchIDs()
+
+	if err != nil {
+		app.log.Error(fmt.Sprintf("%+v", err))
+
+		return &echo.HTTPError{
+			Code:     http.StatusInternalServerError,
+			Message:  err.Error(),
+			Internal: err,
+		}
+	}
+
+	view, err := app.loadLiveMatchesView(matchIDs...)
+
+	if err != nil {
+		app.log.Error(fmt.Sprintf("%+v", err))
+
+		return &echo.HTTPError{
+			Code:     http.StatusInternalServerError,
+			Message:  err.Error(),
+			Internal: err,
+		}
+	}
+
+	return c.JSON(http.StatusOK, view)
+}
 
 func (app *App) createLiveMatchesView(liveMatches ...*models.LiveMatch) (*nspb.LiveMatches, error) {
 	if len(liveMatches) == 0 {
@@ -35,6 +60,7 @@ func (app *App) createLiveMatchesView(liveMatches ...*models.LiveMatch) (*nspb.L
 	stats, err := app.loadLiveMatchStats(matchIDs)
 
 	if err != nil {
+		err = xerrors.Errorf("error loading live match stats: %w", err)
 		return nil, err
 	}
 
@@ -47,6 +73,7 @@ func (app *App) createLiveMatchesView(liveMatches ...*models.LiveMatch) (*nspb.L
 	followedPlayers, err := app.loadFollowedPlayers(accountIDs)
 
 	if err != nil {
+		err = xerrors.Errorf("error loading followed players: %w", err)
 		return nil, err
 	}
 
@@ -59,12 +86,14 @@ func (app *App) createLiveMatchesView(liveMatches ...*models.LiveMatch) (*nspb.L
 	players, err := app.loadPlayers(accountIDs)
 
 	if err != nil {
+		err = xerrors.Errorf("error loading players: %w", err)
 		return nil, err
 	}
 
 	proPlayers, err := app.loadProPlayers(accountIDs)
 
 	if err != nil {
+		err = xerrors.Errorf("error loading pro players: %w", err)
 		return nil, err
 	}
 
@@ -77,6 +106,7 @@ func (app *App) createLiveMatchesView(liveMatches ...*models.LiveMatch) (*nspb.L
 	)
 
 	if err != nil {
+		err = xerrors.Errorf("error creating LiveMatches view: %w", err)
 		return nil, err
 	}
 
@@ -91,10 +121,18 @@ func (app *App) loadLiveMatchesView(matchIDs ...nspb.MatchID) (*nspb.LiveMatches
 	liveMatches, err := app.loadLiveMatches(matchIDs)
 
 	if err != nil {
+		err = xerrors.Errorf("error loading live matches: %w", err)
 		return nil, err
 	}
 
-	return app.createLiveMatchesView(liveMatches...)
+	view, err := app.createLiveMatchesView(liveMatches...)
+
+	if err != nil {
+		err = xerrors.Errorf("error creating LiveMatches view: %w", err)
+		return nil, err
+	}
+
+	return view, nil
 }
 
 func (app *App) loadLiveMatches(matchIDs nscol.MatchIDs) ([]*models.LiveMatch, error) {
@@ -111,7 +149,7 @@ func (app *App) loadLiveMatches(matchIDs nscol.MatchIDs) ([]*models.LiveMatch, e
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database live matches")
+		err = xerrors.Errorf("error loading matches: %w", err)
 		return nil, err
 	}
 
@@ -135,7 +173,7 @@ func (app *App) loadLiveMatchStats(matchIDs nscol.MatchIDs) ([]*models.LiveMatch
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database stats")
+		err = xerrors.Errorf("error loading live match stats: %w", err)
 		return nil, err
 	}
 
@@ -151,7 +189,7 @@ func (app *App) loadFollowedPlayers(accountIDs []nspb.AccountID) (map[nspb.Accou
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database followed players")
+		err = xerrors.Errorf("error loading followed players: %w", err)
 		return nil, err
 	}
 
@@ -173,7 +211,7 @@ func (app *App) loadPlayers(accountIDs []nspb.AccountID) (map[nspb.AccountID]*mo
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database players")
+		err = xerrors.Errorf("error loading players: %w", err)
 		return nil, err
 	}
 
@@ -195,7 +233,7 @@ func (app *App) loadProPlayers(accountIDs []nspb.AccountID) (map[nspb.AccountID]
 		Error
 
 	if err != nil {
-		app.log.WithError(err).Error("database pro players")
+		err = xerrors.Errorf("error loading pro players: %w", err)
 		return nil, err
 	}
 
@@ -206,26 +244,4 @@ func (app *App) loadProPlayers(accountIDs []nspb.AccountID) (map[nspb.AccountID]
 	}
 
 	return byAccountID, nil
-}
-
-func (app *App) serveLiveMatches(c echo.Context) error {
-	matchIDs, err := app.rdsLiveMatchIDs()
-
-	if err != nil {
-		return err
-	}
-
-	view, err := app.loadLiveMatchesView(matchIDs...)
-
-	if err != nil {
-		app.log.WithError(err).Error("error loading live matches view")
-
-		return &echo.HTTPError{
-			Code:     http.StatusInternalServerError,
-			Message:  err.Error(),
-			Internal: err,
-		}
-	}
-
-	return c.JSON(http.StatusOK, view)
 }

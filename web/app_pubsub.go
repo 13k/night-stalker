@@ -3,6 +3,7 @@ package web
 import (
 	"github.com/go-redis/redis/v7"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -14,21 +15,14 @@ func (app *App) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 	result := app.rds.ZRevRange(nsrds.KeyLiveMatches, 0, -1)
 
 	if err := result.Err(); err != nil {
-		app.log.
-			WithField("key", nsrds.KeyLiveMatches).
-			WithError(err).
-			Error("error fetching cached live matches index")
-
+		err = xerrors.Errorf("error loading redis key %s: %w", nsrds.KeyLiveMatches, err)
 		return nil, err
 	}
 
 	matchIDs := make(nscol.MatchIDs, len(result.Val()))
 
 	if err := result.ScanSlice(&matchIDs); err != nil {
-		app.log.
-			WithError(err).
-			Error("error parsing live match IDs")
-
+		err = xerrors.Errorf("error parsing live matches IDs: %w", err)
 		return nil, err
 	}
 
@@ -43,23 +37,23 @@ func (app *App) seedLiveMatches() error {
 	matchIDs, err := app.rdsLiveMatchIDs()
 
 	if err != nil {
-		app.log.WithError(err).Error("error loading live matches ids")
+		err = xerrors.Errorf("error loading live matches IDs: %w", err)
 		return err
 	}
 
 	if len(matchIDs) == 0 {
-		app.matches = nscol.NewLiveMatches()
+		app.matches = nscol.NewLiveMatchesContainer()
 		return nil
 	}
 
 	liveMatches, err := app.loadLiveMatches(matchIDs)
 
 	if err != nil {
-		app.log.WithError(err).Error("error loading live matches")
+		err = xerrors.Errorf("error loading live matches: %w", err)
 		return err
 	}
 
-	app.matches = nscol.NewLiveMatches(liveMatches...)
+	app.matches = nscol.NewLiveMatchesContainer(liveMatches...)
 
 	app.log.WithField("count", len(liveMatches)).Debug("seeded matches")
 
@@ -72,6 +66,7 @@ func (app *App) subscribeLiveMatches() error {
 	msg, err := app.rdsSubLiveMatchesAll.Receive()
 
 	if err != nil {
+		err = xerrors.Errorf("error subscribing to topic %s: %w", nsrds.TopicPatternLiveMatchesAll, err)
 		return err
 	}
 
@@ -81,7 +76,11 @@ func (app *App) subscribeLiveMatches() error {
 	case *redis.Message:
 		go app.handleLiveMatchesChange(m)
 	default:
-		return errRedisPubSubSubscription
+		return xerrors.Errorf(
+			"received invalid message %T when subscribing to topic %s",
+			m,
+			nsrds.TopicPatternLiveMatchesAll,
+		)
 	}
 
 	go app.watchLiveMatches()
@@ -174,7 +173,7 @@ func (app *App) addLiveMatches(matchIDs nscol.MatchIDs) (*nspb.LiveMatches, erro
 	liveMatches, err := app.loadLiveMatches(matchIDs)
 
 	if err != nil {
-		l.WithError(err).Error("error loading live matches")
+		err = xerrors.Errorf("error loading live matches: %w", err)
 		return nil, err
 	}
 
@@ -186,7 +185,7 @@ func (app *App) addLiveMatches(matchIDs nscol.MatchIDs) (*nspb.LiveMatches, erro
 	view, err := app.createLiveMatchesView(liveMatches...)
 
 	if err != nil {
-		l.WithError(err).Error("error loading live matches view")
+		err = xerrors.Errorf("error creating LiveMatches view: %w", err)
 		return nil, err
 	}
 
@@ -201,7 +200,7 @@ func (app *App) removeLiveMatches(matchIDs nscol.MatchIDs) (*nspb.LiveMatches, e
 	view, err := app.loadLiveMatchesView(matchIDs...)
 
 	if err != nil {
-		l.WithError(err).Error("error loading live matches view")
+		err = xerrors.Errorf("error loading LiveMatches view: %w", err)
 		return nil, err
 	}
 
@@ -221,6 +220,7 @@ func (app *App) subscribeLiveMatchStats() error {
 	msg, err := app.rdsSubLiveMatchStatsAll.Receive()
 
 	if err != nil {
+		err = xerrors.Errorf("error subscribing to topic %s: %w", nsrds.TopicPatternLiveMatchStatsAll, err)
 		return err
 	}
 
@@ -230,7 +230,11 @@ func (app *App) subscribeLiveMatchStats() error {
 	case *redis.Message:
 		go app.handleLiveMatchStatsChange(m)
 	default:
-		return errRedisPubSubSubscription
+		return xerrors.Errorf(
+			"received invalid message %T when subscribing to topic %s",
+			m,
+			nsrds.TopicPatternLiveMatchStatsAll,
+		)
 	}
 
 	go app.watchLiveMatchStats()

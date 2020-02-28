@@ -1,131 +1,18 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/xerrors"
 
+	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
-	"github.com/13k/night-stalker/models"
 )
 
-func (app *App) loadPlayerView(accountID nspb.AccountID) (*nspb.Player, error) {
-	followed := &models.FollowedPlayer{}
-
-	err := app.db.
-		Where(&models.FollowedPlayer{AccountID: accountID}).
-		Take(followed).
-		Error
-
-	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
-		}
-
-		app.log.WithError(err).Error("database followed player")
-		return nil, err
-	}
-
-	player := &models.Player{}
-
-	err = app.db.
-		Where(&models.Player{AccountID: accountID}).
-		Take(player).
-		Error
-
-	if err != nil {
-		if !gorm.IsRecordNotFoundError(err) {
-			app.log.WithError(err).Error("database player")
-			return nil, err
-		}
-
-		player = nil
-	}
-
-	proPlayer := &models.ProPlayer{}
-
-	err = app.db.
-		Where(&models.ProPlayer{AccountID: accountID}).
-		Preload("Team").
-		Take(proPlayer).
-		Error
-
-	if err != nil {
-		if !gorm.IsRecordNotFoundError(err) {
-			app.log.WithError(err).Error("database pro player")
-			return nil, err
-		}
-
-		proPlayer = nil
-	}
-
-	var livePlayers []*models.LiveMatchPlayer
-
-	err = app.db.
-		Joins("INNER JOIN live_matches ON (live_match_players.live_match_id = live_matches.id)").
-		Joins("INNER JOIN matches ON (live_matches.match_id = matches.id)").
-		Where(&models.LiveMatchPlayer{AccountID: accountID}).
-		Preload("LiveMatch.Match").
-		Find(&livePlayers).
-		Error
-
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
-		app.log.WithError(err).Error("database live match players")
-		return nil, err
-	}
-
-	var matchIDs []nspb.MatchID
-
-	for _, livePlayer := range livePlayers {
-		liveMatch := livePlayer.LiveMatch
-
-		if liveMatch != nil {
-			matchIDs = append(matchIDs, liveMatch.MatchID)
-		}
-	}
-
-	var matchPlayers []*models.MatchPlayer
-
-	err = app.db.
-		Where("match_players.match_id IN (?)", matchIDs).
-		Where(&models.MatchPlayer{AccountID: accountID}).
-		Preload("Match").
-		Find(&matchPlayers).
-		Error
-
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
-		app.log.WithError(err).Error("database match players")
-		return nil, err
-	}
-
-	var statsPlayers []*models.LiveMatchStatsPlayer
-
-	err = app.db.
-		Joins("INNER JOIN live_match_stats ON (live_match_stats_players.live_match_stats_id = live_match_stats.id)").
-		Where("live_match_stats.match_id IN (?)", matchIDs).
-		Where(&models.LiveMatchStatsPlayer{AccountID: accountID}).
-		Preload("LiveMatchStats").
-		Find(&statsPlayers).
-		Error
-
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
-		app.log.WithError(err).Error("database stats players")
-		return nil, err
-	}
-
-	return nsviews.NewPlayer(
-		followed,
-		player,
-		proPlayer,
-		livePlayers,
-		matchPlayers,
-		statsPlayers,
-	)
-}
-
-func (app *App) servePlayer(c echo.Context) error {
+func (app *App) servePlayerMatches(c echo.Context) error {
 	type PathParams struct {
 		AccountID nspb.AccountID `param:"account_id"`
 	}
@@ -140,9 +27,11 @@ func (app *App) servePlayer(c echo.Context) error {
 		}
 	}
 
-	view, err := app.loadPlayerView(pathParams.AccountID)
+	view, err := app.loadPlayerMatchesView(pathParams.AccountID)
 
 	if err != nil {
+		app.log.Error(fmt.Sprintf("%+v", err))
+
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
 			Message:  err.Error(),
@@ -155,4 +44,67 @@ func (app *App) servePlayer(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, view)
+}
+
+func (app *App) loadPlayerMatchesView(accountID nspb.AccountID) (*nspb.PlayerMatches, error) {
+	playersData, err := app.loadPlayersData(accountID)
+
+	if err != nil {
+		err = xerrors.Errorf("error loading players data: %w", err)
+		return nil, err
+	}
+
+	if playersData == nil {
+		return nil, nil
+	}
+
+	playerData := playersData[accountID]
+
+	if playerData == nil {
+		return nil, nil
+	}
+
+	matchesData, err := app.loadPlayerMatchesData(accountID)
+
+	if err != nil {
+		err = xerrors.Errorf("error loading player matches data: %w", err)
+		return nil, err
+	}
+
+	playersAccountIDs := matchesData.AccountIDs()
+
+	var followedAccountIDs nscol.AccountIDs
+
+	if len(playersAccountIDs) > 0 {
+		followedAccountIDs, err = app.filterFollowedPlayersAccountIDs(playersAccountIDs...)
+
+		if err != nil {
+			err = xerrors.Errorf("error filtering followed players account IDs: %w", err)
+			return nil, err
+		}
+	}
+
+	var knownPlayersData nsviews.PlayersData
+
+	if len(followedAccountIDs) > 0 {
+		knownPlayersData, err = app.loadPlayersData(followedAccountIDs...)
+
+		if err != nil {
+			err = xerrors.Errorf("error loading players data: %w", err)
+			return nil, err
+		}
+	}
+
+	view, err := nsviews.NewPlayerMatches(
+		playerData,
+		knownPlayersData,
+		matchesData,
+	)
+
+	if err != nil {
+		err = xerrors.Errorf("error creating PlayerMatches view: %w", err)
+		return nil, err
+	}
+
+	return view, nil
 }
