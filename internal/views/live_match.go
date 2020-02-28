@@ -1,6 +1,8 @@
 package views
 
 import (
+	"golang.org/x/xerrors"
+
 	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/13k/night-stalker/models"
 )
@@ -15,6 +17,7 @@ func NewLiveMatch(
 	pb, err := LiveMatchProto(match)
 
 	if err != nil {
+		err = xerrors.Errorf("error creating LiveMatch view: %w", err)
 		return nil, err
 	}
 
@@ -148,14 +151,17 @@ func LiveMatchProto(m *models.LiveMatch) (*nspb.LiveMatch, error) {
 	var err error
 
 	if pb.ActivateTime, err = models.NullTimestampProto(m.ActivateTime); err != nil {
+		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		return nil, err
 	}
 
 	if pb.DeactivateTime, err = models.NullTimestampProto(m.DeactivateTime); err != nil {
+		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		return nil, err
 	}
 
 	if pb.LastUpdateTime, err = models.NullTimestampProto(m.LastUpdateTime); err != nil {
+		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		return nil, err
 	}
 

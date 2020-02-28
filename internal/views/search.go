@@ -10,7 +10,7 @@ func NewSearch(
 	followed []*models.FollowedPlayer,
 	players []*models.Player,
 	proPlayers []*models.ProPlayer,
-) (*nspb.Search, error) {
+) *nspb.Search {
 	pb := &nspb.Search{
 		HeroIds: make([]uint64, len(heroes)),
 		Players: make([]*nspb.Search_Player, len(followed)),
@@ -40,7 +40,7 @@ func NewSearch(
 		)
 	}
 
-	return pb, nil
+	return pb
 }
 
 func NewSearchPlayer(

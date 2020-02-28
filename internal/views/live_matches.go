@@ -1,6 +1,8 @@
 package views
 
 import (
+	"golang.org/x/xerrors"
+
 	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/13k/night-stalker/models"
 )
@@ -24,6 +26,7 @@ func NewLiveMatches(
 		)
 
 		if err != nil {
+			err = xerrors.Errorf("error creating LiveMatch view: %w", err)
 			return nil, err
 		}
 
