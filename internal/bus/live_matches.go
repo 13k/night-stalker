@@ -7,11 +7,11 @@ import (
 
 type LiveMatchesChangeMessage struct {
 	Op       nspb.CollectionOp
-	Matches  nscol.LiveMatchesSlice
+	Matches  nscol.LiveMatches
 	MatchIDs nscol.MatchIDs
 }
 
 type LiveMatchStatsChangeMessage struct {
 	Op    nspb.CollectionOp
-	Stats nscol.LiveMatchStatsSlice
+	Stats nscol.LiveMatchStats
 }

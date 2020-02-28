@@ -34,7 +34,7 @@ var _ nsproc.Processor = (*Collector)(nil)
 type Collector struct {
 	ctx                     context.Context
 	options                 CollectorOptions
-	matches                 *nscol.LiveMatches
+	matches                 *nscol.LiveMatchesContainer
 	log                     *nslog.Logger
 	db                      *gorm.DB
 	rds                     *redis.Client
@@ -131,7 +131,7 @@ func (p *Collector) seedLiveMatches() error {
 	}
 
 	if len(matchIDs) == 0 {
-		p.matches = nscol.NewLiveMatches()
+		p.matches = nscol.NewLiveMatchesContainer()
 		return nil
 	}
 
@@ -142,7 +142,7 @@ func (p *Collector) seedLiveMatches() error {
 		return err
 	}
 
-	p.matches = nscol.NewLiveMatches(liveMatches...)
+	p.matches = nscol.NewLiveMatchesContainer(liveMatches...)
 
 	p.log.WithField("count", len(liveMatches)).Debug("seeded matches")
 
@@ -171,8 +171,8 @@ func (p *Collector) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 	return matchIDs, nil
 }
 
-func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatchesSlice, error) {
-	var matches nscol.LiveMatchesSlice
+func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatches, error) {
+	var matches nscol.LiveMatches
 
 	err := p.db.
 		Where("match_id IN (?)", matchIDs).
@@ -238,7 +238,7 @@ func (p *Collector) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage)
 	}
 }
 
-func (p *Collector) add(matches nscol.LiveMatchesSlice) {
+func (p *Collector) add(matches nscol.LiveMatches) {
 	if len(matches) == 0 {
 		return
 	}
@@ -295,7 +295,7 @@ func (p *Collector) handleLiveMatchStatsChange(msg *nsbus.LiveMatchStatsChangeMe
 	}
 }
 
-func (p *Collector) addStats(stats nscol.LiveMatchStatsSlice) {
+func (p *Collector) addStats(stats nscol.LiveMatchStats) {
 	l := p.log.WithField("count", len(stats))
 
 	if err := p.rdsPubLiveMatchStatsAdd(stats); err != nil {
@@ -306,7 +306,7 @@ func (p *Collector) addStats(stats nscol.LiveMatchStatsSlice) {
 	l.Debug("received match stats")
 }
 
-func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatchesSlice) {
+func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	p.busPublishAllMatches()
 
 	if err := p.rdsPubLiveMatchesAdd(liveMatches); err != nil {
@@ -334,47 +334,53 @@ func (p *Collector) busPublishAllMatches() {
 	})
 }
 
-func (p *Collector) rdsAddLiveMatches(liveMatches nscol.LiveMatchesSlice) error {
-	if err := p.rds.ZAdd(nsrds.KeyLiveMatches, liveMatches.ToRedisZValues()...).Err(); err != nil {
-		return err
+func (p *Collector) rdsAddLiveMatches(liveMatches nscol.LiveMatches) error {
+	zValues := nsrds.LiveMatchesToZValues(liveMatches)
+	result := p.rds.ZAdd(nsrds.KeyLiveMatches, zValues...)
+
+	if result.Err() != nil {
+		return result.Err()
 	}
 
-	zValuesByTime := make([]*redis.Z, len(liveMatches))
+	zValues = nsrds.LiveMatchesToZValuesByTime(liveMatches)
+	result = p.rds.ZAdd(nsrds.KeyLiveMatchesByTime, zValues...)
 
-	for i, liveMatch := range liveMatches {
-		var activateTimeUnix int64
-
-		if liveMatch.ActivateTime != nil {
-			activateTimeUnix = liveMatch.ActivateTime.UTC().Unix()
-		}
-
-		zValuesByTime[i] = &redis.Z{
-			Member: liveMatch.MatchID,
-			Score:  float64(activateTimeUnix),
-		}
+	if result.Err() != nil {
+		return result.Err()
 	}
 
-	return p.rds.ZAdd("live_matches_by_time", zValuesByTime...).Err()
+	return nil
 }
 
 func (p *Collector) rdsRemoveLiveMatches(matchIDs nscol.MatchIDs) error {
 	ifaceMatchIDs := matchIDs.ToInterfaces()
 
-	if err := p.rds.ZRem(nsrds.KeyLiveMatches, ifaceMatchIDs...).Err(); err != nil {
-		return err
+	result := p.rds.ZRem(nsrds.KeyLiveMatches, ifaceMatchIDs...)
+
+	if result.Err() != nil {
+		return result.Err()
 	}
 
-	return p.rds.ZRem("live_matches_by_time", ifaceMatchIDs...).Err()
+	result = p.rds.ZRem(nsrds.KeyLiveMatchesByTime, ifaceMatchIDs...)
+
+	if result.Err() != nil {
+		return result.Err()
+	}
+
+	return nil
 }
 
-func (p *Collector) rdsPubLiveMatchesAdd(liveMatches nscol.LiveMatchesSlice) error {
-	return p.rds.Publish(nsrds.TopicLiveMatchesAdd, liveMatches.MatchIDs().Join(",")).Err()
+func (p *Collector) rdsPubLiveMatchesAdd(liveMatches nscol.LiveMatches) error {
+	result := p.rds.Publish(nsrds.TopicLiveMatchesAdd, liveMatches.MatchIDs().Join(","))
+	return result.Err()
 }
 
 func (p *Collector) rdsPubLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
-	return p.rds.Publish(nsrds.TopicLiveMatchesRemove, matchIDs.Join(",")).Err()
+	result := p.rds.Publish(nsrds.TopicLiveMatchesRemove, matchIDs.Join(","))
+	return result.Err()
 }
 
-func (p *Collector) rdsPubLiveMatchStatsAdd(stats nscol.LiveMatchStatsSlice) error {
-	return p.rds.Publish(nsrds.TopicLiveMatchStatsAdd, stats.MatchIDs().Join(",")).Err()
+func (p *Collector) rdsPubLiveMatchStatsAdd(stats nscol.LiveMatchStats) error {
+	result := p.rds.Publish(nsrds.TopicLiveMatchStatsAdd, stats.MatchIDs().Join(","))
+	return result.Err()
 }

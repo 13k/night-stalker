@@ -48,7 +48,7 @@ type Monitor struct {
 	busLiveMatchesReplace <-chan nsbus.Message
 	busMatchesMinimalResp <-chan nsbus.Message
 	matchesMtx            sync.RWMutex
-	matches               nscol.LiveMatchesSlice
+	matches               nscol.LiveMatches
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {

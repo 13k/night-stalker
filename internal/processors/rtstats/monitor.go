@@ -56,8 +56,8 @@ type Monitor struct {
 	activeReqsMtx         sync.Mutex
 	activeReqs            map[nspb.MatchID]bool
 	matchesMtx            sync.RWMutex
-	matches               nscol.LiveMatchesSlice
-	results               nscol.LiveMatchStatsSlice
+	matches               nscol.LiveMatches
+	results               nscol.LiveMatchStats
 	resultsCh             chan *models.LiveMatchStats
 }
 

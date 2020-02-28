@@ -262,8 +262,8 @@ func (p *Watcher) handleResponse(page *queryPage) {
 	}
 }
 
-func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) (nscol.LiveMatchesSlice, error) {
-	liveMatches := make(nscol.LiveMatchesSlice, 0, len(games))
+func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) (nscol.LiveMatches, error) {
+	liveMatches := make(nscol.LiveMatches, 0, len(games))
 
 	for _, game := range games {
 		if p.ctx.Err() != nil {
@@ -346,7 +346,7 @@ func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
 	return tvGames, nil
 }
 
-func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatchesSlice) {
+func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesAdd,
 		Payload: &nsbus.LiveMatchesChangeMessage{
@@ -356,7 +356,7 @@ func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatchesSlice) {
 	})
 }
 
-func (p *Watcher) busPublishLiveMatchesRemove(liveMatches nscol.LiveMatchesSlice) {
+func (p *Watcher) busPublishLiveMatchesRemove(liveMatches nscol.LiveMatches) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{
