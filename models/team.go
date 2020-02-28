@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var TeamModel = (*Team)(nil)
+var TeamModel Model = (*Team)(nil)
 
 type TeamID uint64
 

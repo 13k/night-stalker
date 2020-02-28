@@ -1,6 +1,6 @@
 package models
 
-var HeroModel = (*Hero)(nil)
+var HeroModel Model = (*Hero)(nil)
 
 type HeroID uint64
 

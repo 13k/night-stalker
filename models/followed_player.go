@@ -4,7 +4,7 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protocol"
 )
 
-var FollowedPlayerModel = (*FollowedPlayer)(nil)
+var FollowedPlayerModel Model = (*FollowedPlayer)(nil)
 
 type FollowedPlayerID uint64
 

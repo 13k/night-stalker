@@ -5,7 +5,7 @@ import (
 	"github.com/faceit/go-steam/steamid"
 )
 
-var PlayerModel = (*Player)(nil)
+var PlayerModel Model = (*Player)(nil)
 
 type PlayerID uint64
 

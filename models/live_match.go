@@ -10,7 +10,7 @@ import (
 	nstime "github.com/13k/night-stalker/internal/time"
 )
 
-var LiveMatchModel = (*LiveMatch)(nil)
+var LiveMatchModel Model = (*LiveMatch)(nil)
 
 type LiveMatchID uint64
 

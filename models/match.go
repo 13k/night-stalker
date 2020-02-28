@@ -8,7 +8,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 )
 
-var MatchModel = (*Match)(nil)
+var MatchModel Model = (*Match)(nil)
 
 // Match ...
 type Match struct {
@@ -36,7 +36,8 @@ type Match struct {
 	WeekendTourneySkillLevel     uint32            `gorm:"column:weekend_tourney_skill_level"`
 	Timestamps
 
-	Players []*MatchPlayer
+	Players   []*MatchPlayer
+	LiveMatch *LiveMatch
 }
 
 func (*Match) TableName() string {

@@ -7,7 +7,7 @@ import (
 	"github.com/faceit/go-steam/steamid"
 )
 
-var SteamLoginModel = (*SteamLogin)(nil)
+var SteamLoginModel Model = (*SteamLogin)(nil)
 
 type SteamLoginID uint64
 

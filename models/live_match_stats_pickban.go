@@ -5,7 +5,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 )
 
-var LiveMatchStatsPickBanModel = (*LiveMatchStatsPickBan)(nil)
+var LiveMatchStatsPickBanModel Model = (*LiveMatchStatsPickBan)(nil)
 
 type LiveMatchStatsPickBanID uint64
 

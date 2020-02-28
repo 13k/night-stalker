@@ -6,7 +6,7 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protocol"
 )
 
-var ProPlayerModel = (*ProPlayer)(nil)
+var ProPlayerModel Model = (*ProPlayer)(nil)
 
 type ProPlayerID uint64
 

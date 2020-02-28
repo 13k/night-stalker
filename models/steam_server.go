@@ -1,6 +1,6 @@
 package models
 
-var SteamServerModel = (*SteamServer)(nil)
+var SteamServerModel Model = (*SteamServer)(nil)
 
 type SteamServerID uint64
 

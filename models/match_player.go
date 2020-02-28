@@ -6,7 +6,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 )
 
-var MatchPlayerModel = (*MatchPlayer)(nil)
+var MatchPlayerModel Model = (*MatchPlayer)(nil)
 
 type MatchPlayerID uint64
 

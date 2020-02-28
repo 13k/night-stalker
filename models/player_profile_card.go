@@ -7,7 +7,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 )
 
-var PlayerProfileCardModel = (*PlayerProfileCard)(nil)
+var PlayerProfileCardModel Model = (*PlayerProfileCard)(nil)
 
 type PlayerProfileCardID uint64
 

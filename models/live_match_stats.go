@@ -7,7 +7,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 )
 
-var LiveMatchStatsModel = (*LiveMatchStats)(nil)
+var LiveMatchStatsModel Model = (*LiveMatchStats)(nil)
 
 type LiveMatchStatsID uint64
 
