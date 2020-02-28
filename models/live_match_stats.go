@@ -44,6 +44,12 @@ func (*LiveMatchStats) TableName() string {
 	return "live_match_stats"
 }
 
+func NewLiveMatchStats(liveMatch *LiveMatch, pb *protocol.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
+	m := LiveMatchStatsDotaProto(pb)
+	m.LiveMatchID = liveMatch.ID
+	return m
+}
+
 func LiveMatchStatsDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
 	return &LiveMatchStats{
 		MatchID:                    pb.GetMatch().GetMatchid(),

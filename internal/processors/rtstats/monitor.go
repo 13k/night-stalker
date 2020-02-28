@@ -55,8 +55,8 @@ type Monitor struct {
 	busLiveMatchesReplace <-chan nsbus.Message
 	activeReqsMtx         sync.Mutex
 	activeReqs            map[nspb.MatchID]bool
-	matchesMtx            sync.RWMutex
-	matches               nscol.LiveMatches
+	liveMatchesMtx        sync.RWMutex
+	liveMatches           nscol.LiveMatches
 	results               nscol.LiveMatchStats
 	resultsCh             chan *models.LiveMatchStats
 }
@@ -243,30 +243,30 @@ func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 		"count": len(msg.Matches),
 	}).Debug("received live matches")
 
-	p.matchesMtx.Lock()
-	defer p.matchesMtx.Unlock()
-	p.matches = msg.Matches
+	p.liveMatchesMtx.Lock()
+	defer p.liveMatchesMtx.Unlock()
+	p.liveMatches = msg.Matches
 }
 
 func (p *Monitor) tick() {
-	p.matchesMtx.RLock()
-	defer p.matchesMtx.RUnlock()
+	p.liveMatchesMtx.RLock()
+	defer p.liveMatchesMtx.RUnlock()
 
-	if len(p.matches) == 0 {
+	if len(p.liveMatches) == 0 {
 		return
 	}
 
 	p.log.WithFields(logrus.Fields{
-		"count": len(p.matches),
+		"count": len(p.liveMatches),
 	}).Debug("requesting stats")
 
-	for _, match := range p.matches {
-		p.submitLiveMatch(match)
+	for _, liveMatch := range p.liveMatches {
+		p.submitLiveMatch(liveMatch)
 	}
 }
 
-func (p *Monitor) submitLiveMatch(match *models.LiveMatch) {
-	l := p.log.WithField("match_id", match.MatchID)
+func (p *Monitor) submitLiveMatch(liveMatch *models.LiveMatch) {
+	l := p.log.WithField("match_id", liveMatch.MatchID)
 
 	if err := p.ctx.Err(); err != nil {
 		l.WithError(err).Error()
@@ -274,7 +274,7 @@ func (p *Monitor) submitLiveMatch(match *models.LiveMatch) {
 	}
 
 	err := p.workerPool.Submit(func() {
-		p.work(match)
+		p.work(liveMatch)
 	})
 
 	if err != nil {
@@ -282,15 +282,15 @@ func (p *Monitor) submitLiveMatch(match *models.LiveMatch) {
 	}
 }
 
-func (p *Monitor) work(match *models.LiveMatch) {
+func (p *Monitor) work(liveMatch *models.LiveMatch) {
 	l := p.log.WithFields(logrus.Fields{
-		"match_id":        match.MatchID,
-		"server_steam_id": match.ServerSteamID,
+		"match_id":        liveMatch.MatchID,
+		"server_steam_id": liveMatch.ServerSteamID,
 	})
 
 	var skip bool
 	p.activeReqsMtx.Lock()
-	skip = p.activeReqs[match.MatchID]
+	skip = p.activeReqs[liveMatch.MatchID]
 	p.activeReqsMtx.Unlock()
 
 	if skip {
@@ -299,16 +299,16 @@ func (p *Monitor) work(match *models.LiveMatch) {
 	}
 
 	p.activeReqsMtx.Lock()
-	p.activeReqs[match.MatchID] = true
+	p.activeReqs[liveMatch.MatchID] = true
 	p.activeReqsMtx.Unlock()
 
 	defer func() {
 		p.activeReqsMtx.Lock()
-		delete(p.activeReqs, match.MatchID)
+		delete(p.activeReqs, liveMatch.MatchID)
 		p.activeReqsMtx.Unlock()
 	}()
 
-	result, err := p.requestMatchStats(match)
+	result, err := p.requestMatchStats(liveMatch)
 
 	if err != nil {
 		l.WithError(err).Error("error requesting API")
@@ -319,7 +319,7 @@ func (p *Monitor) work(match *models.LiveMatch) {
 		return
 	}
 
-	stats, err := p.createLiveMatchStats(result)
+	stats, err := p.createLiveMatchStats(liveMatch, result)
 
 	if err != nil {
 		l.WithError(err).Error("error saving stats to database")
@@ -338,7 +338,7 @@ func (p *Monitor) flushResults() {
 	p.results = nil
 }
 
-func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
+func (p *Monitor) requestMatchStats(liveMatch *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
 	req, err := p.apiMatchStats.GetRealtimeStats()
 
 	if err != nil {
@@ -352,7 +352,7 @@ func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTA
 	}
 
 	params := url.Values{}
-	params.Set("server_steam_id", strconv.FormatUint(match.ServerSteamID.ToUint64(), 10))
+	params.Set("server_steam_id", strconv.FormatUint(liveMatch.ServerSteamID.ToUint64(), 10))
 
 	reqOptions := geyser.RequestOptions{
 		Context: p.ctx,
@@ -377,9 +377,10 @@ func (p *Monitor) requestMatchStats(match *models.LiveMatch) (*protocol.CMsgDOTA
 }
 
 func (p *Monitor) createLiveMatchStats(
+	liveMatch *models.LiveMatch,
 	result *protocol.CMsgDOTARealtimeGameStatsTerse,
 ) (*models.LiveMatchStats, error) {
-	stats := models.LiveMatchStatsDotaProto(result)
+	stats := models.NewLiveMatchStats(liveMatch, result)
 
 	for _, team := range result.GetTeams() {
 		stats.Teams = append(stats.Teams, models.LiveMatchStatsTeamDotaProto(team))
