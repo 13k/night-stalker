@@ -27,11 +27,12 @@ var Cmd = &cobra.Command{
 }
 
 var (
-	flagPath     string
-	flagGenerate string
-	flagPrint    bool
-	flagVersion  uint
-	flagSteps    int
+	flagPath         string
+	flagGenerate     string
+	flagPrint        bool
+	flagVersion      uint
+	flagForceVersion bool
+	flagSteps        int
 )
 
 func init() {
@@ -39,6 +40,7 @@ func init() {
 	Cmd.Flags().StringVarP(&flagGenerate, "gen", "g", "", "generate migration")
 	Cmd.Flags().BoolVarP(&flagPrint, "print", "P", false, "print the currently active migration version")
 	Cmd.Flags().UintVarP(&flagVersion, "version", "V", 0, "migration version")
+	Cmd.Flags().BoolVarP(&flagForceVersion, "force", "f", false, "force migration version (must be used with --version)")
 	Cmd.Flags().IntVarP(&flagSteps, "steps", "s", 0, "migrate N steps (can be negative)")
 }
 
@@ -51,6 +53,11 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
+	if flagGenerate != "" {
+		runGenerate(log)
+		return
+	}
+
 	db, err := db.Connect()
 
 	if err != nil {
@@ -59,14 +66,12 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	switch {
-	case flagGenerate != "":
-		runGenerate(log)
-	case flagPrint:
+	if flagPrint {
 		runPrint(db, log)
-	default:
-		runMigrate(db, log)
+		return
 	}
+
+	runMigrate(db, log)
 }
 
 func runGenerate(log *nslog.Logger) {
@@ -166,6 +171,10 @@ func runMigrate(db *gorm.DB, log *nslog.Logger) {
 		log.Fatal("version and steps options are mutually exclusive")
 	}
 
+	if flagForceVersion && flagVersion == 0 {
+		log.Fatal("force option must be used with version")
+	}
+
 	m := newMigrate(db, log)
 
 	defer m.Close()
@@ -176,7 +185,13 @@ func runMigrate(db *gorm.DB, log *nslog.Logger) {
 	switch {
 	case flagVersion != 0:
 		l = log.WithField("version", flagVersion)
-		fn = func() error { return m.Migrate(flagVersion) }
+
+		if flagForceVersion {
+			l = l.WithField("force", true)
+			fn = func() error { return m.Force(int(flagVersion)) }
+		} else {
+			fn = func() error { return m.Migrate(flagVersion) }
+		}
 	case flagSteps != 0:
 		l = log.WithField("steps", flagSteps)
 		fn = func() error { return m.Steps(flagSteps) }
