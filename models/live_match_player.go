@@ -19,6 +19,7 @@ type LiveMatchPlayer struct {
 	Timestamps
 
 	LiveMatch *LiveMatch
+	Match     *Match
 	Hero      *Hero
 }
 

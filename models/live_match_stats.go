@@ -14,6 +14,7 @@ type LiveMatchStatsID uint64
 // LiveMatchStats ...
 type LiveMatchStats struct {
 	ID                         LiveMatchStatsID  `gorm:"column:id;primary_key"`
+	LiveMatchID                LiveMatchID       `gorm:"column:live_match_id;index;not null"`
 	MatchID                    nspb.MatchID      `gorm:"column:match_id;index;not null"`
 	ServerSteamID              steamid.SteamId   `gorm:"column:server_steam_id;index;not null"`
 	LeagueID                   nspb.LeagueID     `gorm:"column:league_id"`
@@ -31,6 +32,8 @@ type LiveMatchStats struct {
 	GraphRax                   pq.Int64Array     `gorm:"column:graph_rax"`
 	Timestamps
 
+	LiveMatch *LiveMatch
+	Match     *Match
 	Teams     []*LiveMatchStatsTeam
 	Players   []*LiveMatchStatsPlayer
 	Draft     []*LiveMatchStatsPickBan
