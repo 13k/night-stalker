@@ -11,6 +11,10 @@ import (
 type TVGames []*protocol.CSourceTVGameSmall
 
 func (s TVGames) MatchIDs() MatchIDs {
+	if s == nil {
+		return nil
+	}
+
 	matchIDs := make(MatchIDs, len(s))
 
 	for i, game := range s {
@@ -30,8 +34,30 @@ func (s TVGames) FindIndexByMatchID(matchID nspb.MatchID) int {
 	return -1
 }
 
+func (s TVGames) GroupByMatchID() map[nspb.MatchID]TVGames {
+	if s == nil {
+		return nil
+	}
+
+	m := make(map[nspb.MatchID]TVGames)
+
+	for _, game := range s {
+		if game == nil {
+			continue
+		}
+
+		if game.GetMatchId() == 0 {
+			continue
+		}
+
+		m[game.GetMatchId()] = append(m[game.GetMatchId()], game)
+	}
+
+	return m
+}
+
 func (s TVGames) Shift() (TVGames, *protocol.CSourceTVGameSmall) {
-	if len(s) < 1 {
+	if len(s) == 0 {
 		return s, nil
 	}
 
@@ -39,7 +65,7 @@ func (s TVGames) Shift() (TVGames, *protocol.CSourceTVGameSmall) {
 }
 
 func (s TVGames) Pop() (TVGames, *protocol.CSourceTVGameSmall) {
-	if len(s) < 1 {
+	if len(s) == 0 {
 		return s, nil
 	}
 
@@ -87,20 +113,7 @@ func (s TVGames) Clean() TVGames {
 		return nil
 	}
 
-	groupByMatchID := make(map[nspb.MatchID]TVGames)
-
-	for _, game := range s {
-		if game == nil {
-			continue
-		}
-
-		if game.GetMatchId() == 0 {
-			continue
-		}
-
-		groupByMatchID[game.GetMatchId()] = append(groupByMatchID[game.GetMatchId()], game)
-	}
-
+	byMatchID := s.GroupByMatchID()
 	visited := make(map[nspb.MatchID]bool)
 	result := make(TVGames, 0, len(s))
 
@@ -117,7 +130,7 @@ func (s TVGames) Clean() TVGames {
 			continue
 		}
 
-		group := groupByMatchID[game.GetMatchId()]
+		group := byMatchID[game.GetMatchId()]
 
 		if len(group) > 1 {
 			for _, g := range group {

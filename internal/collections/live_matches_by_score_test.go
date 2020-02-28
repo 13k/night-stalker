@@ -10,7 +10,7 @@ import (
 
 func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 	testCases := []struct {
-		Subject  nscol.LiveMatchesSlice
+		Subject  nscol.LiveMatches
 		Match    *models.LiveMatch
 		Expected int
 	}{
@@ -24,7 +24,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 		},
 		// greater than all
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   3,
 					SortScore: float64(3.0),
@@ -46,7 +46,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 		},
 		// less than all
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   3,
 					SortScore: float64(3.0),
@@ -68,7 +68,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 		},
 		// equal 2
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   3,
 					SortScore: float64(3.0),
@@ -90,7 +90,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 		},
 		// greater than 2
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   3,
 					SortScore: float64(3.0),
@@ -112,7 +112,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 		},
 		// less than 2
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   3,
 					SortScore: float64(3.0),
@@ -151,7 +151,7 @@ func TestLiveMatchesByScore_FindIndex(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Subject nscol.LiveMatchesSlice
+		Subject nscol.LiveMatches
 		Find    []*findCase
 	}{
 		{
@@ -164,7 +164,7 @@ func TestLiveMatchesByScore_FindIndex(t *testing.T) {
 			},
 		},
 		{
-			Subject: nscol.LiveMatchesSlice{},
+			Subject: nscol.LiveMatches{},
 			Find: []*findCase{
 				{
 					MatchID:  1,
@@ -173,7 +173,7 @@ func TestLiveMatchesByScore_FindIndex(t *testing.T) {
 			},
 		},
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   5,
 					SortScore: float64(5.0),
@@ -248,13 +248,13 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Subject  nscol.LiveMatchesSlice
+		Subject  nscol.LiveMatches
 		Add      []*addCase
-		Expected nscol.LiveMatchesSlice
+		Expected nscol.LiveMatches
 	}{
 		// insert
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   1,
 					SortScore: float64(1.0),
@@ -269,7 +269,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 					Expected: 0,
 				},
 			},
-			Expected: nscol.LiveMatchesSlice{
+			Expected: nscol.LiveMatches{
 				{
 					MatchID:   2,
 					SortScore: float64(2.0),
@@ -282,7 +282,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 		},
 		// noop
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   2,
 					SortScore: float64(2.0),
@@ -301,7 +301,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 					Expected: -1,
 				},
 			},
-			Expected: nscol.LiveMatchesSlice{
+			Expected: nscol.LiveMatches{
 				{
 					MatchID:   2,
 					SortScore: float64(2.0),
@@ -314,7 +314,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 		},
 		// update/reorder
 		{
-			Subject: nscol.LiveMatchesSlice{
+			Subject: nscol.LiveMatches{
 				{
 					MatchID:   2,
 					SortScore: float64(2.0),
@@ -333,7 +333,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 					Expected: 0,
 				},
 			},
-			Expected: nscol.LiveMatchesSlice{
+			Expected: nscol.LiveMatches{
 				{
 					MatchID:   1,
 					SortScore: float64(5.0),
@@ -398,7 +398,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 					Expected: 1,
 				},
 			},
-			Expected: nscol.LiveMatchesSlice{
+			Expected: nscol.LiveMatches{
 				{
 					MatchID:   1,
 					SortScore: float64(5.0),
@@ -498,13 +498,13 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Matches  nscol.LiveMatchesSlice
+		Matches  nscol.LiveMatches
 		Remove   []*removeCase
-		Expected nscol.LiveMatchesSlice
+		Expected nscol.LiveMatches
 	}{
 		// remove
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Matches: nscol.LiveMatches{
 				{
 					MatchID:   4,
 					SortScore: float64(4.0),
@@ -527,8 +527,12 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 					MatchID:  2,
 					Expected: 2,
 				},
+				{
+					MatchID:  5,
+					Expected: 0,
+				},
 			},
-			Expected: nscol.LiveMatchesSlice{
+			Expected: nscol.LiveMatches{
 				{
 					MatchID:   4,
 					SortScore: float64(4.0),
@@ -545,7 +549,7 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 		},
 		// noop
 		{
-			Matches: nscol.LiveMatchesSlice{
+			Matches: nscol.LiveMatches{
 				{
 					MatchID:   1,
 					SortScore: float64(1.0),
@@ -557,7 +561,7 @@ func TestLiveMatchesByScore_Remove(t *testing.T) {
 					Expected: 0,
 				},
 			},
-			Expected: nscol.LiveMatchesSlice{
+			Expected: nscol.LiveMatches{
 				{
 					MatchID:   1,
 					SortScore: float64(1.0),

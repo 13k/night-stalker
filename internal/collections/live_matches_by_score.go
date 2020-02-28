@@ -8,20 +8,20 @@ import (
 )
 
 type LiveMatchesByScore struct {
-	LiveMatchesSlice
+	LiveMatches
 
 	index map[nspb.MatchID]*models.LiveMatch
 }
 
 func NewLiveMatchesByScore(matches ...*models.LiveMatch) *LiveMatchesByScore {
 	s := &LiveMatchesByScore{
-		LiveMatchesSlice: matches,
-		index:            make(map[nspb.MatchID]*models.LiveMatch),
+		LiveMatches: matches,
+		index:       make(map[nspb.MatchID]*models.LiveMatch),
 	}
 
 	sort.Sort(s)
 
-	for _, m := range s.LiveMatchesSlice {
+	for _, m := range s.LiveMatches {
 		s.index[m.MatchID] = m
 	}
 
@@ -33,19 +33,11 @@ func (s *LiveMatchesByScore) Less(i, j int) bool {
 }
 
 func (s *LiveMatchesByScore) At(i int) *models.LiveMatch {
-	return s.LiveMatchesSlice[i]
+	return s.LiveMatches[i]
 }
 
-func (s *LiveMatchesByScore) Get(matchID nspb.MatchID) *models.LiveMatch {
-	if m, ok := s.index[matchID]; ok {
-		return m
-	}
-
-	return nil
-}
-
-func (s *LiveMatchesByScore) All() LiveMatchesSlice {
-	return s.LiveMatchesSlice
+func (s *LiveMatchesByScore) All() LiveMatches {
+	return s.LiveMatches
 }
 
 // SearchIndex [O(log n)] performs a binary search for an index where the given match is or would be
@@ -105,7 +97,7 @@ func (s *LiveMatchesByScore) Remove(matchID nspb.MatchID) nspb.MatchID {
 		return 0
 	}
 
-	removed := s.LiveMatchesSlice.Remove(i)
+	removed := s.LiveMatches.Remove(i)
 
 	if removed == nil {
 		return 0
