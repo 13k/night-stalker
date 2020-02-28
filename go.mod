@@ -26,4 +26,5 @@ require (
 	github.com/spf13/viper v1.6.1
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17
 	golang.org/x/tools v0.0.0-20191210200704-1bcf67c9cb49 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 )
