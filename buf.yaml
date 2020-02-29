@@ -1,0 +1,11 @@
+build:
+  roots:
+    - protobuf
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX
+  ignore_only:
+    ENUM_ZERO_VALUE_SUFFIX:
+      - protocol/enums.proto
