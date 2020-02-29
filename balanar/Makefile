@@ -5,9 +5,9 @@ endif
 
 YARN := $(shell command -v yarn)
 
-PROTO_SRC = ../proto
+PROTO_REL_SRC := "../$(PROTO_SRC)"
 PROTO_JSOUT = src/protocol
-PROTOS = $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto')
+PROTOS = $(shell $(FIND) "$(PROTO_REL_SRC)" -type f -name '*.proto')
 PROTOS_JS_COMBINED = $(PROTO_JSOUT)/proto.js
 
 $(PROTOS_JS_COMBINED): $(PROTOS)
