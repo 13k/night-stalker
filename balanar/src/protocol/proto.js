@@ -2101,6 +2101,457 @@ export const protocol = $root.protocol = (() => {
         return LiveMatch;
     })();
 
+    protocol.LiveMatches = (function() {
+
+        /**
+         * Properties of a LiveMatches.
+         * @memberof protocol
+         * @interface ILiveMatches
+         * @property {Array.<protocol.ILiveMatch>|null} [matches] LiveMatches matches
+         */
+
+        /**
+         * Constructs a new LiveMatches.
+         * @memberof protocol
+         * @classdesc Represents a LiveMatches.
+         * @implements ILiveMatches
+         * @constructor
+         * @param {protocol.ILiveMatches=} [properties] Properties to set
+         */
+        function LiveMatches(properties) {
+            this.matches = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * LiveMatches matches.
+         * @member {Array.<protocol.ILiveMatch>} matches
+         * @memberof protocol.LiveMatches
+         * @instance
+         */
+        LiveMatches.prototype.matches = $util.emptyArray;
+
+        /**
+         * Creates a new LiveMatches instance using the specified properties.
+         * @function create
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {protocol.ILiveMatches=} [properties] Properties to set
+         * @returns {protocol.LiveMatches} LiveMatches instance
+         */
+        LiveMatches.create = function create(properties) {
+            return new LiveMatches(properties);
+        };
+
+        /**
+         * Encodes the specified LiveMatches message. Does not implicitly {@link protocol.LiveMatches.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {protocol.ILiveMatches} message LiveMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LiveMatches.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.matches != null && message.matches.length)
+                for (let i = 0; i < message.matches.length; ++i)
+                    $root.protocol.LiveMatch.encode(message.matches[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified LiveMatches message, length delimited. Does not implicitly {@link protocol.LiveMatches.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {protocol.ILiveMatches} message LiveMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LiveMatches.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a LiveMatches message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.LiveMatches} LiveMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LiveMatches.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.LiveMatches();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    if (!(message.matches && message.matches.length))
+                        message.matches = [];
+                    message.matches.push($root.protocol.LiveMatch.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a LiveMatches message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.LiveMatches} LiveMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LiveMatches.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a LiveMatches message.
+         * @function verify
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        LiveMatches.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.matches != null && message.hasOwnProperty("matches")) {
+                if (!Array.isArray(message.matches))
+                    return "matches: array expected";
+                for (let i = 0; i < message.matches.length; ++i) {
+                    let error = $root.protocol.LiveMatch.verify(message.matches[i]);
+                    if (error)
+                        return "matches." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a LiveMatches message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.LiveMatches} LiveMatches
+         */
+        LiveMatches.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.LiveMatches)
+                return object;
+            let message = new $root.protocol.LiveMatches();
+            if (object.matches) {
+                if (!Array.isArray(object.matches))
+                    throw TypeError(".protocol.LiveMatches.matches: array expected");
+                message.matches = [];
+                for (let i = 0; i < object.matches.length; ++i) {
+                    if (typeof object.matches[i] !== "object")
+                        throw TypeError(".protocol.LiveMatches.matches: object expected");
+                    message.matches[i] = $root.protocol.LiveMatch.fromObject(object.matches[i]);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a LiveMatches message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.LiveMatches
+         * @static
+         * @param {protocol.LiveMatches} message LiveMatches
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        LiveMatches.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.matches = [];
+            if (message.matches && message.matches.length) {
+                object.matches = [];
+                for (let j = 0; j < message.matches.length; ++j)
+                    object.matches[j] = $root.protocol.LiveMatch.toObject(message.matches[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this LiveMatches to JSON.
+         * @function toJSON
+         * @memberof protocol.LiveMatches
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        LiveMatches.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return LiveMatches;
+    })();
+
+    protocol.LiveMatchesChange = (function() {
+
+        /**
+         * Properties of a LiveMatchesChange.
+         * @memberof protocol
+         * @interface ILiveMatchesChange
+         * @property {protocol.CollectionOp|null} [op] LiveMatchesChange op
+         * @property {protocol.ILiveMatches|null} [change] LiveMatchesChange change
+         */
+
+        /**
+         * Constructs a new LiveMatchesChange.
+         * @memberof protocol
+         * @classdesc Represents a LiveMatchesChange.
+         * @implements ILiveMatchesChange
+         * @constructor
+         * @param {protocol.ILiveMatchesChange=} [properties] Properties to set
+         */
+        function LiveMatchesChange(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * LiveMatchesChange op.
+         * @member {protocol.CollectionOp} op
+         * @memberof protocol.LiveMatchesChange
+         * @instance
+         */
+        LiveMatchesChange.prototype.op = 0;
+
+        /**
+         * LiveMatchesChange change.
+         * @member {protocol.ILiveMatches|null|undefined} change
+         * @memberof protocol.LiveMatchesChange
+         * @instance
+         */
+        LiveMatchesChange.prototype.change = null;
+
+        /**
+         * Creates a new LiveMatchesChange instance using the specified properties.
+         * @function create
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {protocol.ILiveMatchesChange=} [properties] Properties to set
+         * @returns {protocol.LiveMatchesChange} LiveMatchesChange instance
+         */
+        LiveMatchesChange.create = function create(properties) {
+            return new LiveMatchesChange(properties);
+        };
+
+        /**
+         * Encodes the specified LiveMatchesChange message. Does not implicitly {@link protocol.LiveMatchesChange.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {protocol.ILiveMatchesChange} message LiveMatchesChange message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LiveMatchesChange.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.op != null && message.hasOwnProperty("op"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.op);
+            if (message.change != null && message.hasOwnProperty("change"))
+                $root.protocol.LiveMatches.encode(message.change, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified LiveMatchesChange message, length delimited. Does not implicitly {@link protocol.LiveMatchesChange.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {protocol.ILiveMatchesChange} message LiveMatchesChange message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LiveMatchesChange.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a LiveMatchesChange message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.LiveMatchesChange} LiveMatchesChange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LiveMatchesChange.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.LiveMatchesChange();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.op = reader.int32();
+                    break;
+                case 2:
+                    message.change = $root.protocol.LiveMatches.decode(reader, reader.uint32());
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a LiveMatchesChange message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.LiveMatchesChange} LiveMatchesChange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LiveMatchesChange.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a LiveMatchesChange message.
+         * @function verify
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        LiveMatchesChange.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.op != null && message.hasOwnProperty("op"))
+                switch (message.op) {
+                default:
+                    return "op: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.change != null && message.hasOwnProperty("change")) {
+                let error = $root.protocol.LiveMatches.verify(message.change);
+                if (error)
+                    return "change." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a LiveMatchesChange message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.LiveMatchesChange} LiveMatchesChange
+         */
+        LiveMatchesChange.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.LiveMatchesChange)
+                return object;
+            let message = new $root.protocol.LiveMatchesChange();
+            switch (object.op) {
+            case "COLLECTION_OP_UNSPECIFIED":
+            case 0:
+                message.op = 0;
+                break;
+            case "COLLECTION_OP_REPLACE":
+            case 1:
+                message.op = 1;
+                break;
+            case "COLLECTION_OP_ADD":
+            case 2:
+                message.op = 2;
+                break;
+            case "COLLECTION_OP_UPDATE":
+            case 3:
+                message.op = 3;
+                break;
+            case "COLLECTION_OP_REMOVE":
+            case 4:
+                message.op = 4;
+                break;
+            }
+            if (object.change != null) {
+                if (typeof object.change !== "object")
+                    throw TypeError(".protocol.LiveMatchesChange.change: object expected");
+                message.change = $root.protocol.LiveMatches.fromObject(object.change);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a LiveMatchesChange message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.LiveMatchesChange
+         * @static
+         * @param {protocol.LiveMatchesChange} message LiveMatchesChange
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        LiveMatchesChange.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.op = options.enums === String ? "COLLECTION_OP_UNSPECIFIED" : 0;
+                object.change = null;
+            }
+            if (message.op != null && message.hasOwnProperty("op"))
+                object.op = options.enums === String ? $root.protocol.CollectionOp[message.op] : message.op;
+            if (message.change != null && message.hasOwnProperty("change"))
+                object.change = $root.protocol.LiveMatches.toObject(message.change, options);
+            return object;
+        };
+
+        /**
+         * Converts this LiveMatchesChange to JSON.
+         * @function toJSON
+         * @memberof protocol.LiveMatchesChange
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        LiveMatchesChange.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return LiveMatchesChange;
+    })();
+
     /**
      * LobbyType enum.
      * @name protocol.LobbyType
@@ -3829,6 +4280,640 @@ export const protocol = $root.protocol = (() => {
         return PlayerMatches;
     })();
 
+    /**
+     * CollectionOp enum.
+     * @name protocol.CollectionOp
+     * @enum {string}
+     * @property {number} COLLECTION_OP_UNSPECIFIED=0 COLLECTION_OP_UNSPECIFIED value
+     * @property {number} COLLECTION_OP_REPLACE=1 COLLECTION_OP_REPLACE value
+     * @property {number} COLLECTION_OP_ADD=2 COLLECTION_OP_ADD value
+     * @property {number} COLLECTION_OP_UPDATE=3 COLLECTION_OP_UPDATE value
+     * @property {number} COLLECTION_OP_REMOVE=4 COLLECTION_OP_REMOVE value
+     */
+    protocol.CollectionOp = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "COLLECTION_OP_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "COLLECTION_OP_REPLACE"] = 1;
+        values[valuesById[2] = "COLLECTION_OP_ADD"] = 2;
+        values[valuesById[3] = "COLLECTION_OP_UPDATE"] = 3;
+        values[valuesById[4] = "COLLECTION_OP_REMOVE"] = 4;
+        return values;
+    })();
+
+    protocol.Hero = (function() {
+
+        /**
+         * Properties of a Hero.
+         * @memberof protocol
+         * @interface IHero
+         * @property {Long|null} [id] Hero id
+         * @property {string|null} [name] Hero name
+         * @property {string|null} [localized_name] Hero localized_name
+         * @property {string|null} [image_full_url] Hero image_full_url
+         * @property {string|null} [image_large_url] Hero image_large_url
+         * @property {string|null} [image_small_url] Hero image_small_url
+         * @property {string|null} [image_portrait_url] Hero image_portrait_url
+         */
+
+        /**
+         * Constructs a new Hero.
+         * @memberof protocol
+         * @classdesc Represents a Hero.
+         * @implements IHero
+         * @constructor
+         * @param {protocol.IHero=} [properties] Properties to set
+         */
+        function Hero(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Hero id.
+         * @member {Long} id
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Hero name.
+         * @member {string} name
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.name = "";
+
+        /**
+         * Hero localized_name.
+         * @member {string} localized_name
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.localized_name = "";
+
+        /**
+         * Hero image_full_url.
+         * @member {string} image_full_url
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.image_full_url = "";
+
+        /**
+         * Hero image_large_url.
+         * @member {string} image_large_url
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.image_large_url = "";
+
+        /**
+         * Hero image_small_url.
+         * @member {string} image_small_url
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.image_small_url = "";
+
+        /**
+         * Hero image_portrait_url.
+         * @member {string} image_portrait_url
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.image_portrait_url = "";
+
+        /**
+         * Creates a new Hero instance using the specified properties.
+         * @function create
+         * @memberof protocol.Hero
+         * @static
+         * @param {protocol.IHero=} [properties] Properties to set
+         * @returns {protocol.Hero} Hero instance
+         */
+        Hero.create = function create(properties) {
+            return new Hero(properties);
+        };
+
+        /**
+         * Encodes the specified Hero message. Does not implicitly {@link protocol.Hero.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.Hero
+         * @static
+         * @param {protocol.IHero} message Hero message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Hero.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && message.hasOwnProperty("id"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
+            if (message.name != null && message.hasOwnProperty("name"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
+            if (message.localized_name != null && message.hasOwnProperty("localized_name"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.localized_name);
+            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.image_full_url);
+            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.image_large_url);
+            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.image_small_url);
+            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
+                writer.uint32(/* id 7, wireType 2 =*/58).string(message.image_portrait_url);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Hero message, length delimited. Does not implicitly {@link protocol.Hero.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.Hero
+         * @static
+         * @param {protocol.IHero} message Hero message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Hero.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Hero message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.Hero
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.Hero} Hero
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Hero.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Hero();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.id = reader.uint64();
+                    break;
+                case 2:
+                    message.name = reader.string();
+                    break;
+                case 3:
+                    message.localized_name = reader.string();
+                    break;
+                case 4:
+                    message.image_full_url = reader.string();
+                    break;
+                case 5:
+                    message.image_large_url = reader.string();
+                    break;
+                case 6:
+                    message.image_small_url = reader.string();
+                    break;
+                case 7:
+                    message.image_portrait_url = reader.string();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Hero message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.Hero
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.Hero} Hero
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Hero.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Hero message.
+         * @function verify
+         * @memberof protocol.Hero
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Hero.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
+                    return "id: integer|Long expected";
+            if (message.name != null && message.hasOwnProperty("name"))
+                if (!$util.isString(message.name))
+                    return "name: string expected";
+            if (message.localized_name != null && message.hasOwnProperty("localized_name"))
+                if (!$util.isString(message.localized_name))
+                    return "localized_name: string expected";
+            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
+                if (!$util.isString(message.image_full_url))
+                    return "image_full_url: string expected";
+            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
+                if (!$util.isString(message.image_large_url))
+                    return "image_large_url: string expected";
+            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
+                if (!$util.isString(message.image_small_url))
+                    return "image_small_url: string expected";
+            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
+                if (!$util.isString(message.image_portrait_url))
+                    return "image_portrait_url: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a Hero message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.Hero
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.Hero} Hero
+         */
+        Hero.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.Hero)
+                return object;
+            let message = new $root.protocol.Hero();
+            if (object.id != null)
+                if ($util.Long)
+                    (message.id = $util.Long.fromValue(object.id)).unsigned = true;
+                else if (typeof object.id === "string")
+                    message.id = parseInt(object.id, 10);
+                else if (typeof object.id === "number")
+                    message.id = object.id;
+                else if (typeof object.id === "object")
+                    message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
+            if (object.name != null)
+                message.name = String(object.name);
+            if (object.localized_name != null)
+                message.localized_name = String(object.localized_name);
+            if (object.image_full_url != null)
+                message.image_full_url = String(object.image_full_url);
+            if (object.image_large_url != null)
+                message.image_large_url = String(object.image_large_url);
+            if (object.image_small_url != null)
+                message.image_small_url = String(object.image_small_url);
+            if (object.image_portrait_url != null)
+                message.image_portrait_url = String(object.image_portrait_url);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Hero message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.Hero
+         * @static
+         * @param {protocol.Hero} message Hero
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Hero.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.id = options.longs === String ? "0" : 0;
+                object.name = "";
+                object.localized_name = "";
+                object.image_full_url = "";
+                object.image_large_url = "";
+                object.image_small_url = "";
+                object.image_portrait_url = "";
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (typeof message.id === "number")
+                    object.id = options.longs === String ? String(message.id) : message.id;
+                else
+                    object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
+            if (message.name != null && message.hasOwnProperty("name"))
+                object.name = message.name;
+            if (message.localized_name != null && message.hasOwnProperty("localized_name"))
+                object.localized_name = message.localized_name;
+            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
+                object.image_full_url = message.image_full_url;
+            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
+                object.image_large_url = message.image_large_url;
+            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
+                object.image_small_url = message.image_small_url;
+            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
+                object.image_portrait_url = message.image_portrait_url;
+            return object;
+        };
+
+        /**
+         * Converts this Hero to JSON.
+         * @function toJSON
+         * @memberof protocol.Hero
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Hero.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return Hero;
+    })();
+
+    protocol.HeroMatches = (function() {
+
+        /**
+         * Properties of a HeroMatches.
+         * @memberof protocol
+         * @interface IHeroMatches
+         * @property {protocol.IHero|null} [hero] HeroMatches hero
+         * @property {Array.<protocol.IMatch>|null} [matches] HeroMatches matches
+         * @property {Array.<protocol.IPlayer>|null} [known_players] HeroMatches known_players
+         */
+
+        /**
+         * Constructs a new HeroMatches.
+         * @memberof protocol
+         * @classdesc Represents a HeroMatches.
+         * @implements IHeroMatches
+         * @constructor
+         * @param {protocol.IHeroMatches=} [properties] Properties to set
+         */
+        function HeroMatches(properties) {
+            this.matches = [];
+            this.known_players = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * HeroMatches hero.
+         * @member {protocol.IHero|null|undefined} hero
+         * @memberof protocol.HeroMatches
+         * @instance
+         */
+        HeroMatches.prototype.hero = null;
+
+        /**
+         * HeroMatches matches.
+         * @member {Array.<protocol.IMatch>} matches
+         * @memberof protocol.HeroMatches
+         * @instance
+         */
+        HeroMatches.prototype.matches = $util.emptyArray;
+
+        /**
+         * HeroMatches known_players.
+         * @member {Array.<protocol.IPlayer>} known_players
+         * @memberof protocol.HeroMatches
+         * @instance
+         */
+        HeroMatches.prototype.known_players = $util.emptyArray;
+
+        /**
+         * Creates a new HeroMatches instance using the specified properties.
+         * @function create
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.IHeroMatches=} [properties] Properties to set
+         * @returns {protocol.HeroMatches} HeroMatches instance
+         */
+        HeroMatches.create = function create(properties) {
+            return new HeroMatches(properties);
+        };
+
+        /**
+         * Encodes the specified HeroMatches message. Does not implicitly {@link protocol.HeroMatches.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.IHeroMatches} message HeroMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        HeroMatches.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.hero != null && message.hasOwnProperty("hero"))
+                $root.protocol.Hero.encode(message.hero, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            if (message.matches != null && message.matches.length)
+                for (let i = 0; i < message.matches.length; ++i)
+                    $root.protocol.Match.encode(message.matches[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
+            if (message.known_players != null && message.known_players.length)
+                for (let i = 0; i < message.known_players.length; ++i)
+                    $root.protocol.Player.encode(message.known_players[i], writer.uint32(/* id 102, wireType 2 =*/818).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified HeroMatches message, length delimited. Does not implicitly {@link protocol.HeroMatches.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.IHeroMatches} message HeroMatches message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        HeroMatches.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a HeroMatches message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.HeroMatches} HeroMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        HeroMatches.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.HeroMatches();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 100:
+                    message.hero = $root.protocol.Hero.decode(reader, reader.uint32());
+                    break;
+                case 101:
+                    if (!(message.matches && message.matches.length))
+                        message.matches = [];
+                    message.matches.push($root.protocol.Match.decode(reader, reader.uint32()));
+                    break;
+                case 102:
+                    if (!(message.known_players && message.known_players.length))
+                        message.known_players = [];
+                    message.known_players.push($root.protocol.Player.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a HeroMatches message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.HeroMatches} HeroMatches
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        HeroMatches.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a HeroMatches message.
+         * @function verify
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        HeroMatches.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.hero != null && message.hasOwnProperty("hero")) {
+                let error = $root.protocol.Hero.verify(message.hero);
+                if (error)
+                    return "hero." + error;
+            }
+            if (message.matches != null && message.hasOwnProperty("matches")) {
+                if (!Array.isArray(message.matches))
+                    return "matches: array expected";
+                for (let i = 0; i < message.matches.length; ++i) {
+                    let error = $root.protocol.Match.verify(message.matches[i]);
+                    if (error)
+                        return "matches." + error;
+                }
+            }
+            if (message.known_players != null && message.hasOwnProperty("known_players")) {
+                if (!Array.isArray(message.known_players))
+                    return "known_players: array expected";
+                for (let i = 0; i < message.known_players.length; ++i) {
+                    let error = $root.protocol.Player.verify(message.known_players[i]);
+                    if (error)
+                        return "known_players." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a HeroMatches message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.HeroMatches} HeroMatches
+         */
+        HeroMatches.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.HeroMatches)
+                return object;
+            let message = new $root.protocol.HeroMatches();
+            if (object.hero != null) {
+                if (typeof object.hero !== "object")
+                    throw TypeError(".protocol.HeroMatches.hero: object expected");
+                message.hero = $root.protocol.Hero.fromObject(object.hero);
+            }
+            if (object.matches) {
+                if (!Array.isArray(object.matches))
+                    throw TypeError(".protocol.HeroMatches.matches: array expected");
+                message.matches = [];
+                for (let i = 0; i < object.matches.length; ++i) {
+                    if (typeof object.matches[i] !== "object")
+                        throw TypeError(".protocol.HeroMatches.matches: object expected");
+                    message.matches[i] = $root.protocol.Match.fromObject(object.matches[i]);
+                }
+            }
+            if (object.known_players) {
+                if (!Array.isArray(object.known_players))
+                    throw TypeError(".protocol.HeroMatches.known_players: array expected");
+                message.known_players = [];
+                for (let i = 0; i < object.known_players.length; ++i) {
+                    if (typeof object.known_players[i] !== "object")
+                        throw TypeError(".protocol.HeroMatches.known_players: object expected");
+                    message.known_players[i] = $root.protocol.Player.fromObject(object.known_players[i]);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a HeroMatches message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.HeroMatches
+         * @static
+         * @param {protocol.HeroMatches} message HeroMatches
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        HeroMatches.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.matches = [];
+                object.known_players = [];
+            }
+            if (options.defaults)
+                object.hero = null;
+            if (message.hero != null && message.hasOwnProperty("hero"))
+                object.hero = $root.protocol.Hero.toObject(message.hero, options);
+            if (message.matches && message.matches.length) {
+                object.matches = [];
+                for (let j = 0; j < message.matches.length; ++j)
+                    object.matches[j] = $root.protocol.Match.toObject(message.matches[j], options);
+            }
+            if (message.known_players && message.known_players.length) {
+                object.known_players = [];
+                for (let j = 0; j < message.known_players.length; ++j)
+                    object.known_players[j] = $root.protocol.Player.toObject(message.known_players[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this HeroMatches to JSON.
+         * @function toJSON
+         * @memberof protocol.HeroMatches
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        HeroMatches.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return HeroMatches;
+    })();
+
     protocol.Match = (function() {
 
         /**
@@ -5388,1084 +6473,6 @@ export const protocol = $root.protocol = (() => {
         })();
 
         return Match;
-    })();
-
-    /**
-     * CollectionOp enum.
-     * @name protocol.CollectionOp
-     * @enum {string}
-     * @property {number} REPLACE=0 REPLACE value
-     * @property {number} ADD=1 ADD value
-     * @property {number} UPDATE=2 UPDATE value
-     * @property {number} REMOVE=3 REMOVE value
-     */
-    protocol.CollectionOp = (function() {
-        const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "REPLACE"] = 0;
-        values[valuesById[1] = "ADD"] = 1;
-        values[valuesById[2] = "UPDATE"] = 2;
-        values[valuesById[3] = "REMOVE"] = 3;
-        return values;
-    })();
-
-    protocol.Hero = (function() {
-
-        /**
-         * Properties of a Hero.
-         * @memberof protocol
-         * @interface IHero
-         * @property {Long|null} [id] Hero id
-         * @property {string|null} [name] Hero name
-         * @property {string|null} [localized_name] Hero localized_name
-         * @property {string|null} [image_full_url] Hero image_full_url
-         * @property {string|null} [image_large_url] Hero image_large_url
-         * @property {string|null} [image_small_url] Hero image_small_url
-         * @property {string|null} [image_portrait_url] Hero image_portrait_url
-         */
-
-        /**
-         * Constructs a new Hero.
-         * @memberof protocol
-         * @classdesc Represents a Hero.
-         * @implements IHero
-         * @constructor
-         * @param {protocol.IHero=} [properties] Properties to set
-         */
-        function Hero(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * Hero id.
-         * @member {Long} id
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * Hero name.
-         * @member {string} name
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.name = "";
-
-        /**
-         * Hero localized_name.
-         * @member {string} localized_name
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.localized_name = "";
-
-        /**
-         * Hero image_full_url.
-         * @member {string} image_full_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_full_url = "";
-
-        /**
-         * Hero image_large_url.
-         * @member {string} image_large_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_large_url = "";
-
-        /**
-         * Hero image_small_url.
-         * @member {string} image_small_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_small_url = "";
-
-        /**
-         * Hero image_portrait_url.
-         * @member {string} image_portrait_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_portrait_url = "";
-
-        /**
-         * Creates a new Hero instance using the specified properties.
-         * @function create
-         * @memberof protocol.Hero
-         * @static
-         * @param {protocol.IHero=} [properties] Properties to set
-         * @returns {protocol.Hero} Hero instance
-         */
-        Hero.create = function create(properties) {
-            return new Hero(properties);
-        };
-
-        /**
-         * Encodes the specified Hero message. Does not implicitly {@link protocol.Hero.verify|verify} messages.
-         * @function encode
-         * @memberof protocol.Hero
-         * @static
-         * @param {protocol.IHero} message Hero message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        Hero.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.id != null && message.hasOwnProperty("id"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
-            if (message.name != null && message.hasOwnProperty("name"))
-                writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
-            if (message.localized_name != null && message.hasOwnProperty("localized_name"))
-                writer.uint32(/* id 3, wireType 2 =*/26).string(message.localized_name);
-            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
-                writer.uint32(/* id 4, wireType 2 =*/34).string(message.image_full_url);
-            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
-                writer.uint32(/* id 5, wireType 2 =*/42).string(message.image_large_url);
-            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
-                writer.uint32(/* id 6, wireType 2 =*/50).string(message.image_small_url);
-            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
-                writer.uint32(/* id 7, wireType 2 =*/58).string(message.image_portrait_url);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified Hero message, length delimited. Does not implicitly {@link protocol.Hero.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof protocol.Hero
-         * @static
-         * @param {protocol.IHero} message Hero message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        Hero.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a Hero message from the specified reader or buffer.
-         * @function decode
-         * @memberof protocol.Hero
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {protocol.Hero} Hero
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        Hero.decode = function decode(reader, length) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Hero();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                switch (tag >>> 3) {
-                case 1:
-                    message.id = reader.uint64();
-                    break;
-                case 2:
-                    message.name = reader.string();
-                    break;
-                case 3:
-                    message.localized_name = reader.string();
-                    break;
-                case 4:
-                    message.image_full_url = reader.string();
-                    break;
-                case 5:
-                    message.image_large_url = reader.string();
-                    break;
-                case 6:
-                    message.image_small_url = reader.string();
-                    break;
-                case 7:
-                    message.image_portrait_url = reader.string();
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a Hero message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof protocol.Hero
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {protocol.Hero} Hero
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        Hero.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a Hero message.
-         * @function verify
-         * @memberof protocol.Hero
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        Hero.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.id != null && message.hasOwnProperty("id"))
-                if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
-                    return "id: integer|Long expected";
-            if (message.name != null && message.hasOwnProperty("name"))
-                if (!$util.isString(message.name))
-                    return "name: string expected";
-            if (message.localized_name != null && message.hasOwnProperty("localized_name"))
-                if (!$util.isString(message.localized_name))
-                    return "localized_name: string expected";
-            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
-                if (!$util.isString(message.image_full_url))
-                    return "image_full_url: string expected";
-            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
-                if (!$util.isString(message.image_large_url))
-                    return "image_large_url: string expected";
-            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
-                if (!$util.isString(message.image_small_url))
-                    return "image_small_url: string expected";
-            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
-                if (!$util.isString(message.image_portrait_url))
-                    return "image_portrait_url: string expected";
-            return null;
-        };
-
-        /**
-         * Creates a Hero message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof protocol.Hero
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {protocol.Hero} Hero
-         */
-        Hero.fromObject = function fromObject(object) {
-            if (object instanceof $root.protocol.Hero)
-                return object;
-            let message = new $root.protocol.Hero();
-            if (object.id != null)
-                if ($util.Long)
-                    (message.id = $util.Long.fromValue(object.id)).unsigned = true;
-                else if (typeof object.id === "string")
-                    message.id = parseInt(object.id, 10);
-                else if (typeof object.id === "number")
-                    message.id = object.id;
-                else if (typeof object.id === "object")
-                    message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
-            if (object.name != null)
-                message.name = String(object.name);
-            if (object.localized_name != null)
-                message.localized_name = String(object.localized_name);
-            if (object.image_full_url != null)
-                message.image_full_url = String(object.image_full_url);
-            if (object.image_large_url != null)
-                message.image_large_url = String(object.image_large_url);
-            if (object.image_small_url != null)
-                message.image_small_url = String(object.image_small_url);
-            if (object.image_portrait_url != null)
-                message.image_portrait_url = String(object.image_portrait_url);
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a Hero message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof protocol.Hero
-         * @static
-         * @param {protocol.Hero} message Hero
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        Hero.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.id = options.longs === String ? "0" : 0;
-                object.name = "";
-                object.localized_name = "";
-                object.image_full_url = "";
-                object.image_large_url = "";
-                object.image_small_url = "";
-                object.image_portrait_url = "";
-            }
-            if (message.id != null && message.hasOwnProperty("id"))
-                if (typeof message.id === "number")
-                    object.id = options.longs === String ? String(message.id) : message.id;
-                else
-                    object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
-            if (message.name != null && message.hasOwnProperty("name"))
-                object.name = message.name;
-            if (message.localized_name != null && message.hasOwnProperty("localized_name"))
-                object.localized_name = message.localized_name;
-            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
-                object.image_full_url = message.image_full_url;
-            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
-                object.image_large_url = message.image_large_url;
-            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
-                object.image_small_url = message.image_small_url;
-            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
-                object.image_portrait_url = message.image_portrait_url;
-            return object;
-        };
-
-        /**
-         * Converts this Hero to JSON.
-         * @function toJSON
-         * @memberof protocol.Hero
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        Hero.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        return Hero;
-    })();
-
-    protocol.HeroMatches = (function() {
-
-        /**
-         * Properties of a HeroMatches.
-         * @memberof protocol
-         * @interface IHeroMatches
-         * @property {protocol.IHero|null} [hero] HeroMatches hero
-         * @property {Array.<protocol.IMatch>|null} [matches] HeroMatches matches
-         * @property {Array.<protocol.IPlayer>|null} [known_players] HeroMatches known_players
-         */
-
-        /**
-         * Constructs a new HeroMatches.
-         * @memberof protocol
-         * @classdesc Represents a HeroMatches.
-         * @implements IHeroMatches
-         * @constructor
-         * @param {protocol.IHeroMatches=} [properties] Properties to set
-         */
-        function HeroMatches(properties) {
-            this.matches = [];
-            this.known_players = [];
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * HeroMatches hero.
-         * @member {protocol.IHero|null|undefined} hero
-         * @memberof protocol.HeroMatches
-         * @instance
-         */
-        HeroMatches.prototype.hero = null;
-
-        /**
-         * HeroMatches matches.
-         * @member {Array.<protocol.IMatch>} matches
-         * @memberof protocol.HeroMatches
-         * @instance
-         */
-        HeroMatches.prototype.matches = $util.emptyArray;
-
-        /**
-         * HeroMatches known_players.
-         * @member {Array.<protocol.IPlayer>} known_players
-         * @memberof protocol.HeroMatches
-         * @instance
-         */
-        HeroMatches.prototype.known_players = $util.emptyArray;
-
-        /**
-         * Creates a new HeroMatches instance using the specified properties.
-         * @function create
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {protocol.IHeroMatches=} [properties] Properties to set
-         * @returns {protocol.HeroMatches} HeroMatches instance
-         */
-        HeroMatches.create = function create(properties) {
-            return new HeroMatches(properties);
-        };
-
-        /**
-         * Encodes the specified HeroMatches message. Does not implicitly {@link protocol.HeroMatches.verify|verify} messages.
-         * @function encode
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {protocol.IHeroMatches} message HeroMatches message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        HeroMatches.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.hero != null && message.hasOwnProperty("hero"))
-                $root.protocol.Hero.encode(message.hero, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
-            if (message.matches != null && message.matches.length)
-                for (let i = 0; i < message.matches.length; ++i)
-                    $root.protocol.Match.encode(message.matches[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
-            if (message.known_players != null && message.known_players.length)
-                for (let i = 0; i < message.known_players.length; ++i)
-                    $root.protocol.Player.encode(message.known_players[i], writer.uint32(/* id 102, wireType 2 =*/818).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified HeroMatches message, length delimited. Does not implicitly {@link protocol.HeroMatches.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {protocol.IHeroMatches} message HeroMatches message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        HeroMatches.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a HeroMatches message from the specified reader or buffer.
-         * @function decode
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {protocol.HeroMatches} HeroMatches
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        HeroMatches.decode = function decode(reader, length) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.HeroMatches();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                switch (tag >>> 3) {
-                case 100:
-                    message.hero = $root.protocol.Hero.decode(reader, reader.uint32());
-                    break;
-                case 101:
-                    if (!(message.matches && message.matches.length))
-                        message.matches = [];
-                    message.matches.push($root.protocol.Match.decode(reader, reader.uint32()));
-                    break;
-                case 102:
-                    if (!(message.known_players && message.known_players.length))
-                        message.known_players = [];
-                    message.known_players.push($root.protocol.Player.decode(reader, reader.uint32()));
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a HeroMatches message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {protocol.HeroMatches} HeroMatches
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        HeroMatches.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a HeroMatches message.
-         * @function verify
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        HeroMatches.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.hero != null && message.hasOwnProperty("hero")) {
-                let error = $root.protocol.Hero.verify(message.hero);
-                if (error)
-                    return "hero." + error;
-            }
-            if (message.matches != null && message.hasOwnProperty("matches")) {
-                if (!Array.isArray(message.matches))
-                    return "matches: array expected";
-                for (let i = 0; i < message.matches.length; ++i) {
-                    let error = $root.protocol.Match.verify(message.matches[i]);
-                    if (error)
-                        return "matches." + error;
-                }
-            }
-            if (message.known_players != null && message.hasOwnProperty("known_players")) {
-                if (!Array.isArray(message.known_players))
-                    return "known_players: array expected";
-                for (let i = 0; i < message.known_players.length; ++i) {
-                    let error = $root.protocol.Player.verify(message.known_players[i]);
-                    if (error)
-                        return "known_players." + error;
-                }
-            }
-            return null;
-        };
-
-        /**
-         * Creates a HeroMatches message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {protocol.HeroMatches} HeroMatches
-         */
-        HeroMatches.fromObject = function fromObject(object) {
-            if (object instanceof $root.protocol.HeroMatches)
-                return object;
-            let message = new $root.protocol.HeroMatches();
-            if (object.hero != null) {
-                if (typeof object.hero !== "object")
-                    throw TypeError(".protocol.HeroMatches.hero: object expected");
-                message.hero = $root.protocol.Hero.fromObject(object.hero);
-            }
-            if (object.matches) {
-                if (!Array.isArray(object.matches))
-                    throw TypeError(".protocol.HeroMatches.matches: array expected");
-                message.matches = [];
-                for (let i = 0; i < object.matches.length; ++i) {
-                    if (typeof object.matches[i] !== "object")
-                        throw TypeError(".protocol.HeroMatches.matches: object expected");
-                    message.matches[i] = $root.protocol.Match.fromObject(object.matches[i]);
-                }
-            }
-            if (object.known_players) {
-                if (!Array.isArray(object.known_players))
-                    throw TypeError(".protocol.HeroMatches.known_players: array expected");
-                message.known_players = [];
-                for (let i = 0; i < object.known_players.length; ++i) {
-                    if (typeof object.known_players[i] !== "object")
-                        throw TypeError(".protocol.HeroMatches.known_players: object expected");
-                    message.known_players[i] = $root.protocol.Player.fromObject(object.known_players[i]);
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a HeroMatches message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof protocol.HeroMatches
-         * @static
-         * @param {protocol.HeroMatches} message HeroMatches
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        HeroMatches.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.arrays || options.defaults) {
-                object.matches = [];
-                object.known_players = [];
-            }
-            if (options.defaults)
-                object.hero = null;
-            if (message.hero != null && message.hasOwnProperty("hero"))
-                object.hero = $root.protocol.Hero.toObject(message.hero, options);
-            if (message.matches && message.matches.length) {
-                object.matches = [];
-                for (let j = 0; j < message.matches.length; ++j)
-                    object.matches[j] = $root.protocol.Match.toObject(message.matches[j], options);
-            }
-            if (message.known_players && message.known_players.length) {
-                object.known_players = [];
-                for (let j = 0; j < message.known_players.length; ++j)
-                    object.known_players[j] = $root.protocol.Player.toObject(message.known_players[j], options);
-            }
-            return object;
-        };
-
-        /**
-         * Converts this HeroMatches to JSON.
-         * @function toJSON
-         * @memberof protocol.HeroMatches
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        HeroMatches.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        return HeroMatches;
-    })();
-
-    protocol.LiveMatches = (function() {
-
-        /**
-         * Properties of a LiveMatches.
-         * @memberof protocol
-         * @interface ILiveMatches
-         * @property {Array.<protocol.ILiveMatch>|null} [matches] LiveMatches matches
-         */
-
-        /**
-         * Constructs a new LiveMatches.
-         * @memberof protocol
-         * @classdesc Represents a LiveMatches.
-         * @implements ILiveMatches
-         * @constructor
-         * @param {protocol.ILiveMatches=} [properties] Properties to set
-         */
-        function LiveMatches(properties) {
-            this.matches = [];
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * LiveMatches matches.
-         * @member {Array.<protocol.ILiveMatch>} matches
-         * @memberof protocol.LiveMatches
-         * @instance
-         */
-        LiveMatches.prototype.matches = $util.emptyArray;
-
-        /**
-         * Creates a new LiveMatches instance using the specified properties.
-         * @function create
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {protocol.ILiveMatches=} [properties] Properties to set
-         * @returns {protocol.LiveMatches} LiveMatches instance
-         */
-        LiveMatches.create = function create(properties) {
-            return new LiveMatches(properties);
-        };
-
-        /**
-         * Encodes the specified LiveMatches message. Does not implicitly {@link protocol.LiveMatches.verify|verify} messages.
-         * @function encode
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {protocol.ILiveMatches} message LiveMatches message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        LiveMatches.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.matches != null && message.matches.length)
-                for (let i = 0; i < message.matches.length; ++i)
-                    $root.protocol.LiveMatch.encode(message.matches[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified LiveMatches message, length delimited. Does not implicitly {@link protocol.LiveMatches.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {protocol.ILiveMatches} message LiveMatches message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        LiveMatches.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a LiveMatches message from the specified reader or buffer.
-         * @function decode
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {protocol.LiveMatches} LiveMatches
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        LiveMatches.decode = function decode(reader, length) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.LiveMatches();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                switch (tag >>> 3) {
-                case 1:
-                    if (!(message.matches && message.matches.length))
-                        message.matches = [];
-                    message.matches.push($root.protocol.LiveMatch.decode(reader, reader.uint32()));
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a LiveMatches message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {protocol.LiveMatches} LiveMatches
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        LiveMatches.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a LiveMatches message.
-         * @function verify
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        LiveMatches.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.matches != null && message.hasOwnProperty("matches")) {
-                if (!Array.isArray(message.matches))
-                    return "matches: array expected";
-                for (let i = 0; i < message.matches.length; ++i) {
-                    let error = $root.protocol.LiveMatch.verify(message.matches[i]);
-                    if (error)
-                        return "matches." + error;
-                }
-            }
-            return null;
-        };
-
-        /**
-         * Creates a LiveMatches message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {protocol.LiveMatches} LiveMatches
-         */
-        LiveMatches.fromObject = function fromObject(object) {
-            if (object instanceof $root.protocol.LiveMatches)
-                return object;
-            let message = new $root.protocol.LiveMatches();
-            if (object.matches) {
-                if (!Array.isArray(object.matches))
-                    throw TypeError(".protocol.LiveMatches.matches: array expected");
-                message.matches = [];
-                for (let i = 0; i < object.matches.length; ++i) {
-                    if (typeof object.matches[i] !== "object")
-                        throw TypeError(".protocol.LiveMatches.matches: object expected");
-                    message.matches[i] = $root.protocol.LiveMatch.fromObject(object.matches[i]);
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a LiveMatches message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof protocol.LiveMatches
-         * @static
-         * @param {protocol.LiveMatches} message LiveMatches
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        LiveMatches.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.arrays || options.defaults)
-                object.matches = [];
-            if (message.matches && message.matches.length) {
-                object.matches = [];
-                for (let j = 0; j < message.matches.length; ++j)
-                    object.matches[j] = $root.protocol.LiveMatch.toObject(message.matches[j], options);
-            }
-            return object;
-        };
-
-        /**
-         * Converts this LiveMatches to JSON.
-         * @function toJSON
-         * @memberof protocol.LiveMatches
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        LiveMatches.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        return LiveMatches;
-    })();
-
-    protocol.LiveMatchesChange = (function() {
-
-        /**
-         * Properties of a LiveMatchesChange.
-         * @memberof protocol
-         * @interface ILiveMatchesChange
-         * @property {protocol.CollectionOp|null} [op] LiveMatchesChange op
-         * @property {protocol.ILiveMatches|null} [change] LiveMatchesChange change
-         */
-
-        /**
-         * Constructs a new LiveMatchesChange.
-         * @memberof protocol
-         * @classdesc Represents a LiveMatchesChange.
-         * @implements ILiveMatchesChange
-         * @constructor
-         * @param {protocol.ILiveMatchesChange=} [properties] Properties to set
-         */
-        function LiveMatchesChange(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * LiveMatchesChange op.
-         * @member {protocol.CollectionOp} op
-         * @memberof protocol.LiveMatchesChange
-         * @instance
-         */
-        LiveMatchesChange.prototype.op = 0;
-
-        /**
-         * LiveMatchesChange change.
-         * @member {protocol.ILiveMatches|null|undefined} change
-         * @memberof protocol.LiveMatchesChange
-         * @instance
-         */
-        LiveMatchesChange.prototype.change = null;
-
-        /**
-         * Creates a new LiveMatchesChange instance using the specified properties.
-         * @function create
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {protocol.ILiveMatchesChange=} [properties] Properties to set
-         * @returns {protocol.LiveMatchesChange} LiveMatchesChange instance
-         */
-        LiveMatchesChange.create = function create(properties) {
-            return new LiveMatchesChange(properties);
-        };
-
-        /**
-         * Encodes the specified LiveMatchesChange message. Does not implicitly {@link protocol.LiveMatchesChange.verify|verify} messages.
-         * @function encode
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {protocol.ILiveMatchesChange} message LiveMatchesChange message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        LiveMatchesChange.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.op != null && message.hasOwnProperty("op"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.op);
-            if (message.change != null && message.hasOwnProperty("change"))
-                $root.protocol.LiveMatches.encode(message.change, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified LiveMatchesChange message, length delimited. Does not implicitly {@link protocol.LiveMatchesChange.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {protocol.ILiveMatchesChange} message LiveMatchesChange message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        LiveMatchesChange.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a LiveMatchesChange message from the specified reader or buffer.
-         * @function decode
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {protocol.LiveMatchesChange} LiveMatchesChange
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        LiveMatchesChange.decode = function decode(reader, length) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.LiveMatchesChange();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                switch (tag >>> 3) {
-                case 1:
-                    message.op = reader.int32();
-                    break;
-                case 2:
-                    message.change = $root.protocol.LiveMatches.decode(reader, reader.uint32());
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a LiveMatchesChange message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {protocol.LiveMatchesChange} LiveMatchesChange
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        LiveMatchesChange.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a LiveMatchesChange message.
-         * @function verify
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        LiveMatchesChange.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.op != null && message.hasOwnProperty("op"))
-                switch (message.op) {
-                default:
-                    return "op: enum value expected";
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                    break;
-                }
-            if (message.change != null && message.hasOwnProperty("change")) {
-                let error = $root.protocol.LiveMatches.verify(message.change);
-                if (error)
-                    return "change." + error;
-            }
-            return null;
-        };
-
-        /**
-         * Creates a LiveMatchesChange message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {protocol.LiveMatchesChange} LiveMatchesChange
-         */
-        LiveMatchesChange.fromObject = function fromObject(object) {
-            if (object instanceof $root.protocol.LiveMatchesChange)
-                return object;
-            let message = new $root.protocol.LiveMatchesChange();
-            switch (object.op) {
-            case "REPLACE":
-            case 0:
-                message.op = 0;
-                break;
-            case "ADD":
-            case 1:
-                message.op = 1;
-                break;
-            case "UPDATE":
-            case 2:
-                message.op = 2;
-                break;
-            case "REMOVE":
-            case 3:
-                message.op = 3;
-                break;
-            }
-            if (object.change != null) {
-                if (typeof object.change !== "object")
-                    throw TypeError(".protocol.LiveMatchesChange.change: object expected");
-                message.change = $root.protocol.LiveMatches.fromObject(object.change);
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a LiveMatchesChange message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof protocol.LiveMatchesChange
-         * @static
-         * @param {protocol.LiveMatchesChange} message LiveMatchesChange
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        LiveMatchesChange.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.op = options.enums === String ? "REPLACE" : 0;
-                object.change = null;
-            }
-            if (message.op != null && message.hasOwnProperty("op"))
-                object.op = options.enums === String ? $root.protocol.CollectionOp[message.op] : message.op;
-            if (message.change != null && message.hasOwnProperty("change"))
-                object.change = $root.protocol.LiveMatches.toObject(message.change, options);
-            return object;
-        };
-
-        /**
-         * Converts this LiveMatchesChange to JSON.
-         * @function toJSON
-         * @memberof protocol.LiveMatchesChange
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        LiveMatchesChange.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        return LiveMatchesChange;
     })();
 
     return protocol;
