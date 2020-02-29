@@ -6,18 +6,18 @@ endif
 PROTOC := $(shell command -v protoc)
 
 SUBDIRS = balanar
-PROTO_SRC = proto
-PROTO_GOOUT = internal/protocol
+PROTO_SRC = protobuf
+PROTO_GOOUT = internal/protobuf
 PROTOS = $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto' -printf '%P\n')
 PROTOS_GO = $(patsubst %.proto,$(PROTO_GOOUT)/%.pb.go,$(PROTOS))
 TOOLS_PATH = bin
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-	@$(MAKE) -C "$@" $(MAKECMDGOALS) FIND=$(FIND)
+	@$(MAKE) -C "$@" $(MAKECMDGOALS) FIND=$(FIND) PROTO_SRC=$(PROTO_SRC)
 
 $(PROTO_GOOUT)/%.pb.go: $(PROTO_SRC)/%.proto
-	PROTOC="$(PROTOC)" hack/go-gen-protobuf.sh "$(PROTO_SRC)" "$<" "$(PROTO_GOOUT)" "$@"
+	PROTOC="$(PROTOC)" hack/go-gen-protobuf.sh "$(PROTO_SRC)" "$<" "$(PROTO_GOOUT)"
 
 .PHONY: proto-go
 proto-go: $(PROTOS_GO)
