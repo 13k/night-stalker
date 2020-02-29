@@ -185,7 +185,7 @@ func (p *Monitor) loop() error {
 }
 
 func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
-	if msg.Op != nspb.CollectionOp_REPLACE {
+	if msg.Op != nspb.CollectionOp_COLLECTION_OP_REPLACE {
 		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
 		return
 	}
@@ -352,7 +352,7 @@ func (p *Monitor) busPublishLiveMatchesRemove(matchIDs nscol.MatchIDs) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{
-			Op:       nspb.CollectionOp_REMOVE,
+			Op:       nspb.CollectionOp_COLLECTION_OP_REMOVE,
 			MatchIDs: matchIDs,
 		},
 	})

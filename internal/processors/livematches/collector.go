@@ -229,9 +229,9 @@ func (p *Collector) loop() error {
 
 func (p *Collector) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 	switch msg.Op {
-	case nspb.CollectionOp_ADD, nspb.CollectionOp_UPDATE:
+	case nspb.CollectionOp_COLLECTION_OP_ADD, nspb.CollectionOp_COLLECTION_OP_UPDATE:
 		p.add(msg.Matches)
-	case nspb.CollectionOp_REMOVE:
+	case nspb.CollectionOp_COLLECTION_OP_REMOVE:
 		p.remove(msg.MatchIDs)
 	default:
 		return
@@ -288,7 +288,7 @@ func (p *Collector) remove(matchIDs nscol.MatchIDs) {
 
 func (p *Collector) handleLiveMatchStatsChange(msg *nsbus.LiveMatchStatsChangeMessage) {
 	switch msg.Op {
-	case nspb.CollectionOp_ADD:
+	case nspb.CollectionOp_COLLECTION_OP_ADD:
 		p.addStats(msg.Stats)
 	default:
 		return
@@ -328,7 +328,7 @@ func (p *Collector) busPublishAllMatches() {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesReplace,
 		Payload: &nsbus.LiveMatchesChangeMessage{
-			Op:      nspb.CollectionOp_REPLACE,
+			Op:      nspb.CollectionOp_COLLECTION_OP_REPLACE,
 			Matches: p.matches.All(),
 		},
 	})

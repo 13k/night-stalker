@@ -350,7 +350,7 @@ func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesAdd,
 		Payload: &nsbus.LiveMatchesChangeMessage{
-			Op:      nspb.CollectionOp_ADD,
+			Op:      nspb.CollectionOp_COLLECTION_OP_ADD,
 			Matches: liveMatches,
 		},
 	})
@@ -360,7 +360,7 @@ func (p *Watcher) busPublishLiveMatchesRemove(liveMatches nscol.LiveMatches) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{
-			Op:      nspb.CollectionOp_REMOVE,
+			Op:      nspb.CollectionOp_COLLECTION_OP_REMOVE,
 			Matches: liveMatches,
 		},
 	})

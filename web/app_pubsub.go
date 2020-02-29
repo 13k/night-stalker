@@ -145,7 +145,7 @@ func (app *App) handleLiveMatchesAdd(matchIDs nscol.MatchIDs) {
 	app.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicWebLiveMatchesAdd,
 		Payload: &nspb.LiveMatchesChange{
-			Op:     nspb.CollectionOp_ADD,
+			Op:     nspb.CollectionOp_COLLECTION_OP_ADD,
 			Change: view,
 		},
 	})
@@ -161,7 +161,7 @@ func (app *App) handleLiveMatchesRemove(matchIDs nscol.MatchIDs) {
 	app.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicWebLiveMatchesRemove,
 		Payload: &nspb.LiveMatchesChange{
-			Op:     nspb.CollectionOp_REMOVE,
+			Op:     nspb.CollectionOp_COLLECTION_OP_REMOVE,
 			Change: view,
 		},
 	})
@@ -305,7 +305,7 @@ func (app *App) handleLiveMatchStatsAdd(matchIDs nscol.MatchIDs) {
 	app.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicWebLiveMatchesUpdate,
 		Payload: &nspb.LiveMatchesChange{
-			Op:     nspb.CollectionOp_UPDATE,
+			Op:     nspb.CollectionOp_COLLECTION_OP_UPDATE,
 			Change: view,
 		},
 	})
