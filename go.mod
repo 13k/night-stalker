@@ -18,6 +18,7 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/lib/pq v1.3.0
 	github.com/markbates/pkger v0.14.0
+	github.com/mitchellh/protoc-gen-go-json v0.0.0-20200113165135-fd297ce346f1 // indirect
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/panjf2000/ants/v2 v2.2.2
 	github.com/paralin/go-dota2 v0.0.0-20191126225751-cae5acd7b08d
