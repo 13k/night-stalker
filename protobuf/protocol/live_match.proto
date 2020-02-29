@@ -2,8 +2,12 @@ syntax = "proto3";
 
 package protocol;
 
+option go_package = "github.com/13k/night-stalker/internal/protocol";
+
 import "google/protobuf/timestamp.proto";
-import "enums.proto";
+
+import "protocol/collections.proto";
+import "protocol/enums.proto";
 
 message LiveMatch {
   message Player {
@@ -16,7 +20,7 @@ message LiveMatch {
     bool is_pro = 7;
     uint64 hero_id = 8;
     uint32 player_slot = 9;
-    GameTeam team = 10;
+    protocol.GameTeam team = 10;
     uint32 level = 11;
     uint32 kills = 12;
     uint32 deaths = 13;
@@ -31,11 +35,11 @@ message LiveMatch {
   uint64 match_id = 1;
   uint64 server_steam_id = 2;
   uint64 lobby_id = 3;
-  LobbyType lobby_type = 4;
+  protocol.LobbyType lobby_type = 4;
   uint64 league_id = 5;
   uint64 series_id = 6;
-  GameMode game_mode = 7;
-  GameState game_state = 8;
+  protocol.GameMode game_mode = 7;
+  protocol.GameState game_state = 8;
   uint32 game_timestamp = 9;
   int32 game_time = 10;
   uint32 average_mmr = 11;
@@ -67,4 +71,11 @@ message LiveMatch {
   google.protobuf.Timestamp last_update_time = 37;
 
   repeated Player players = 100;
+}
+
+message LiveMatches { repeated protocol.LiveMatch matches = 1; }
+
+message LiveMatchesChange {
+  protocol.CollectionOp op = 1;
+  protocol.LiveMatches change = 2;
 }

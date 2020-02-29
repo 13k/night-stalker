@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package protocol;
 
-import "match.proto";
-import "player.proto";
+option go_package = "github.com/13k/night-stalker/internal/protocol";
+
+import "protocol/match.proto";
+import "protocol/player.proto";
 
 message Hero {
   uint64 id = 1;
