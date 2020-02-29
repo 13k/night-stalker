@@ -319,6 +319,14 @@ func (p *Monitor) work(liveMatch *models.LiveMatch) {
 		return
 	}
 
+	if result.GetMatch().GetMatchid() != liveMatch.MatchID {
+		l.
+			WithField("result_match_id", result.GetMatch().GetMatchid()).
+			Warn("ignoring result with invalid match ID")
+
+		return
+	}
+
 	stats, err := p.createLiveMatchStats(liveMatch, result)
 
 	if err != nil {
