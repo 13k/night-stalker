@@ -1,18 +1,19 @@
 package cmddebug
 
 import (
+	"fmt"
 	"os"
 
-	// "github.com/davecgh/go-spew/spew"
-	// "github.com/jinzhu/gorm"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/markbates/pkger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	// nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	// "github.com/jinzhu/gorm"
+
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
-	// nscol "github.com/13k/night-stalker/internal/collections"
-	// nspb "github.com/13k/night-stalker/internal/protocol"
+	// nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	// nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	// "github.com/13k/night-stalker/models"
 )
 
@@ -30,6 +31,16 @@ var CmdPkger = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(CmdPkger)
+}
+
+func dumpf(format string, values ...interface{}) { //nolint: unused
+	dumps := make([]interface{}, len(values))
+
+	for i, v := range values {
+		dumps[i] = spew.Sdump(v)
+	}
+
+	fmt.Printf(format, dumps...)
 }
 
 func debug(cmd *cobra.Command, args []string) {

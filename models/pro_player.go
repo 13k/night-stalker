@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 var ProPlayerModel Model = (*ProPlayer)(nil)

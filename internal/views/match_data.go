@@ -4,7 +4,7 @@ import (
 	"golang.org/x/xerrors"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 

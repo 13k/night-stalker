@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/xerrors"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 func NewPlayer(data *PlayerData) (*nspb.Player, error) {

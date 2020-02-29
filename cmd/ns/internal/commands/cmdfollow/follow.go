@@ -3,11 +3,12 @@ package cmdfollow
 import (
 	"strconv"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	"github.com/13k/night-stalker/cmd/ns/internal/util"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
 )
 
 var Cmd = &cobra.Command{
@@ -26,7 +27,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -43,7 +44,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	accountID := uint32(accountID64)
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")
@@ -51,7 +52,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	followed, err := util.FollowPlayer(db, accountID, label, flagUpdate)
+	followed, err := nscmdutil.FollowPlayer(db, accountID, label, flagUpdate)
 
 	if err != nil {
 		log.WithError(err).Fatal("error")

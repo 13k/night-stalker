@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 type MatchIDs []nspb.MatchID

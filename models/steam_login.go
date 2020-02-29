@@ -3,8 +3,9 @@ package models
 import (
 	"time"
 
-	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/faceit/go-steam/steamid"
+
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var SteamLoginModel Model = (*SteamLogin)(nil)

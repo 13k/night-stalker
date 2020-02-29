@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 func TestLiveMatchStatsPlayers_MatchIDs(t *testing.T) {

@@ -14,9 +14,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/httpfsd"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdhttpfsd "github.com/13k/night-stalker/cmd/ns/internal/httpfsd"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
 
@@ -45,7 +45,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -58,7 +58,7 @@ func run(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")
@@ -120,7 +120,7 @@ func newMigrate(db *gorm.DB, log *nslog.Logger) *migrate.Migrate {
 		log.WithError(err).Fatal("error opening pkger root")
 	}
 
-	srcDriver, err := httpfsd.New(pkgerRoot, "/")
+	srcDriver, err := nscmdhttpfsd.New(pkgerRoot, "/")
 
 	if err != nil {
 		log.WithError(err).Fatal("error creating httpfs source driver")

@@ -5,7 +5,7 @@ import (
 
 	"github.com/paralin/go-dota2/protocol"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 type TVGames []*protocol.CSourceTVGameSmall

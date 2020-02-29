@@ -1,9 +1,10 @@
 package models
 
 import (
-	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/faceit/go-steam/steamid"
 	"github.com/paralin/go-dota2/protocol"
+
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 var LiveMatchStatsTeamModel Model = (*LiveMatchStatsTeam)(nil)

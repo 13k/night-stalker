@@ -3,8 +3,9 @@ package models
 import (
 	"time"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/paralin/go-dota2/protocol"
+
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 var PlayerProfileCardModel Model = (*PlayerProfileCard)(nil)

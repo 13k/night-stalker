@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	"github.com/13k/night-stalker/web"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nsweb "github.com/13k/night-stalker/web"
 )
 
 var Cmd = &cobra.Command{
@@ -16,7 +16,7 @@ var Cmd = &cobra.Command{
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -24,7 +24,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	app, err := web.New(web.AppOptions{
+	app, err := nsweb.New(nsweb.AppOptions{
 		Log: log,
 	})
 

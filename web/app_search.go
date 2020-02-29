@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
 )

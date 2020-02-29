@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdweb/routes"
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	"github.com/13k/night-stalker/cmd/ns/internal/redis"
-	"github.com/13k/night-stalker/web"
+	cmdwebroutes "github.com/13k/night-stalker/cmd/ns/internal/commands/cmdweb/routes"
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmdrds "github.com/13k/night-stalker/cmd/ns/internal/redis"
+	nsweb "github.com/13k/night-stalker/web"
 )
 
 var Cmd = &cobra.Command{
@@ -50,11 +50,11 @@ func init() {
 		panic(err)
 	}
 
-	Cmd.AddCommand(routes.Cmd)
+	Cmd.AddCommand(cmdwebroutes.Cmd)
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -62,7 +62,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")
@@ -70,7 +70,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	rds, err := redis.Connect()
+	rds, err := nscmdrds.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to redis")
@@ -84,7 +84,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.WithError(err).Fatal("error loading assets")
 	}
 
-	app, err := web.New(web.AppOptions{
+	app, err := nsweb.New(nsweb.AppOptions{
 		Log:             log.WithPackage("web"),
 		DB:              db,
 		Redis:           rds,

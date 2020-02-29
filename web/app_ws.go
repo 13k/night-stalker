@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 var wsUpgrader = ws.Upgrader{}

@@ -1,8 +1,9 @@
 package models
 
 import (
-	nspb "github.com/13k/night-stalker/internal/protocol"
 	"github.com/faceit/go-steam/steamid"
+
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 var PlayerModel Model = (*Player)(nil)

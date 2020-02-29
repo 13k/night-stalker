@@ -1,14 +1,15 @@
 package teams
 
 import (
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	nsjson "github.com/13k/night-stalker/internal/json"
-	"github.com/13k/night-stalker/models"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nsjson "github.com/13k/night-stalker/internal/json"
+	"github.com/13k/night-stalker/models"
 )
 
 const (
@@ -36,7 +37,7 @@ type responseEntry struct {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -44,7 +45,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")

@@ -7,7 +7,7 @@ import (
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsdb "github.com/13k/night-stalker/internal/db"
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
 )

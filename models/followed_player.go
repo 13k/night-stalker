@@ -1,7 +1,7 @@
 package models
 
 import (
-	nspb "github.com/13k/night-stalker/internal/protocol"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 var FollowedPlayerModel Model = (*FollowedPlayer)(nil)

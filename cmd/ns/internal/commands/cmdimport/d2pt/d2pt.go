@@ -13,9 +13,9 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/spf13/cobra"
 
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	"github.com/13k/night-stalker/cmd/ns/internal/util"
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
 )
 
 const (
@@ -67,7 +67,7 @@ type player struct {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -75,7 +75,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")
@@ -113,10 +113,10 @@ func run(cmd *cobra.Command, args []string) {
 				return
 			}
 
-			followed, err := util.FollowPlayer(db, p.accountID, p.label, false)
+			followed, err := nscmdutil.FollowPlayer(db, p.accountID, p.label, false)
 
 			if err != nil {
-				if err == util.ErrFollowedPlayerAlreadyExists {
+				if err == nscmdutil.ErrFollowedPlayerAlreadyExists {
 					l.Warn(err.Error())
 					return
 				}

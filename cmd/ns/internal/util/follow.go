@@ -3,8 +3,9 @@ package util
 import (
 	"errors"
 
-	"github.com/13k/night-stalker/models"
 	"github.com/jinzhu/gorm"
+
+	"github.com/13k/night-stalker/models"
 )
 
 var (

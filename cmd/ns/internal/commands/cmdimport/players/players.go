@@ -1,17 +1,18 @@
 package players
 
 import (
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	"github.com/13k/night-stalker/cmd/ns/internal/util"
-	nsjson "github.com/13k/night-stalker/internal/json"
-	nsproto "github.com/13k/night-stalker/internal/protocol"
-	"github.com/13k/night-stalker/models"
 	"github.com/faceit/go-steam/steamid"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	nsjson "github.com/13k/night-stalker/internal/json"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	"github.com/13k/night-stalker/models"
 )
 
 const (
@@ -28,23 +29,23 @@ var Cmd = &cobra.Command{
 type response []*responseEntry
 
 type responseEntry struct {
-	AccountID    nsproto.AccountID   `json:"account_id,omitempty"`
-	SteamID      nsjson.StringUint   `json:"steamid,omitempty"`
-	TeamID       models.TeamID       `json:"team_id,omitempty"`
-	Name         string              `json:"name,omitempty"`
-	PersonaName  string              `json:"personaname,omitempty"`
-	Avatar       string              `json:"avatar,omitempty"`
-	AvatarMedium string              `json:"avatarmedium,omitempty"`
-	AvatarFull   string              `json:"avatarfull,omitempty"`
-	ProfileURL   string              `json:"profileurl,omitempty"`
-	CountryCode  string              `json:"loccountrycode,omitempty"`
-	FantasyRole  nsproto.FantasyRole `json:"fantasy_role,omitempty"`
-	IsLocked     bool                `json:"is_locked,omitempty"`
-	LockedUntil  *nsjson.UnixTime    `json:"locked_until,omitempty"`
+	AccountID    nspb.AccountID    `json:"account_id,omitempty"`
+	SteamID      nsjson.StringUint `json:"steamid,omitempty"`
+	TeamID       models.TeamID     `json:"team_id,omitempty"`
+	Name         string            `json:"name,omitempty"`
+	PersonaName  string            `json:"personaname,omitempty"`
+	Avatar       string            `json:"avatar,omitempty"`
+	AvatarMedium string            `json:"avatarmedium,omitempty"`
+	AvatarFull   string            `json:"avatarfull,omitempty"`
+	ProfileURL   string            `json:"profileurl,omitempty"`
+	CountryCode  string            `json:"loccountrycode,omitempty"`
+	FantasyRole  nspb.FantasyRole  `json:"fantasy_role,omitempty"`
+	IsLocked     bool              `json:"is_locked,omitempty"`
+	LockedUntil  *nsjson.UnixTime  `json:"locked_until,omitempty"`
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -52,7 +53,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")
@@ -141,10 +142,10 @@ func run(cmd *cobra.Command, args []string) {
 
 		var followed *models.FollowedPlayer
 
-		followed, err = util.FollowPlayer(db, entry.AccountID, entry.Name, false)
+		followed, err = nscmdutil.FollowPlayer(db, entry.AccountID, entry.Name, false)
 
 		if err != nil {
-			if err != util.ErrFollowedPlayerAlreadyExists {
+			if err != nscmdutil.ErrFollowedPlayerAlreadyExists {
 				tx.Rollback()
 				l.WithError(err).Fatal()
 			}

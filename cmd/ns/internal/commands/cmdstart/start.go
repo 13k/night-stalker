@@ -5,12 +5,13 @@ import (
 	"os/signal"
 	"time"
 
-	ns "github.com/13k/night-stalker"
-	"github.com/13k/night-stalker/cmd/ns/internal/db"
-	"github.com/13k/night-stalker/cmd/ns/internal/logger"
-	"github.com/13k/night-stalker/cmd/ns/internal/redis"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	ns "github.com/13k/night-stalker"
+	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmdrds "github.com/13k/night-stalker/cmd/ns/internal/redis"
 )
 
 var Cmd = &cobra.Command{
@@ -40,7 +41,7 @@ func run(cmd *cobra.Command, args []string) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 
-	log, err := logger.New()
+	log, err := nscmdlog.New()
 
 	if err != nil {
 		panic(err)
@@ -48,7 +49,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer log.Close()
 
-	db, err := db.Connect()
+	db, err := nscmddb.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to database")
@@ -56,7 +57,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	rds, err := redis.Connect()
+	rds, err := nscmdrds.Connect()
 
 	if err != nil {
 		log.WithError(err).Fatal("error connecting to redis")
