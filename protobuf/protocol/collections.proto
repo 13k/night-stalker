@@ -2,11 +2,12 @@ syntax = "proto3";
 
 package protocol;
 
-option go_package = "github.com/13k/night-stalker/internal/protocol";
+option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
 enum CollectionOp {
-  REPLACE = 0;
-  ADD = 1;
-  UPDATE = 2;
-  REMOVE = 3;
+  COLLECTION_OP_UNSPECIFIED = 0;
+  COLLECTION_OP_REPLACE = 1;
+  COLLECTION_OP_ADD = 2;
+  COLLECTION_OP_UPDATE = 3;
+  COLLECTION_OP_REMOVE = 4;
 }

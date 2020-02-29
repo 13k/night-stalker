@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package protocol;
 
-option go_package = "github.com/13k/night-stalker/internal/protocol";
+option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
 import "google/protobuf/timestamp.proto";
 
@@ -73,7 +73,9 @@ message LiveMatch {
   repeated Player players = 100;
 }
 
-message LiveMatches { repeated protocol.LiveMatch matches = 1; }
+message LiveMatches {
+  repeated protocol.LiveMatch matches = 1;
+}
 
 message LiveMatchesChange {
   protocol.CollectionOp op = 1;

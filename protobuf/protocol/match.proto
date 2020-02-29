@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package protocol;
 
-option go_package = "github.com/13k/night-stalker/internal/protocol";
+option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
 import "google/protobuf/timestamp.proto";
 
