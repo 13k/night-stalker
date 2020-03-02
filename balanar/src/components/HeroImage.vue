@@ -18,17 +18,26 @@
 import { get } from "lodash/object";
 import { isString } from "lodash/lang";
 
+import * as $a from "@/assets/helpers";
+import pb from "@/protocol/proto";
+
 export default {
   name: "HeroImage",
 
   props: {
     hero: {
-      type: Object,
+      type: pb.protocol.Hero,
       default: null,
     },
-    version: {
+    orientation: {
       type: String,
-      default: "portrait",
+      default: $a.DEFAULT_HERO_IMAGE_ORIENTATION,
+      validator: value => $a.HERO_IMAGE_ORIENTATIONS.indexOf(value) >= 0,
+    },
+    size: {
+      type: String,
+      default: $a.DEFAULT_HERO_IMAGE_SIZE,
+      validator: value => $a.HERO_IMAGE_SIZES.indexOf(value) >= 0,
     },
     placeholder: {
       type: Boolean,
@@ -70,28 +79,17 @@ export default {
 
   computed: {
     source() {
-      if (!this.hero) {
-        return this.placeholder ? this.lazySource : "";
-      }
-
-      switch (this.version) {
-        case "icon":
-          return require(`@/assets/heroes/icons/${this.hero.name}_png.png`);
-        case "selection":
-          return require(`@/assets/heroes/selection/${this.hero.name}_png.png`);
-        default:
-          return require(`@/assets/heroes/${this.hero.name}_png.png`);
-      }
+      return $a.heroImage(this.hero, {
+        orientation: this.orientation,
+        size: this.size,
+        placeholder: this.placeholder,
+      });
     },
     lazySource() {
-      switch (this.version) {
-        case "icon":
-          return "";
-        case "selection":
-          return require("@/assets/heroes/default_vert.png");
-        default:
-          return require("@/assets/heroes/default_full.png");
-      }
+      return $a.heroPlaceholderImage({
+        orientation: this.orientation,
+        size: this.size,
+      });
     },
     altText() {
       if (isString(this.alt)) {
@@ -102,7 +100,7 @@ export default {
         return get(this.hero, "localized_name", this.altPlaceholder);
       }
 
-      return "";
+      return null;
     },
   },
 };
