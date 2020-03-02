@@ -60,6 +60,10 @@ export function opendotaTeamURL(team) {
   return `https://www.opendota.com/teams/${team.id}`;
 }
 
+export function opendotaHeroURL(hero) {
+  return `https://www.opendota.com/heroes/${hero.id}`;
+}
+
 export function dotabuffMatchURL(match) {
   return `https://www.dotabuff.com/matches/${match.match_id}`;
 }
@@ -72,12 +76,20 @@ export function dotabuffTeamURL(team) {
   return `https://www.dotabuff.com/esports/teams/${team.id}`;
 }
 
+export function dotabuffHeroURL(hero) {
+  return `https://www.dotabuff.com/heroes/${hero.name}`;
+}
+
 export function stratzMatchURL(match) {
   return `https://www.stratz.com/matches/${match.match_id}`;
 }
 
 export function stratzPlayerURL(player) {
   return `https://www.stratz.com/players/${player.account_id}`;
+}
+
+export function stratzHeroURL(hero) {
+  return `https://www.stratz.com/heroes/${hero.id}`;
 }
 
 export function datdotaMatchURL(match) {
