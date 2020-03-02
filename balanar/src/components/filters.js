@@ -93,5 +93,5 @@ export function datdotaTeamURL(team) {
 }
 
 export function teamSideName(slot) {
-  return TEAM_SIDES[slot.teamNumber];
+  return TEAM_SIDES[slot.team];
 }
