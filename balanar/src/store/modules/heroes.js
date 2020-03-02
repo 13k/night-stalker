@@ -1,7 +1,7 @@
 import _ from "lodash";
 import Vue from "vue";
 
-import api from "@/api";
+import { fetchHeroes } from "@/protocol/api";
 
 const log = Vue.log({ context: { location: "store/heroes" } });
 
@@ -16,7 +16,7 @@ const actions = {
   fetch({ commit }) {
     log.debug("<fetch>");
 
-    api.getHeroes().then(heroes => {
+    fetchHeroes().then(heroes => {
       log.debug("<fetch> received response", heroes);
       commit("setHeroes", heroes || []);
     });

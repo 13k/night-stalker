@@ -2,7 +2,7 @@ import Vue from "vue";
 import _ from "lodash";
 
 import pb from "@/protocol/proto";
-import { getLiveMatches } from "@/protocol/api";
+import { fetchLiveMatches } from "@/protocol/api";
 import { handleLiveMatchesChange } from "@/protocol/ws";
 
 const log = Vue.log({ context: { location: "store/liveMatches" } });
@@ -30,16 +30,16 @@ const actions = {
       let mutation;
 
       switch (liveMatchesChange.op) {
-        case pb.protocol.CollectionOp.REPLACE:
+        case pb.protocol.CollectionOp.COLLECTION_OP_REPLACE:
           mutation = "setLiveMatches";
           break;
-        case pb.protocol.CollectionOp.ADD:
+        case pb.protocol.CollectionOp.COLLECTION_OP_ADD:
           mutation = "addLiveMatches";
           break;
-        case pb.protocol.CollectionOp.UPDATE:
+        case pb.protocol.CollectionOp.COLLECTION_OP_UPDATE:
           mutation = "updateLiveMatches";
           break;
-        case pb.protocol.CollectionOp.REMOVE:
+        case pb.protocol.CollectionOp.COLLECTION_OP_REMOVE:
           mutation = "removeLiveMatches";
           break;
         default:
@@ -54,7 +54,7 @@ const actions = {
   fetch({ commit, rootState }) {
     log.debug("<fetch>");
 
-    getLiveMatches(rootState).then(liveMatches => {
+    fetchLiveMatches(rootState).then(liveMatches => {
       log.debug("<fetch:response>", liveMatches);
       commit("setLiveMatches", liveMatches);
     });
