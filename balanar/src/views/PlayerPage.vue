@@ -1,5 +1,5 @@
 <template>
-  <div class="player-page">
+  <div>
     <v-row v-if="loading">
       <v-col
         cols="12"
@@ -193,7 +193,11 @@
             lg="8"
             offset-lg="2"
           >
-            <PlayerMatches :matches="matches" />
+            <PlayerMatches
+              :player="player"
+              :matches="matches"
+              :known-players="knownPlayers"
+            />
           </v-col>
         </v-row>
       </section>
@@ -202,19 +206,10 @@
 </template>
 
 <script>
-import { getPlayer } from "@/protocol/api";
-import * as t from "@/protocol/transform";
+import _ from "lodash";
 
-import {
-  opendotaPlayerURL,
-  opendotaTeamURL,
-  dotabuffPlayerURL,
-  dotabuffTeamURL,
-  stratzPlayerURL,
-  datdotaPlayerURL,
-  datdotaTeamURL,
-} from "@/components/filters";
-
+import * as $f from "@/components/filters";
+import { fetchPlayerMatches } from "@/protocol/api";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import PlayerMatches from "@/components/PlayerMatches.vue";
 
@@ -229,14 +224,20 @@ export default {
   data() {
     return {
       loading: false,
-      player: null,
+      playerMatches: null,
       error: null,
     };
   },
 
   computed: {
+    player() {
+      return _.get(this.playerMatches, "player");
+    },
     matches() {
-      return t.get(this.player, "matches");
+      return _.get(this.playerMatches, "matches");
+    },
+    knownPlayers() {
+      return _.get(this.playerMatches, "known_players");
     },
     playerAvatarSize() {
       return this.$vuetify.breakpoint.xsOnly ? 32 : 64;
@@ -248,20 +249,24 @@ export default {
       return this.$vuetify.breakpoint.xsOnly ? 16 : 24;
     },
     communitySitesPlayer() {
+      if (this.player == null) {
+        return [];
+      }
+
       const sites = [
         {
           site: "opendota",
-          url: opendotaPlayerURL(this.player),
+          url: $f.opendotaPlayerURL(this.player),
           text: "View player on OpenDota",
         },
         {
           site: "dotabuff",
-          url: dotabuffPlayerURL(this.player),
+          url: $f.dotabuffPlayerURL(this.player),
           text: "View player on Dotabuff",
         },
         {
           site: "stratz",
-          url: stratzPlayerURL(this.player),
+          url: $f.stratzPlayerURL(this.player),
           text: "View player on Stratz",
         },
       ];
@@ -269,7 +274,7 @@ export default {
       if (this.player.is_pro) {
         sites.push({
           site: "datdota",
-          url: datdotaPlayerURL(this.player),
+          url: $f.datdotaPlayerURL(this.player),
           text: "View player on DatDota",
         });
       }
@@ -277,24 +282,24 @@ export default {
       return sites;
     },
     communitySitesTeam() {
-      if (!this.player.team) {
+      if (this.player.team == null) {
         return [];
       }
 
       return [
         {
           site: "opendota",
-          url: opendotaTeamURL(this.player.team),
+          url: $f.opendotaTeamURL(this.player.team),
           text: "View team on OpenDota",
         },
         {
           site: "dotabuff",
-          url: dotabuffTeamURL(this.player.team),
+          url: $f.dotabuffTeamURL(this.player.team),
           text: "View team on Dotabuff",
         },
         {
           site: "datdota",
-          url: datdotaTeamURL(this.player.team),
+          url: $f.datdotaTeamURL(this.player.team),
           text: "View team on DatDota",
         },
       ];
@@ -311,12 +316,12 @@ export default {
 
   methods: {
     fetchData() {
-      this.error = this.player = null;
+      this.error = this.playerMatches = null;
       this.loading = true;
 
-      getPlayer(this.$store.state, this.$route.params.accountId)
-        .then(player => {
-          this.player = player;
+      fetchPlayerMatches(this.$store.state, parseInt(this.$route.params.accountId))
+        .then(playerMatches => {
+          this.playerMatches = playerMatches;
         })
         .catch(err => {
           this.error = err.toString();

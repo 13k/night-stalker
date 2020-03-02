@@ -42,7 +42,7 @@
                     <v-list-item-avatar>
                       <HeroImage
                         :hero="item"
-                        version="icon"
+                        orientation="icon"
                         width="28"
                         height="28"
                       />
@@ -99,12 +99,13 @@
           <PlayerMatch
             v-for="match in items"
             :key="match.match_id.toString()"
+            :player="player"
             :match="match"
           />
         </v-expansion-panels>
       </template>
 
-      <template v-slot:footer>
+      <template v-slot:footer="{ pagination }">
         <v-row
           class="mt-3 mb-3"
           align="center"
@@ -115,14 +116,14 @@
             icon
             dark
             class="mr-1"
-            :disabled="!hasPrevPage"
+            :disabled="pagination.page === 1"
             @click="prevPage"
           >
             <v-icon>mdi-chevron-left</v-icon>
           </v-btn>
 
           <span>
-            {{ page }} / {{ numberOfPages }}
+            {{ pagination.page }} / {{ pagination.pageCount }}
           </span>
 
           <v-btn
@@ -130,7 +131,7 @@
             icon
             dark
             class="ml-1"
-            :disabled="!hasNextPage"
+            :disabled="pagination.page === pagination.pageCount"
             @click="nextPage"
           >
             <v-icon>mdi-chevron-right</v-icon>
@@ -144,7 +145,8 @@
 <script>
 import _ from "lodash";
 
-import * as t from "@/protocol/transform";
+import * as $t from "@/protocol/transform";
+import pb from "@/protocol/proto";
 import HeroImage from "@/components/HeroImage.vue";
 import PlayerMatch from "@/components/PlayerMatch.vue";
 
@@ -157,9 +159,19 @@ export default {
   },
 
   props: {
+    player: {
+      type: pb.protocol.Player,
+      required: true,
+    },
     matches: {
       type: Array,
       default: () => [],
+      validator: v => _.every(v, i => i instanceof pb.protocol.Match),
+    },
+    knownPlayers: {
+      type: Array,
+      default: () => [],
+      validator: v => _.every(v, i => i instanceof pb.protocol.Player),
     },
     itemsPerPage: {
       type: Number,
@@ -184,43 +196,34 @@ export default {
       let matches = this.matches;
 
       if (this.onlyWins) {
-        matches = _.filter(matches, t.bindGet("outcome.playerVictory"));
+        matches = _.filter(matches, $t.bindGet("poi.$t.victory"));
       }
 
       return matches;
     },
     heroes() {
       return _.chain(this.filteredMatches)
-        .map(t.bindGet("hero"))
+        .map($t.bindGet("poi.$t.hero"))
         .filter("id")
         .uniqBy("id")
         .sortBy("localized_name")
         .value();
     },
-    numberOfPages() {
-      return Math.ceil(this.filteredMatches.length / this.itemsPerPage);
-    },
-    hasPrevPage() {
-      return this.page > 1;
-    },
-    hasNextPage() {
-      return this.page < this.numberOfPages;
-    },
   },
 
   methods: {
     nextPage() {
-      if (this.page + 1 <= this.numberOfPages) this.page += 1;
+      this.page += 1;
     },
     prevPage() {
-      if (this.page - 1 >= 1) this.page -= 1;
+      this.page -= 1;
     },
     filterMatches(matches, search) {
       if (_.isEmpty(search)) {
         return matches;
       }
 
-      return _.filter(matches, t.propertyMatches({ hero: { name: search } }));
+      return _.filter(matches, $t.propertyMatches("poi.$t.hero.name", search));
     },
     sortMatches(matches, sortBy, sortDesc) {
       sortBy = _.get(sortBy, "[0]", "time");
@@ -228,13 +231,13 @@ export default {
 
       switch (sortBy) {
         case "time":
-          matches = _.orderBy(matches, t.property("activate_time"), sortDesc ? "desc" : "asc");
+          matches = _.orderBy(matches, $t.property("activate_time"), sortDesc ? "desc" : "asc");
 
           break;
         case "hero":
           matches = _.orderBy(
             matches,
-            t.property("hero.localized_name"),
+            $t.property("hero.localized_name"),
             sortDesc ? "desc" : "asc"
           );
 

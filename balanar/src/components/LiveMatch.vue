@@ -77,10 +77,7 @@
               v-for="player in team.players"
               :key="player.account_id"
               class="player"
-              :to="{
-                name: 'players.show',
-                params: { accountId: player.account_id },
-              }"
+              :to="player | playerRoute"
             >
               <LiveMatchPlayer
                 :team="team"
@@ -114,7 +111,9 @@
 </template>
 
 <script>
-import * as t from "@/protocol/transform";
+import * as $t from "@/protocol/transform";
+import pb from "@/protocol/proto";
+import { playerRoute } from "@/router/helpers";
 import { colonDuration, humanDuration } from "@/components/filters";
 import ClipboardBtn from "@/components/ClipboardBtn.vue";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
@@ -130,6 +129,7 @@ export default {
   filters: {
     colonDuration,
     humanDuration,
+    playerRoute,
     playersColWidth(team) {
       return team.tag || team.name ? 9 : 12;
     },
@@ -147,14 +147,14 @@ export default {
 
   props: {
     match: {
-      type: Object,
+      type: pb.protocol.LiveMatch,
       required: true,
     },
   },
 
   computed: {
     teams() {
-      return t.get(this.match, "teams");
+      return $t.get(this.match, "teams");
     },
     hasMMR() {
       return this.match.average_mmr > 0;

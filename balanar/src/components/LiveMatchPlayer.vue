@@ -19,7 +19,7 @@
         v-if="kda"
         class="ml-2 overline grey--text"
       >
-        {{ kda.kills }}/{{ kda.deaths }}/{{ kda.assists }}
+        {{ kda }}
       </span>
     </div>
 
@@ -29,7 +29,7 @@
     >
       <HeroImage
         :hero="hero"
-        version="portrait"
+        orientation="landscape"
         width="64"
         height="36"
         placeholder
@@ -47,6 +47,7 @@
 
 <script>
 import * as $t from "@/protocol/transform";
+import pb from "@/protocol/proto";
 import { normalizePlayerName } from "@/util";
 import HeroImage from "@/components/HeroImage.vue";
 
@@ -63,7 +64,7 @@ export default {
       required: true,
     },
     player: {
-      type: Object,
+      type: pb.protocol.LiveMatch.Player,
       required: true,
     },
   },
@@ -86,12 +87,10 @@ export default {
       return null;
     },
     kda() {
-      if (this.player.kills > 0 || this.player.deaths > 0 || this.player.assists > 0) {
-        return {
-          kills: this.player.kills || 0,
-          deaths: this.player.deaths || 0,
-          assists: this.player.assists || 0,
-        };
+      const { kills = 0, deaths = 0, assists = 0 } = this.player || {};
+
+      if (kills > 0 || deaths > 0 || assists > 0) {
+        return `${kills}/${deaths}/${assists}`;
       }
 
       return null;

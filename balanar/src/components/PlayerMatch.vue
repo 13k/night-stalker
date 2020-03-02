@@ -3,7 +3,7 @@
     <v-expansion-panel-header class="justify-start">
       <HeroImage
         :hero="hero"
-        version="icon"
+        orientation="icon"
         max-width="32"
         max-height="32"
         class="mr-6"
@@ -108,9 +108,7 @@
                 </v-list-item-icon>
 
                 <v-list-item-content>
-                  <v-list-item-title>
-                    {{ match.player_details.kills }}/{{ match.player_details.deaths }}/{{ match.player_details.assists }}
-                  </v-list-item-title>
+                  <v-list-item-title>{{ kda.text }}</v-list-item-title>
                   <v-list-item-subtitle>KDA</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
@@ -123,17 +121,11 @@
 </template>
 
 <script>
-import {
-  l10n,
-  colonDuration,
-  teamSideName,
-  opendotaMatchURL,
-  dotabuffMatchURL,
-  stratzMatchURL,
-  datdotaMatchURL,
-} from "@/components/filters";
+import _ from "lodash";
 
-import * as t from "@/protocol/transform";
+import * as $t from "@/protocol/transform";
+import * as $f from "@/components/filters";
+import pb from "@/protocol/proto";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import HeroImage from "@/components/HeroImage.vue";
 
@@ -145,41 +137,64 @@ export default {
     HeroImage,
   },
 
-  filters: {
-    l10n,
-    colonDuration,
-    teamSideName,
-  },
+  filters: _.pick($f, "colonDuration", "l10n", "teamSideName"),
 
   props: {
-    match: {
-      type: Object,
+    player: {
+      type: pb.protocol.Player,
       required: true,
+    },
+    match: {
+      type: pb.protocol.Match,
+      required: true,
+    },
+    knownPlayers: {
+      type: Array,
+      default: () => [],
+      validator: v => _.every(v, i => i instanceof pb.protocol.Player),
     },
   },
 
   computed: {
+    matchPlayer() {
+      return $t.get(this.match, "poi");
+    },
     hero() {
-      return t.get(this.match, "hero");
+      return $t.get(this.matchPlayer, "hero");
     },
     playerSlot() {
-      return t.get(this.match, "slot");
+      return $t.get(this.matchPlayer, "slot");
     },
     date() {
-      return t.get(this.match, "start_time") || t.get(this.match, "activate_time");
+      return $t.get(this.match, "start_time") || $t.get(this.match, "activate_time");
     },
     outcome() {
-      const outcome = t.get(this.match, "outcome");
-
-      if (!outcome) {
+      if (this.matchPlayer == null) {
         return null;
       }
 
+      const victory = $t.get(this.matchPlayer, "victory");
+
       return {
-        text: outcome.playerVictory ? "Victory" : "Defeat",
-        color: outcome.playerVictory ? "green" : "red",
-        icon: outcome.playerVictory ? "mdi-trophy" : "mdi-bomb",
+        text: victory ? "Victory" : "Defeat",
+        color: victory ? "green" : "red",
+        icon: victory ? "mdi-trophy" : "mdi-bomb",
       };
+    },
+    kda() {
+      const { kills = 0, deaths = 0, assists = 0 } = this.matchPlayer || {};
+      const kda = {
+        kills,
+        deaths,
+        assists,
+        text: "N/A",
+      };
+
+      if (kda.kills > 0 || kda.deaths > 0 || kda.assists > 0) {
+        kda.text = `${kda.kills}/${kda.deaths}/${kda.assists}`;
+      }
+
+      return kda;
     },
     communitySiteIconSize() {
       return this.$vuetify.breakpoint.xsOnly ? 22 : 28;
@@ -188,17 +203,17 @@ export default {
       const sites = [
         {
           site: "opendota",
-          url: opendotaMatchURL(this.match),
+          url: $f.opendotaMatchURL(this.match),
           text: "View match on OpenDota",
         },
         {
           site: "dotabuff",
-          url: dotabuffMatchURL(this.match),
+          url: $f.dotabuffMatchURL(this.match),
           text: "View match on Dotabuff",
         },
         {
           site: "stratz",
-          url: stratzMatchURL(this.match),
+          url: $f.stratzMatchURL(this.match),
           text: "View match on Stratz",
         },
       ];
@@ -206,7 +221,7 @@ export default {
       if (!this.match.league_id.isZero()) {
         sites.push({
           site: "datdota",
-          url: datdotaMatchURL(this.match),
+          url: $f.datdotaMatchURL(this.match),
           text: "View match on DatDota",
         });
       }

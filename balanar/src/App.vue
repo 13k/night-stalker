@@ -110,7 +110,7 @@
         <div class="d-flex justify-left">
           <HeroImage
             :hero="balanar"
-            version="icon"
+            orientation="icon"
             width="28"
             height="28"
             class="mx-4"
