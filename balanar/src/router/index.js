@@ -3,6 +3,7 @@ import VueRouter from "vue-router";
 
 import Home from "@/views/Home.vue";
 import PlayerPage from "@/views/PlayerPage.vue";
+import HeroPage from "@/views/HeroPage.vue";
 
 Vue.use(VueRouter);
 
@@ -21,6 +22,11 @@ const routes = [
     path: "/players/:accountId",
     name: "players.show",
     component: PlayerPage,
+  },
+  {
+    path: "/heroes/:id",
+    name: "heroes.show",
+    component: HeroPage,
   },
 ];
 
