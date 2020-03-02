@@ -6,6 +6,12 @@ import { compile } from "path-to-regexp";
 const log = Vue.log({ context: { location: "api" } });
 
 const DEBUG = process.env.NODE_ENV !== "production";
+
+const CLIENT_OPTIONS = {
+  timeout: false,
+  retry: 0,
+};
+
 const API_URL = "/api/v1";
 
 const ROUTES = {
@@ -29,13 +35,15 @@ const afterResponse = DEBUG ? [debugResponse] : [];
 
 class API {
   constructor(baseURL) {
-    this.client = ky.create({
-      prefixUrl: baseURL,
-      hooks: {
-        beforeRequest,
-        afterResponse,
-      },
-    });
+    this.client = ky.create(
+      Object.assign({}, CLIENT_OPTIONS, {
+        prefixUrl: baseURL,
+        hooks: {
+          beforeRequest,
+          afterResponse,
+        },
+      })
+    );
   }
 
   request(method, route, options) {
