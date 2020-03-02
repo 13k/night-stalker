@@ -15,8 +15,7 @@
 </template>
 
 <script>
-import { get } from "lodash/object";
-import { isString } from "lodash/lang";
+import _ from "lodash";
 
 import * as $a from "@/assets/helpers";
 import pb from "@/protocol/proto";
@@ -92,12 +91,12 @@ export default {
       });
     },
     altText() {
-      if (isString(this.alt)) {
+      if (_.isString(this.alt)) {
         return this.alt;
       }
 
       if (this.alt) {
-        return get(this.hero, "localized_name", this.altPlaceholder);
+        return _.get(this.hero, "localized_name", this.altPlaceholder);
       }
 
       return null;

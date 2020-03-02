@@ -1,5 +1,4 @@
-import { assign, get } from "lodash/object";
-import { isEmpty, isDate } from "lodash/lang";
+import _ from "lodash";
 import prettyMs from "pretty-ms";
 
 const PRETTY_DURATION_DEFAULTS = { unit: "seconds" };
@@ -10,7 +9,7 @@ const TEAM_SIDES = {
 };
 
 export function l10n(value) {
-  if (isDate(value)) {
+  if (_.isDate(value)) {
     return value.toLocaleString();
   }
 
@@ -42,36 +41,11 @@ export function humanDuration(duration, options = PRETTY_DURATION_DEFAULTS) {
 }
 
 export function colonDuration(duration, options = PRETTY_DURATION_DEFAULTS) {
-  return prettyDuration(duration, assign({ colonNotation: true }, options));
-}
-
-export function heroPlaceholderImageURL(version) {
-  switch (version) {
-    case "portrait":
-      return require("@/assets/heroes/default_vert.png");
-    default:
-      return require("@/assets/heroes/default_full.png");
-  }
-}
-
-// available versions: full (full), large (lg), small (sb), portrait (vert)
-export function heroImageURL(hero, options) {
-  options = assign({ version: "full", placeholder: true }, options);
-  let url = get(hero, `image_${options.version}_url`);
-
-  if (isEmpty(url)) {
-    if (options.placeholder === true) {
-      url = heroPlaceholderImageURL(options.version);
-    } else if (options.placeholder) {
-      url = options.placeholder;
-    }
-  }
-
-  return url;
+  return prettyDuration(duration, _.assign({ colonNotation: true }, options));
 }
 
 export function heroName(hero, fallback) {
-  return get(hero, "localized_name", fallback);
+  return _.get(hero, "localized_name", fallback);
 }
 
 export function opendotaMatchURL(match) {

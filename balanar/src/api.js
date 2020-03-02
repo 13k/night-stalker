@@ -1,7 +1,7 @@
 import Vue from "vue";
 import ky from "ky";
+import _ from "lodash";
 import { compile } from "path-to-regexp";
-import { get } from "lodash/object";
 
 const log = Vue.log({ context: { location: "api" } });
 
@@ -39,8 +39,8 @@ class API {
   }
 
   request(method, route, options) {
-    const routeParams = get(route, "params", {});
-    const toPath = get(ROUTES, route.name);
+    const routeParams = _.get(route, "params", {});
+    const toPath = _.get(ROUTES, route.name);
     const path = toPath(routeParams);
 
     return this.client[method].call(this.client, path, options).json();

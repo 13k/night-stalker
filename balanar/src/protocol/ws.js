@@ -1,11 +1,11 @@
-import { isPlainObject } from "lodash/lang";
+import _ from "lodash";
 
 import pb from "@/protocol/proto";
 import { preprocessMatches } from "@/protocol/preprocess";
 import { transformMatches } from "@/protocol/transform";
 
 export function handleLiveMatchesChange(state, ev) {
-  if (!isPlainObject(ev.body)) {
+  if (!_.isPlainObject(ev.body)) {
     throw new TypeError("received message with non-object body", ev.body);
   }
 

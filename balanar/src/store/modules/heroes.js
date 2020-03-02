@@ -1,5 +1,5 @@
+import _ from "lodash";
 import Vue from "vue";
-import { keyBy } from "lodash/collection";
 
 import api from "@/api";
 
@@ -25,8 +25,8 @@ const actions = {
 
 const mutations = {
   setHeroes(state, heroes) {
-    state.byId = keyBy(heroes, "id");
-    state.byName = keyBy(heroes, "name");
+    state.byId = _.keyBy(heroes, "id");
+    state.byName = _.keyBy(heroes, "name");
   },
 };
 

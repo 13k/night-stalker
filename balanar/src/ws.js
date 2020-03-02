@@ -1,6 +1,5 @@
 import Vue from "vue";
-import { each } from "lodash/collection";
-import { assign, get } from "lodash/object";
+import _ from "lodash";
 
 const EVENTS = ["open", "close", "error", "message"];
 
@@ -14,7 +13,7 @@ const log = Vue.log({ context: { location: "ws" } });
 class WSEvent extends Event {
   constructor(name, data) {
     super(name);
-    assign(this, data || {});
+    _.assign(this, data || {});
   }
 }
 
@@ -29,26 +28,26 @@ export default class WS extends EventTarget {
   }
 
   get connecting() {
-    return get(this, "socket.readyState") === STATE_CONNECTING;
+    return _.get(this, "socket.readyState") === STATE_CONNECTING;
   }
 
   get ready() {
-    return get(this, "socket.readyState") === STATE_OPEN;
+    return _.get(this, "socket.readyState") === STATE_OPEN;
   }
 
   get closing() {
-    return get(this, "socket.readyState") === STATE_CLOSING;
+    return _.get(this, "socket.readyState") === STATE_CLOSING;
   }
 
   get closed() {
-    return !this.socket || get(this, "socket.readyState") === STATE_CLOSED;
+    return !this.socket || _.get(this, "socket.readyState") === STATE_CLOSED;
   }
 
   connect() {
     log.debug("connecting", this.url);
     this.socket = new WebSocket(this.url);
 
-    each(EVENTS, event => {
+    _.each(EVENTS, event => {
       this.socket.addEventListener(event, this[`_on${event}`].bind(this));
     });
   }

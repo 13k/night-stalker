@@ -1,4 +1,4 @@
-import { assign } from "lodash/object";
+import _ from "lodash";
 
 export function image(path) {
   return require(`@/assets/images/${path}`);
@@ -43,7 +43,7 @@ export function heroPlaceholderImage(options = {}) {
 }
 
 export function heroImage(hero, options = {}) {
-  options = assign({ placeholder: true }, options);
+  options = _.assign({ placeholder: true }, options);
 
   if (hero == null) {
     if (options.placeholder === true) {
