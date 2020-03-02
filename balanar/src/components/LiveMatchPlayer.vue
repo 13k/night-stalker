@@ -46,19 +46,9 @@
 </template>
 
 <script>
-import _ from "lodash";
-
-import * as t from "@/protocol/transform";
+import * as $t from "@/protocol/transform";
+import { normalizePlayerName } from "@/util";
 import HeroImage from "@/components/HeroImage.vue";
-
-const cleanName = name =>
-  _.chain((name || "").normalize())
-    .deburr()
-    .toLower()
-    .replace(/\W/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/(^-|-$)/, "")
-    .value();
 
 export default {
   name: "LiveMatchPlayer",
@@ -80,14 +70,14 @@ export default {
 
   computed: {
     hero() {
-      return t.get(this.player, "hero");
+      return $t.get(this.player, "hero");
     },
     slot() {
-      return t.get(this.player, "slot");
+      return $t.get(this.player, "slot");
     },
     label() {
-      const label = cleanName(this.player.label);
-      const name = cleanName(this.player.name);
+      const label = normalizePlayerName(this.player.label);
+      const name = normalizePlayerName(this.player.name);
 
       if (name !== label) {
         return this.player.label;
