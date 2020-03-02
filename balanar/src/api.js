@@ -17,12 +17,16 @@ const API_URL = "/api/v1";
 const ROUTES = {
   heroes: {
     index: compile("heroes"),
+    matches: compile("heroes/:id/matches"),
   },
   live_matches: {
     index: compile("live_matches"),
   },
   players: {
-    show: compile("players/:accountId"),
+    matches: compile("players/:accountId/matches"),
+  },
+  search: {
+    index: compile("search"),
   },
 };
 
@@ -58,18 +62,28 @@ class API {
     return this.request("get", route, options);
   }
 
-  getLiveMatches() {
+  search(query) {
+    const route = { name: "search.index" };
+    return this.get(route, { searchParams: { q: query } });
+  }
+
+  liveMatches() {
     const route = { name: "live_matches.index" };
     return this.get(route);
   }
 
-  getHeroes() {
+  heroes() {
     const route = { name: "heroes.index" };
     return this.get(route);
   }
 
-  getPlayer(accountId) {
-    const route = { name: "players.show", params: { accountId } };
+  playerMatches(accountId) {
+    const route = { name: "players.matches", params: { accountId } };
+    return this.get(route);
+  }
+
+  heroMatches(id) {
+    const route = { name: "heroes.matches", params: { id } };
     return this.get(route);
   }
 }
