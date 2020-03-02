@@ -22,6 +22,8 @@
 </template>
 
 <script>
+import * as $a from "@/assets/helpers";
+
 export default {
   name: "CommunitySiteBtn",
 
@@ -80,7 +82,7 @@ export default {
 
   computed: {
     source() {
-      return require(`@/assets/sites/${this.site}.png`);
+      return $a.image(`sites/${this.site}.png`);
     },
   },
 };
