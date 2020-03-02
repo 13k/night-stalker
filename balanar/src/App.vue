@@ -97,7 +97,6 @@
     <v-app-bar
       app
       clipped-left
-      dense
       dark
       color="primary"
     >
@@ -126,51 +125,12 @@
       <v-spacer />
 
       <v-col
-        v-if="!this.$vuetify.breakpoint.xsOnly"
         cols="6"
         lg="4"
         xl="4"
       >
-        <v-text-field
-          ref="search"
-          v-model="searchQuery"
-          clearable
-          single-line
-          hide-details
-          color="white"
-          append-icon="mdi-magnify"
-          :placeholder="searchPlaceholderText"
-          @keyup.esc="clearSearch"
-          @click:clear="clearSearch"
-        />
+        <AppSearch />
       </v-col>
-
-      <v-btn
-        v-if="this.$vuetify.breakpoint.xsOnly"
-        icon
-        @click.stop="toggleExtensionSearch"
-      >
-        <v-icon>mdi-magnify</v-icon>
-      </v-btn>
-
-      <template
-        v-if="extensionSearch"
-        v-slot:extension
-      >
-        <v-expand-transition>
-          <v-text-field
-            ref="search"
-            v-model="searchQuery"
-            clearable
-            single-line
-            hide-details
-            color="white"
-            :placeholder="searchPlaceholderText"
-            @click:clear="toggleExtensionSearch"
-            @keyup.esc="toggleExtensionSearch"
-          />
-        </v-expand-transition>
-      </template>
     </v-app-bar>
 
     <v-content>
@@ -184,6 +144,7 @@
 <script>
 import { mapState } from "vuex";
 
+import AppSearch from "@/components/AppSearch.vue";
 import HeroImage from "@/components/HeroImage.vue";
 import ThemeToggle from "@/components/ThemeToggle.vue";
 
@@ -191,6 +152,7 @@ export default {
   name: "App",
 
   components: {
+    AppSearch,
     HeroImage,
     ThemeToggle,
   },
@@ -199,22 +161,12 @@ export default {
     appName: process.env.VUE_APP_NAME,
     drawer: null,
     miniDrawer: false,
-    extensionSearchOpen: false,
-    searchQuery: null,
     followed: [{ name: "13k", account_id: 13, picture: 28 }],
   }),
 
-  computed: {
-    ...mapState({
-      balanar: state => state.heroes.byName.npc_dota_hero_night_stalker,
-    }),
-    searchPlaceholderText() {
-      return this.$vuetify.breakpoint.xsOnly ? "Search..." : 'Search ("Ctrl+Enter" to focus)';
-    },
-    extensionSearch() {
-      return this.$vuetify.breakpoint.xsOnly && this.extensionSearchOpen;
-    },
-  },
+  computed: mapState({
+    balanar: state => state.heroes.byName.npc_dota_hero_night_stalker,
+  }),
 
   watch: {
     miniDrawer(val) {
@@ -231,45 +183,9 @@ export default {
     this.$store.dispatch("liveMatches/fetch");
   },
 
-  mounted() {
-    document.addEventListener("keyup", ev => {
-      ev = ev || window.event;
-
-      if (
-        this.$refs.search &&
-        ev.target !== this.$refs.search.$refs.input &&
-        ev.key === "Enter" &&
-        ev.ctrlKey
-      ) {
-        ev.preventDefault();
-        this.focusSearch();
-      }
-    });
-  },
-
   methods: {
     toggleMiniDrawer() {
       this.miniDrawer = !this.miniDrawer;
-    },
-    focusSearch() {
-      if (this.$refs.search) {
-        this.$refs.search.focus();
-      }
-    },
-    clearSearch() {
-      if (this.$refs.search) {
-        this.$refs.search.reset();
-        this.$refs.search.blur();
-      }
-    },
-    toggleExtensionSearch() {
-      this.extensionSearchOpen = !this.extensionSearchOpen;
-
-      if (this.extensionSearchOpen) {
-        this.$nextTick(() => this.focusSearch());
-      } else {
-        this.clearSearch();
-      }
     },
   },
 };
