@@ -15,6 +15,7 @@ message Player {
   string avatar_medium_url = 5;
   string avatar_full_url = 6;
   bool is_pro = 7;
+  string slug = 8;
 
   protocol.Team team = 100;
 }
