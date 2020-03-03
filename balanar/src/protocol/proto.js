@@ -4309,10 +4309,6 @@ export const protocol = $root.protocol = (() => {
          * @property {Long|null} [id] Hero id
          * @property {string|null} [name] Hero name
          * @property {string|null} [localized_name] Hero localized_name
-         * @property {string|null} [image_full_url] Hero image_full_url
-         * @property {string|null} [image_large_url] Hero image_large_url
-         * @property {string|null} [image_small_url] Hero image_small_url
-         * @property {string|null} [image_portrait_url] Hero image_portrait_url
          */
 
         /**
@@ -4355,38 +4351,6 @@ export const protocol = $root.protocol = (() => {
         Hero.prototype.localized_name = "";
 
         /**
-         * Hero image_full_url.
-         * @member {string} image_full_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_full_url = "";
-
-        /**
-         * Hero image_large_url.
-         * @member {string} image_large_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_large_url = "";
-
-        /**
-         * Hero image_small_url.
-         * @member {string} image_small_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_small_url = "";
-
-        /**
-         * Hero image_portrait_url.
-         * @member {string} image_portrait_url
-         * @memberof protocol.Hero
-         * @instance
-         */
-        Hero.prototype.image_portrait_url = "";
-
-        /**
          * Creates a new Hero instance using the specified properties.
          * @function create
          * @memberof protocol.Hero
@@ -4416,14 +4380,6 @@ export const protocol = $root.protocol = (() => {
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.localized_name);
-            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
-                writer.uint32(/* id 4, wireType 2 =*/34).string(message.image_full_url);
-            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
-                writer.uint32(/* id 5, wireType 2 =*/42).string(message.image_large_url);
-            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
-                writer.uint32(/* id 6, wireType 2 =*/50).string(message.image_small_url);
-            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
-                writer.uint32(/* id 7, wireType 2 =*/58).string(message.image_portrait_url);
             return writer;
         };
 
@@ -4466,18 +4422,6 @@ export const protocol = $root.protocol = (() => {
                     break;
                 case 3:
                     message.localized_name = reader.string();
-                    break;
-                case 4:
-                    message.image_full_url = reader.string();
-                    break;
-                case 5:
-                    message.image_large_url = reader.string();
-                    break;
-                case 6:
-                    message.image_small_url = reader.string();
-                    break;
-                case 7:
-                    message.image_portrait_url = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -4523,18 +4467,6 @@ export const protocol = $root.protocol = (() => {
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
                 if (!$util.isString(message.localized_name))
                     return "localized_name: string expected";
-            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
-                if (!$util.isString(message.image_full_url))
-                    return "image_full_url: string expected";
-            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
-                if (!$util.isString(message.image_large_url))
-                    return "image_large_url: string expected";
-            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
-                if (!$util.isString(message.image_small_url))
-                    return "image_small_url: string expected";
-            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
-                if (!$util.isString(message.image_portrait_url))
-                    return "image_portrait_url: string expected";
             return null;
         };
 
@@ -4563,14 +4495,6 @@ export const protocol = $root.protocol = (() => {
                 message.name = String(object.name);
             if (object.localized_name != null)
                 message.localized_name = String(object.localized_name);
-            if (object.image_full_url != null)
-                message.image_full_url = String(object.image_full_url);
-            if (object.image_large_url != null)
-                message.image_large_url = String(object.image_large_url);
-            if (object.image_small_url != null)
-                message.image_small_url = String(object.image_small_url);
-            if (object.image_portrait_url != null)
-                message.image_portrait_url = String(object.image_portrait_url);
             return message;
         };
 
@@ -4595,10 +4519,6 @@ export const protocol = $root.protocol = (() => {
                     object.id = options.longs === String ? "0" : 0;
                 object.name = "";
                 object.localized_name = "";
-                object.image_full_url = "";
-                object.image_large_url = "";
-                object.image_small_url = "";
-                object.image_portrait_url = "";
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 if (typeof message.id === "number")
@@ -4609,14 +4529,6 @@ export const protocol = $root.protocol = (() => {
                 object.name = message.name;
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
                 object.localized_name = message.localized_name;
-            if (message.image_full_url != null && message.hasOwnProperty("image_full_url"))
-                object.image_full_url = message.image_full_url;
-            if (message.image_large_url != null && message.hasOwnProperty("image_large_url"))
-                object.image_large_url = message.image_large_url;
-            if (message.image_small_url != null && message.hasOwnProperty("image_small_url"))
-                object.image_small_url = message.image_small_url;
-            if (message.image_portrait_url != null && message.hasOwnProperty("image_portrait_url"))
-                object.image_portrait_url = message.image_portrait_url;
             return object;
         };
 
