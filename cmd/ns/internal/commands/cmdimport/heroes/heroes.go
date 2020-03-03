@@ -1,9 +1,6 @@
 package heroes
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/13k/geyser"
 	"github.com/paralin/go-dota2"
 	"github.com/sirupsen/logrus"
@@ -21,10 +18,6 @@ var Cmd = &cobra.Command{
 	Run:   run,
 }
 
-const (
-	fmtHeroImageURL = "http://cdn.dota2.com/apps/dota2/images/heroes/%s_%s.%s"
-)
-
 type response struct {
 	Result *result `json:"result"`
 }
@@ -39,39 +32,6 @@ type resultHero struct {
 	ID            models.HeroID `json:"id,omitempty"`
 	Name          string        `json:"name,omitempty"`
 	LocalizedName string        `json:"localized_name,omitempty"`
-}
-
-var imageURLFormats = map[string]struct {
-	Suffix string
-	Ext    string
-}{
-	"full": {
-		Suffix: "full",
-		Ext:    "png",
-	},
-	"large": {
-		Suffix: "lg",
-		Ext:    "png",
-	},
-	"small": {
-		Suffix: "sb",
-		Ext:    "png",
-	},
-	"portrait": {
-		Suffix: "vert",
-		Ext:    "jpg",
-	},
-}
-
-func createImageURLs(name string) map[string]string {
-	shortName := strings.TrimPrefix(name, "npc_dota_hero_")
-	urls := make(map[string]string)
-
-	for fname, fcfg := range imageURLFormats {
-		urls[fname] = fmt.Sprintf(fmtHeroImageURL, shortName, fcfg.Suffix, fcfg.Ext)
-	}
-
-	return urls
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -142,15 +102,10 @@ func run(cmd *cobra.Command, args []string) {
 
 	for _, entry := range result.Result.Heroes {
 		l := log.WithField("name", entry.Name)
-		imageURLs := createImageURLs(entry.Name)
 		hero := &models.Hero{
-			ID:               entry.ID,
-			Name:             entry.Name,
-			LocalizedName:    entry.LocalizedName,
-			ImageFullURL:     imageURLs["full"],
-			ImageLargeURL:    imageURLs["large"],
-			ImageSmallURL:    imageURLs["small"],
-			ImagePortraitURL: imageURLs["portrait"],
+			ID:            entry.ID,
+			Name:          entry.Name,
+			LocalizedName: entry.LocalizedName,
 		}
 
 		result := tx.Assign(hero).FirstOrCreate(hero)
