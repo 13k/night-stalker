@@ -14,6 +14,10 @@ import (
 	"github.com/13k/night-stalker/models"
 )
 
+const (
+	defaultMatchIDsAgeDays = 7
+)
+
 var (
 	errEmptyFilters  = errors.New("empty filters")
 	errEmptyMatchIDs = errors.New("empty match IDs")
@@ -31,7 +35,7 @@ func (app *App) findMatchIDs(filters *findMatchIDsFilters) (nscol.MatchIDs, erro
 	}
 
 	if filters.Since.IsZero() {
-		filters.Since = nstime.TravelFrom(time.Now()).DaysAgo(15).BeginningOfDay().T()
+		filters.Since = nstime.TravelFrom(time.Now()).DaysAgo(defaultMatchIDsAgeDays).BeginningOfDay().T()
 	}
 
 	var matchIDs nscol.MatchIDs
