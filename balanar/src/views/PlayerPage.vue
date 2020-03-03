@@ -208,7 +208,7 @@
 <script>
 import _ from "lodash";
 
-import * as $f from "@/components/filters";
+import * as $f from "@/filters";
 import { fetchPlayerMatches } from "@/protocol/api";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 import PlayerMatches from "@/components/PlayerMatches.vue";

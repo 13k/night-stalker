@@ -114,7 +114,7 @@
 import * as $t from "@/protocol/transform";
 import pb from "@/protocol/proto";
 import { playerRoute } from "@/router/helpers";
-import { colonDuration, humanDuration } from "@/components/filters";
+import { colonDuration, humanDuration } from "@/filters";
 import ClipboardBtn from "@/components/ClipboardBtn.vue";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
 

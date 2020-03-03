@@ -140,7 +140,7 @@
 import _ from "lodash";
 
 import * as $t from "@/protocol/transform";
-import * as $f from "@/components/filters";
+import * as $f from "@/filters";
 import pb from "@/protocol/proto";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 
