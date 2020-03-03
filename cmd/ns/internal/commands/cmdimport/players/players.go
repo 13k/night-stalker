@@ -140,9 +140,12 @@ func run(cmd *cobra.Command, args []string) {
 			l.WithError(err).Fatal()
 		}
 
-		var followed *models.FollowedPlayer
+		followed := &models.FollowedPlayer{
+			AccountID: entry.AccountID,
+			Label:     entry.Name,
+		}
 
-		followed, err = nscmdutil.FollowPlayer(db, entry.AccountID, entry.Name, false)
+		followed, err = nscmdutil.FollowPlayer(db, followed, false)
 
 		if err != nil {
 			if err != nscmdutil.ErrFollowedPlayerAlreadyExists {

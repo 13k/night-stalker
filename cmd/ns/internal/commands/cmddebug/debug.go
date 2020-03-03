@@ -9,10 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	// "github.com/jinzhu/gorm"
-
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
-	// nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	// nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	// "github.com/13k/night-stalker/models"
 )

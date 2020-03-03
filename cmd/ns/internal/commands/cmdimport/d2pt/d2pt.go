@@ -16,6 +16,7 @@ import (
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	"github.com/13k/night-stalker/models"
 )
 
 const (
@@ -113,7 +114,12 @@ func run(cmd *cobra.Command, args []string) {
 				return
 			}
 
-			followed, err := nscmdutil.FollowPlayer(db, p.accountID, p.label, false)
+			followed := &models.FollowedPlayer{
+				AccountID: p.accountID,
+				Label:     p.label,
+			}
+
+			followed, err := nscmdutil.FollowPlayer(db, followed, false)
 
 			if err != nil {
 				if err == nscmdutil.ErrFollowedPlayerAlreadyExists {

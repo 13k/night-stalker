@@ -9,6 +9,7 @@ import (
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	"github.com/13k/night-stalker/models"
 )
 
 var Cmd = &cobra.Command{
@@ -52,7 +53,12 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	followed, err := nscmdutil.FollowPlayer(db, accountID, label, flagUpdate)
+	followed := &models.FollowedPlayer{
+		AccountID: accountID,
+		Label:     label,
+	}
+
+	followed, err = nscmdutil.FollowPlayer(db, followed, flagUpdate)
 
 	if err != nil {
 		log.WithError(err).Fatal("error")

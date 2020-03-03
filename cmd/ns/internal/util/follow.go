@@ -12,26 +12,30 @@ var (
 	ErrFollowedPlayerAlreadyExists = errors.New("player already followed")
 )
 
-func FollowPlayer(db *gorm.DB, accountID uint32, label string, updateExisting bool) (*models.FollowedPlayer, error) {
-	followed := &models.FollowedPlayer{AccountID: accountID}
-	criteria := *followed
-	result := db.Where(criteria).FirstOrInit(followed)
+func FollowPlayer(db *gorm.DB, followed *models.FollowedPlayer, updateExisting bool) (*models.FollowedPlayer, error) {
+	persisted := &models.FollowedPlayer{}
+	scope := db.Where(&models.FollowedPlayer{AccountID: followed.AccountID})
+
+	var result *gorm.DB
+
+	if updateExisting {
+		result = scope.Assign(followed).FirstOrCreate(persisted)
+	} else {
+		result = scope.Take(persisted)
+
+		if err := result.Error; err != nil {
+			if gorm.IsRecordNotFoundError(err) {
+				persisted = followed
+				result = db.Create(persisted)
+			}
+		} else {
+			return nil, ErrFollowedPlayerAlreadyExists
+		}
+	}
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	if !db.NewRecord(followed) && !updateExisting {
-		return nil, ErrFollowedPlayerAlreadyExists
-	}
-
-	if db.NewRecord(followed) {
-		followed.Label = label
-		result = db.Create(followed)
-	} else {
-		update := models.FollowedPlayer{Label: label}
-		result = db.Model(models.FollowedPlayerModel).Updates(update)
-	}
-
-	return followed, result.Error
+	return persisted, nil
 }
