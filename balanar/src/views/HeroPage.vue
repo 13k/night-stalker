@@ -36,7 +36,7 @@
     <transition name="slide">
       <section
         v-if="hero"
-        :key="hero.id"
+        :key="hero.id.toString()"
         class="content"
       >
         <v-row>
