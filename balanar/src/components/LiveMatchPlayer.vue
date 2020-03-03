@@ -1,11 +1,11 @@
 <template>
   <div
-    class="live-match-player d-flex align-center"
     :class="containerClasses"
+    class="live-match-player d-flex align-center"
   >
     <div
-      class="d-flex"
       :class="nameClasses"
+      class="d-flex"
     >
       <span>{{ player.name }}</span>
       <span
@@ -24,22 +24,22 @@
     </div>
 
     <div
-      class="d-flex"
       :class="iconClasses"
+      class="d-flex"
     >
       <HeroImage
         :hero="hero"
         orientation="landscape"
         width="64"
         height="36"
-        placeholder
-        alt
         alt-placeholder="Picking hero"
+        alt
+        placeholder
       />
 
       <div
-        class="slot-bar"
         :class="slotBarClasses"
+        class="slot-bar"
       />
     </div>
   </div>

@@ -35,10 +35,10 @@
           :key="link.site"
           :site="link.site"
           :href="link.url"
-          target="_blank"
           :max-width="communitySiteIconSize"
           :max-height="communitySiteIconSize"
           class="ml-1"
+          target="_blank"
         />
       </div>
     </v-expansion-panel-header>

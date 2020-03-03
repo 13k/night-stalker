@@ -73,8 +73,8 @@
                 >
                   <template v-slot:activator="{ on }">
                     <v-btn
-                      icon
                       color="accent"
+                      icon
                       v-on="on"
                     >
                       <v-icon large>

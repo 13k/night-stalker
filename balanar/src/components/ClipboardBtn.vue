@@ -1,9 +1,9 @@
 <template>
   <v-btn
     ref="btn"
+    :title="title"
     icon
     small
-    :title="title"
   >
     <slot>
       <v-icon small>

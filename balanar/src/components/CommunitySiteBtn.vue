@@ -7,7 +7,6 @@
     :target="target"
   >
     <v-img
-      contain
       :src="source"
       :alt="alt"
       :title="alt"
@@ -17,6 +16,7 @@
       :max-height="maxHeight"
       :min-width="minWidth"
       :min-height="minHeight"
+      contain
     />
   </v-btn>
 </template>

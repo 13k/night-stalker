@@ -28,8 +28,8 @@
         disabled
       >
         <v-list-item
-          dense
           :two-line="match.delay > 0"
+          dense
         >
           <v-list-item-icon class="mr-3">
             <v-icon>mdi-clock-outline</v-icon>
@@ -64,10 +64,10 @@
         :key="team.number"
       >
         <v-col
-          order="1"
-          class="players-col"
           :cols="team | playersColWidth"
           :class="team | playersColClasses"
+          order="1"
+          class="players-col"
         >
           <v-list
             link
@@ -76,8 +76,8 @@
             <v-list-item
               v-for="player in team.players"
               :key="player.account_id"
-              class="player"
               :to="player | playerRoute"
+              class="player"
             >
               <LiveMatchPlayer
                 :team="team"
@@ -89,16 +89,16 @@
 
         <v-col
           v-if="team.tag || team.name"
+          :order="team.number % 2 === 0 ? 1 : 0"
           cols="3"
           align-self="center"
           class="d-flex flex-column justify-center align-center"
-          :order="team.number % 2 === 0 ? 1 : 0"
         >
           <img
             v-if="team.logo_url"
-            class="team-logo"
             :src="team.logo_url"
             :title="team.name"
+            class="team-logo"
           >
 
           <span class="team-name caption">

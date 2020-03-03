@@ -2,9 +2,9 @@
   <v-app id="night-stalker">
     <v-navigation-drawer
       v-model="drawer"
+      :mini-variant="miniDrawer"
       app
       clipped
-      :mini-variant="miniDrawer"
     >
       <v-list
         dense
@@ -13,8 +13,8 @@
         <v-list-item>
           <v-list-item-action v-if="miniDrawer">
             <v-btn
-              icon
               title="Expand"
+              icon
               @click.stop="toggleMiniDrawer"
             >
               <v-icon>mdi-chevron-right</v-icon>
@@ -25,8 +25,8 @@
 
           <v-list-item-action>
             <v-btn
-              icon
               title="Collapse"
+              icon
               @click.stop="toggleMiniDrawer"
             >
               <v-icon>mdi-chevron-left</v-icon>
@@ -51,8 +51,8 @@
         </v-list-item>
 
         <v-list-item
-          link
           title="Match history"
+          link
         >
           <v-list-item-action>
             <v-icon>mdi-history</v-icon>
@@ -95,10 +95,10 @@
     </v-navigation-drawer>
 
     <v-app-bar
+      color="primary"
       app
       clipped-left
       dark
-      color="primary"
     >
       <v-app-bar-nav-icon
         class="hidden-lg-and-up"
@@ -109,11 +109,11 @@
         <div class="d-flex justify-left">
           <HeroImage
             :hero="balanar"
+            :alt="appName"
             orientation="icon"
             width="28"
             height="28"
             class="mx-4"
-            :alt="appName"
           />
 
           <span class="title app-title grey--text text--darken-4">

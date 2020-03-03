@@ -1,6 +1,5 @@
 <template>
   <v-img
-    contain
     :src="source"
     :lazy-src="lazySource"
     :alt="altText"
@@ -11,6 +10,7 @@
     :max-height="maxHeight"
     :min-width="minWidth"
     :min-height="minHeight"
+    contain
   />
 </template>
 

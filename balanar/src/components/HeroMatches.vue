@@ -15,9 +15,9 @@
     >
       <template v-slot:header>
         <v-toolbar
-          dark
           color="secondary"
           height="auto"
+          dark
         >
           <v-container>
             <v-row>
@@ -29,15 +29,15 @@
                 <v-select
                   v-model="sortBy"
                   :items="sortValues"
+                  class="mr-1"
                   dense
                   hide-details
-                  class="mr-1"
                 />
 
                 <v-btn
+                  :title="sortDesc ? 'Sort ascending' : 'Sort descending'"
                   icon
                   small
-                  :title="sortDesc ? 'Sort ascending' : 'Sort descending'"
                   @click.stop="sortDesc = !sortDesc"
                 >
                   <v-icon>{{ sortDesc ? "mdi-sort-ascending" : "mdi-sort-descending" }}</v-icon>
@@ -79,11 +79,11 @@
           justify="center"
         >
           <v-btn
-            small
-            icon
-            dark
-            class="mr-1"
             :disabled="pagination.page === 1"
+            class="mr-1"
+            dark
+            icon
+            small
             @click="prevPage"
           >
             <v-icon>mdi-chevron-left</v-icon>
@@ -94,11 +94,11 @@
           </span>
 
           <v-btn
-            small
-            icon
-            dark
-            class="ml-1"
             :disabled="pagination.page === pagination.pageCount"
+            class="ml-1"
+            dark
+            icon
+            small
             @click="nextPage"
           >
             <v-icon>mdi-chevron-right</v-icon>

@@ -1,7 +1,7 @@
 <template>
   <v-btn
-    icon
     :title="title"
+    icon
     @click="$vuetify.theme.dark = !$vuetify.theme.dark"
   >
     <v-icon>mdi-brightness-{{ $vuetify.theme.dark ? '7' : '4' }}</v-icon>

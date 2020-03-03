@@ -57,9 +57,9 @@
                 <v-img
                   v-if="player.avatar_medium_url"
                   :src="player.avatar_medium_url"
-                  class="player-avatar"
                   :max-width="playerAvatarSize"
                   :max-height="playerAvatarSize"
+                  class="player-avatar"
                   contain
                 />
 
@@ -74,8 +74,8 @@
                 >
                   <template v-slot:activator="{ on }">
                     <v-btn
-                      icon
                       color="accent"
+                      icon
                       v-on="on"
                     >
                       <v-icon large>
@@ -145,8 +145,8 @@
                   >
                     <template v-slot:activator="{ on }">
                       <v-btn
-                        icon
                         color="accent"
+                        icon
                         v-on="on"
                       >
                         <v-icon large>
