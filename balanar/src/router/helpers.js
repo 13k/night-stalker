@@ -1,5 +1,3 @@
-import { normalizePlayerName } from "@/util";
-
 export function heroParam(hero) {
   return `${hero.id}-${hero.name.replace(/^npc_dota_hero_/, "")}`;
 }
@@ -12,12 +10,12 @@ export function heroRoute(hero) {
 }
 
 export function playerParam(player) {
-  return `${player.account_id}-${normalizePlayerName(player.name)}`;
+  return `${player.account_id}-${player.slug}`;
 }
 
 export function playerRoute(player) {
   return {
     name: "players.show",
-    params: { id: playerParam(player) },
+    params: { accountId: playerParam(player) },
   };
 }
