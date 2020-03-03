@@ -19,9 +19,9 @@ const HERO_PLACEHOLDER_IMAGES = {
 const HERO_IMAGES = {
   "icon": hero => `heroes/vpk/icons/${hero.name}_png.png`,
   "portrait.regular": hero => `heroes/vpk/selection/${hero.name}_png.png`,
-  "portrait.large": hero => `heroes/cdn/vert/${hero.name}.jpg`,
+  "portrait.large": hero => `heroes/cdn/${hero.name}_vert.jpg`,
   "landscape.regular": hero => `heroes/vpk/${hero.name}_png.png`,
-  "landscape.large": hero => `heroes/cdn/full/${hero.name}.png`,
+  "landscape.large": hero => `heroes/cdn/${hero.name}_full.png`,
 };
 
 function heroImageVersion({
