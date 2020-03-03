@@ -57,7 +57,7 @@
                 </v-list-item-icon>
 
                 <v-list-item-content>
-                  <v-list-item-title>{{ match.average_mmr }}</v-list-item-title>
+                  <v-list-item-title>{{ avgMMR }}</v-list-item-title>
                   <v-list-item-subtitle>Average MMR</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
@@ -97,7 +97,7 @@
                 </v-list-item-icon>
 
                 <v-list-item-content>
-                  <v-list-item-title>{{ playerSlot | teamSideName }}</v-list-item-title>
+                  <v-list-item-title>{{ teamSideName }}</v-list-item-title>
                   <v-list-item-subtitle>Side</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
@@ -137,7 +137,7 @@ export default {
     HeroImage,
   },
 
-  filters: _.pick($f, "colonDuration", "l10n", "teamSideName"),
+  filters: _.pick($f, "colonDuration", "l10n"),
 
   props: {
     player: {
@@ -162,8 +162,12 @@ export default {
     hero() {
       return $t.get(this.matchPlayer, "hero");
     },
-    playerSlot() {
-      return $t.get(this.matchPlayer, "slot");
+    avgMMR() {
+      return this.match.average_mmr !== 0 ? this.match.average_mmr : "N/A";
+    },
+    teamSideName() {
+      const slot = $t.get(this.matchPlayer, "slot");
+      return slot ? $f.teamSideName(slot) : "N/A";
     },
     date() {
       return $t.get(this.match, "start_time") || $t.get(this.match, "activate_time");
