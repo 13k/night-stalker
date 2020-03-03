@@ -9,13 +9,9 @@ import (
 
 func NewHero(h *models.Hero) *nspb.Hero {
 	return &nspb.Hero{
-		Id:               uint64(h.ID),
-		Name:             h.Name,
-		LocalizedName:    h.LocalizedName,
-		ImageFullUrl:     h.ImageFullURL,
-		ImageLargeUrl:    h.ImageLargeURL,
-		ImageSmallUrl:    h.ImageSmallURL,
-		ImagePortraitUrl: h.ImagePortraitURL,
+		Id:            uint64(h.ID),
+		Name:          h.Name,
+		LocalizedName: h.LocalizedName,
 	}
 }
 
