@@ -148,7 +148,10 @@ export default {
     page: 1,
     sortBy: "time",
     sortDesc: true,
-    sortValues: [{ text: "Date", value: "time" }],
+    sortValues: [
+      { text: "Date", value: "time" },
+      { text: "MMR", value: "mmr" },
+    ],
     onlyWins: false,
   }),
 
@@ -185,15 +188,9 @@ export default {
       switch (sortBy) {
         case "time":
           matches = _.orderBy(matches, $t.property("activate_time"), sortDesc ? "desc" : "asc");
-
           break;
-        case "hero":
-          matches = _.orderBy(
-            matches,
-            $t.property("hero.localized_name"),
-            sortDesc ? "desc" : "asc"
-          );
-
+        case "mmr":
+          matches = _.orderBy(matches, "average_mmr", sortDesc ? "desc" : "asc");
           break;
         default:
           this.$log.error("Invalid player matches sorting:", sortBy);
