@@ -209,7 +209,9 @@ func NewMatchPlayer(data *MatchPlayerData) (*nspb.Match_Player, error) {
 	}
 
 	if data.LiveMatchPlayer != nil {
-		pb.HeroId = uint64(data.LiveMatchPlayer.HeroID)
+		if pb.HeroId == 0 {
+			pb.HeroId = uint64(data.LiveMatchPlayer.HeroID)
+		}
 	}
 
 	for _, statsPlayer := range data.LiveMatchStatsPlayers {
