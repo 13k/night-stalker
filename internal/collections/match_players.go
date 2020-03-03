@@ -26,10 +26,13 @@ func (s MatchPlayers) AccountIDs() AccountIDs {
 		return nil
 	}
 
-	ids := make(AccountIDs, len(s))
+	ids := make(AccountIDs, 0, len(s))
 
-	for i, p := range s {
-		ids[i] = p.AccountID
+	for _, p := range s {
+		// MatchPlayer can have zero AccountID (player with private profile)
+		if p.AccountID != 0 {
+			ids = append(ids, p.AccountID)
+		}
 	}
 
 	return ids

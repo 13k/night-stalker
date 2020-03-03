@@ -78,11 +78,14 @@ func TestMatchPlayers_AccountIDs(t *testing.T) {
 		},
 		{
 			Subject: nscol.MatchPlayers{
+				{AccountID: 0},
 				{AccountID: 1},
 				{AccountID: 1},
 				{AccountID: 2},
+				{AccountID: 0},
 				{AccountID: 3},
 				{AccountID: 3},
+				{AccountID: 0},
 			},
 			Expected: nscol.AccountIDs{1, 1, 2, 3, 3},
 		},
