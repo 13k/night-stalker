@@ -117,7 +117,7 @@ func (app *App) loadPlayersData(accountIDs ...nspb.AccountID) (nsviews.PlayersDa
 }
 
 func (app *App) loadPlayerMatchesData(accountID nspb.AccountID) (nsviews.MatchesData, error) {
-	matchIDs, err := app.findMatchIDs(&findMatchIDsFilters{
+	matchIDs, err := nsdb.FindMatchIDs(app.db, nsdb.FindMatchIDsFilters{
 		PlayerFilters: &nsdb.PlayerFilters{
 			AccountIDs: nscol.AccountIDs{accountID},
 		},
@@ -132,7 +132,7 @@ func (app *App) loadPlayerMatchesData(accountID nspb.AccountID) (nsviews.Matches
 		return nil, nil
 	}
 
-	matchesData, err := app.loadMatchesData(matchIDs...)
+	matchesData, err := nsdb.LoadMatchesData(app.db, matchIDs...)
 
 	if err != nil {
 		err = xerrors.Errorf("error loading matches data: %w", err)

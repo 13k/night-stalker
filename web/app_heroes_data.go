@@ -29,7 +29,7 @@ func (app *App) loadHeroesData(heroIDs ...models.HeroID) ([]*models.Hero, error)
 }
 
 func (app *App) loadHeroMatchesData(id models.HeroID) (nsviews.MatchesData, error) {
-	matchIDs, err := app.findMatchIDs(&findMatchIDsFilters{
+	matchIDs, err := nsdb.FindMatchIDs(app.db, nsdb.FindMatchIDsFilters{
 		PlayerFilters: &nsdb.PlayerFilters{
 			HeroIDs: nscol.HeroIDs{id},
 		},
@@ -44,7 +44,7 @@ func (app *App) loadHeroMatchesData(id models.HeroID) (nsviews.MatchesData, erro
 		return nil, nil
 	}
 
-	matchesData, err := app.loadMatchesData(matchIDs...)
+	matchesData, err := nsdb.LoadMatchesData(app.db, matchIDs...)
 
 	if err != nil {
 		err = xerrors.Errorf("error loading matches data: %w", err)

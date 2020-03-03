@@ -22,6 +22,14 @@ func WhereBinaryOp(db *gorm.DB, model models.Model, col string, op string, value
 	return db.Where(fmt.Sprintf("%s.%s %s %s", quote(model.TableName()), quote(col), op, placeholder), value)
 }
 
+func Eq(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB {
+	return WhereBinaryOp(db, model, col, "=", value)
+}
+
+func Neq(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB {
+	return WhereBinaryOp(db, model, col, "!=", value)
+}
+
 func In(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB {
 	return WhereBinaryOp(db, model, col, "IN", value)
 }
@@ -32,6 +40,14 @@ func Gt(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB
 
 func GtEq(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB {
 	return WhereBinaryOp(db, model, col, ">=", value)
+}
+
+func Lt(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB {
+	return WhereBinaryOp(db, model, col, "<", value)
+}
+
+func LtEq(db *gorm.DB, model models.Model, col string, value interface{}) *gorm.DB {
+	return WhereBinaryOp(db, model, col, "<=", value)
 }
 
 func Group(db *gorm.DB, model models.Model, col string) *gorm.DB {
