@@ -3666,6 +3666,7 @@ export const protocol = $root.protocol = (() => {
          * @property {string|null} [avatar_medium_url] Player avatar_medium_url
          * @property {string|null} [avatar_full_url] Player avatar_full_url
          * @property {boolean|null} [is_pro] Player is_pro
+         * @property {string|null} [slug] Player slug
          * @property {protocol.ITeam|null} [team] Player team
          */
 
@@ -3741,6 +3742,14 @@ export const protocol = $root.protocol = (() => {
         Player.prototype.is_pro = false;
 
         /**
+         * Player slug.
+         * @member {string} slug
+         * @memberof protocol.Player
+         * @instance
+         */
+        Player.prototype.slug = "";
+
+        /**
          * Player team.
          * @member {protocol.ITeam|null|undefined} team
          * @memberof protocol.Player
@@ -3786,6 +3795,8 @@ export const protocol = $root.protocol = (() => {
                 writer.uint32(/* id 6, wireType 2 =*/50).string(message.avatar_full_url);
             if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                 writer.uint32(/* id 7, wireType 0 =*/56).bool(message.is_pro);
+            if (message.slug != null && message.hasOwnProperty("slug"))
+                writer.uint32(/* id 8, wireType 2 =*/66).string(message.slug);
             if (message.team != null && message.hasOwnProperty("team"))
                 $root.protocol.Team.encode(message.team, writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
             return writer;
@@ -3842,6 +3853,9 @@ export const protocol = $root.protocol = (() => {
                     break;
                 case 7:
                     message.is_pro = reader.bool();
+                    break;
+                case 8:
+                    message.slug = reader.string();
                     break;
                 case 100:
                     message.team = $root.protocol.Team.decode(reader, reader.uint32());
@@ -3902,6 +3916,9 @@ export const protocol = $root.protocol = (() => {
             if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                 if (typeof message.is_pro !== "boolean")
                     return "is_pro: boolean expected";
+            if (message.slug != null && message.hasOwnProperty("slug"))
+                if (!$util.isString(message.slug))
+                    return "slug: string expected";
             if (message.team != null && message.hasOwnProperty("team")) {
                 let error = $root.protocol.Team.verify(message.team);
                 if (error)
@@ -3936,6 +3953,8 @@ export const protocol = $root.protocol = (() => {
                 message.avatar_full_url = String(object.avatar_full_url);
             if (object.is_pro != null)
                 message.is_pro = Boolean(object.is_pro);
+            if (object.slug != null)
+                message.slug = String(object.slug);
             if (object.team != null) {
                 if (typeof object.team !== "object")
                     throw TypeError(".protocol.Player.team: object expected");
@@ -3965,6 +3984,7 @@ export const protocol = $root.protocol = (() => {
                 object.avatar_medium_url = "";
                 object.avatar_full_url = "";
                 object.is_pro = false;
+                object.slug = "";
                 object.team = null;
             }
             if (message.account_id != null && message.hasOwnProperty("account_id"))
@@ -3981,6 +4001,8 @@ export const protocol = $root.protocol = (() => {
                 object.avatar_full_url = message.avatar_full_url;
             if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                 object.is_pro = message.is_pro;
+            if (message.slug != null && message.hasOwnProperty("slug"))
+                object.slug = message.slug;
             if (message.team != null && message.hasOwnProperty("team"))
                 object.team = $root.protocol.Team.toObject(message.team, options);
             return object;
