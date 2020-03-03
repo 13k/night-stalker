@@ -18,8 +18,9 @@ func NewPlayer(data *PlayerData) (*nspb.Player, error) {
 		AccountId: data.AccountID,
 	}
 
-	if pb.Name == "" && data.FollowedPlayer != nil {
+	if data.FollowedPlayer != nil {
 		pb.Name = data.FollowedPlayer.Label
+		pb.Slug = data.FollowedPlayer.Slug
 	}
 
 	if data.Player != nil {
