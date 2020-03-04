@@ -20,7 +20,15 @@
               {{ outcome.icon }}
             </v-icon>
 
-            <span class="subtitle-2">{{ match.match_id }}</span>
+            <span class="subtitle-2">
+              {{ match.match_id }}
+
+              <ClipboardBtn
+                :content="match.match_id.toString()"
+                :success="onClipboardSuccess"
+                :error="onClipboardError"
+              />
+            </span>
           </div>
 
           <span class="caption">{{ date | l10n }}</span>
@@ -142,12 +150,14 @@ import _ from "lodash";
 import * as $t from "@/protocol/transform";
 import * as $f from "@/filters";
 import pb from "@/protocol/proto";
+import ClipboardBtn from "@/components/ClipboardBtn.vue";
 import CommunitySiteBtn from "@/components/CommunitySiteBtn.vue";
 
 export default {
   name: "HeroMatch",
 
   components: {
+    ClipboardBtn,
     CommunitySiteBtn,
   },
 
@@ -250,6 +260,21 @@ export default {
     },
     avatarSize() {
       return this.$vuetify.breakpoint.xsOnly ? 18 : 32;
+    },
+  },
+
+  methods: {
+    onClipboardSuccess() {
+      this.$store.commit("snackbar/show", {
+        type: "success",
+        text: `MatchID ${this.match.match_id} copied to clipboard`,
+      });
+    },
+    onClipboardError() {
+      this.$store.commit("snackbar/show", {
+        type: "error",
+        text: "Failed to copy MatchID to clipboard",
+      });
     },
   },
 };
