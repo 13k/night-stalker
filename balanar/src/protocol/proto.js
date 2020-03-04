@@ -2834,6 +2834,36 @@ export const protocol = $root.protocol = (() => {
         return values;
     })();
 
+    /**
+     * HeroRole enum.
+     * @name protocol.HeroRole
+     * @enum {string}
+     * @property {number} HERO_ROLE_UNSPECIFIED=0 HERO_ROLE_UNSPECIFIED value
+     * @property {number} HERO_ROLE_CARRY=1 HERO_ROLE_CARRY value
+     * @property {number} HERO_ROLE_DISABLER=2 HERO_ROLE_DISABLER value
+     * @property {number} HERO_ROLE_DURABLE=3 HERO_ROLE_DURABLE value
+     * @property {number} HERO_ROLE_ESCAPE=4 HERO_ROLE_ESCAPE value
+     * @property {number} HERO_ROLE_INITIATOR=5 HERO_ROLE_INITIATOR value
+     * @property {number} HERO_ROLE_JUNGLER=6 HERO_ROLE_JUNGLER value
+     * @property {number} HERO_ROLE_NUKER=7 HERO_ROLE_NUKER value
+     * @property {number} HERO_ROLE_PUSHER=8 HERO_ROLE_PUSHER value
+     * @property {number} HERO_ROLE_SUPPORT=9 HERO_ROLE_SUPPORT value
+     */
+    protocol.HeroRole = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "HERO_ROLE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "HERO_ROLE_CARRY"] = 1;
+        values[valuesById[2] = "HERO_ROLE_DISABLER"] = 2;
+        values[valuesById[3] = "HERO_ROLE_DURABLE"] = 3;
+        values[valuesById[4] = "HERO_ROLE_ESCAPE"] = 4;
+        values[valuesById[5] = "HERO_ROLE_INITIATOR"] = 5;
+        values[valuesById[6] = "HERO_ROLE_JUNGLER"] = 6;
+        values[valuesById[7] = "HERO_ROLE_NUKER"] = 7;
+        values[valuesById[8] = "HERO_ROLE_PUSHER"] = 8;
+        values[valuesById[9] = "HERO_ROLE_SUPPORT"] = 9;
+        return values;
+    })();
+
     protocol.Search = (function() {
 
         /**
