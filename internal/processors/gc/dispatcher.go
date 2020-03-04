@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
+	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
@@ -20,7 +21,8 @@ import (
 
 const (
 	processorName = "gc.dispatcher"
-	queueSize     = 1024
+	queueSize     = 32
+	queueTimeout  = 10 * time.Second
 
 	msgTypeFindTopSourceTVGamesResponse = protocol.EDOTAGCMsg_k_EMsgGCToClientFindTopSourceTVGamesResponse
 	msgTypeMatchesMinimalResponse       = protocol.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalResponse
@@ -219,26 +221,34 @@ func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
 }
 
 func (p *Dispatcher) enqueueRx(packet *gc.GCPacket) {
-	l := p.log.WithField("msg_type", protocol.EDOTAGCMsg(packet.MsgType).String())
-	// l.Debug("enqueuing incoming packet")
+	t := time.NewTicker(queueTimeout)
+
+	defer t.Stop()
 
 	select {
 	case p.rx <- packet:
-		break
-	default:
-		l.Warn("ignored incoming packet (queue is full)")
+		return
+	case <-t.C:
+		p.log.WithFields(logrus.Fields{
+			"msg_type": protocol.EDOTAGCMsg(packet.MsgType).String(),
+			"wait":     queueTimeout.String(),
+		}).Warn("ignored incoming packet (queue is full)")
 	}
 }
 
 func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) {
-	l := p.log.WithField("msg_type", sendmsg.MsgType.String())
-	// l.Debug("enqueuing outgoing message")
+	t := time.NewTicker(queueTimeout)
+
+	defer t.Stop()
 
 	select {
 	case p.tx <- sendmsg:
-		break
-	default:
-		l.Warn("ignored outgoing message (queue is full)")
+		return
+	case <-t.C:
+		p.log.WithFields(logrus.Fields{
+			"msg_type": sendmsg.MsgType.String(),
+			"wait":     queueTimeout.String(),
+		}).Warn("ignored outgoing message (queue is full)")
 	}
 }
 
