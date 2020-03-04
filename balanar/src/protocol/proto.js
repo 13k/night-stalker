@@ -2800,6 +2800,40 @@ export const protocol = $root.protocol = (() => {
         return values;
     })();
 
+    /**
+     * DotaAttribute enum.
+     * @name protocol.DotaAttribute
+     * @enum {string}
+     * @property {number} DOTA_ATTRIBUTE_UNSPECIFIED=0 DOTA_ATTRIBUTE_UNSPECIFIED value
+     * @property {number} DOTA_ATTRIBUTE_STRENGTH=1 DOTA_ATTRIBUTE_STRENGTH value
+     * @property {number} DOTA_ATTRIBUTE_AGILITY=2 DOTA_ATTRIBUTE_AGILITY value
+     * @property {number} DOTA_ATTRIBUTE_INTELLECT=3 DOTA_ATTRIBUTE_INTELLECT value
+     */
+    protocol.DotaAttribute = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "DOTA_ATTRIBUTE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "DOTA_ATTRIBUTE_STRENGTH"] = 1;
+        values[valuesById[2] = "DOTA_ATTRIBUTE_AGILITY"] = 2;
+        values[valuesById[3] = "DOTA_ATTRIBUTE_INTELLECT"] = 3;
+        return values;
+    })();
+
+    /**
+     * DotaUnitCap enum.
+     * @name protocol.DotaUnitCap
+     * @enum {string}
+     * @property {number} DOTA_UNIT_CAP_NO_ATTACK=0 DOTA_UNIT_CAP_NO_ATTACK value
+     * @property {number} DOTA_UNIT_CAP_MELEE_ATTACK=1 DOTA_UNIT_CAP_MELEE_ATTACK value
+     * @property {number} DOTA_UNIT_CAP_RANGED_ATTACK=2 DOTA_UNIT_CAP_RANGED_ATTACK value
+     */
+    protocol.DotaUnitCap = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "DOTA_UNIT_CAP_NO_ATTACK"] = 0;
+        values[valuesById[1] = "DOTA_UNIT_CAP_MELEE_ATTACK"] = 1;
+        values[valuesById[2] = "DOTA_UNIT_CAP_RANGED_ATTACK"] = 2;
+        return values;
+    })();
+
     protocol.Search = (function() {
 
         /**
