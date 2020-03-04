@@ -9,11 +9,6 @@ const log = Vue.log({ context: { location: "store/liveMatches" } });
 
 const state = {
   all: [],
-  clipboardNotification: {
-    show: false,
-    type: "success",
-    text: "",
-  },
 };
 
 const getters = {};
@@ -95,16 +90,6 @@ const mutations = {
         state.all.splice(idx, 1);
       }
     });
-  },
-  showClipboardNotification(state, { type, text }) {
-    state.clipboardNotification.show = true;
-    state.clipboardNotification.type = type;
-    state.clipboardNotification.text = text;
-  },
-  hideClipboardNotification(state) {
-    state.clipboardNotification.show = false;
-    state.clipboardNotification.type = "success";
-    state.clipboardNotification.text = "";
   },
 };
 
