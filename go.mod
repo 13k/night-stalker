@@ -7,6 +7,7 @@ require (
 	github.com/13k/geyser v0.2.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/faceit/go-steam v0.0.0-20190206021251-2be7df6980e1
+	github.com/galaco/KeyValues v1.4.1
 	github.com/go-redis/redis/v7 v7.0.0-beta.5
 	github.com/go-resty/resty/v2 v2.1.0
 	github.com/golang-migrate/migrate/v4 v4.7.1
