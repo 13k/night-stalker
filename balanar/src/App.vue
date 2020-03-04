@@ -136,6 +136,15 @@
     <v-content>
       <v-container fluid>
         <router-view />
+
+        <v-snackbar
+          v-model="snackbarShow"
+          :color="snackbar.color"
+          :timeout="snackbar.timeout"
+          bottom
+        >
+          {{ snackbar.text }}
+        </v-snackbar>
       </v-container>
     </v-content>
   </v-app>
@@ -162,15 +171,46 @@ export default {
     drawer: null,
     miniDrawer: false,
     followed: [{ name: "13k", account_id: 13, picture: 28 }],
+    snackbarShow: false,
   }),
 
   computed: mapState({
     balanar: state => state.heroes.byName.npc_dota_hero_night_stalker,
+    snackbar: state => {
+      let { show, type, text, color, timeout } = state.snackbar;
+
+      timeout = timeout || 1500;
+
+      if (show && color == null) {
+        switch (type) {
+          case "success":
+            color = "primary";
+            break;
+          case "info":
+            color = "indigo";
+            break;
+          case "warn":
+            color = "yellow";
+            break;
+          case "error":
+            color = "error";
+            break;
+        }
+      }
+
+      return { show, type, text, color, timeout };
+    },
   }),
 
   watch: {
-    miniDrawer(val) {
+    "miniDrawer"(val) {
       localStorage.setItem("balanar.drawer.mini", val);
+    },
+    "snackbar.show"(val) {
+      this.snackbarShow = val;
+    },
+    "snackbarShow"(val) {
+      if (!val) this.$store.commit("snackbar/hide");
     },
   },
 

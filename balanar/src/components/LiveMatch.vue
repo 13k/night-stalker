@@ -166,13 +166,13 @@ export default {
 
   methods: {
     onClipboardSuccess() {
-      this.$store.commit("liveMatches/showClipboardNotification", {
+      this.$store.commit("snackbar/show", {
         type: "success",
         text: "Command copied to clipboard",
       });
     },
     onClipboardError() {
-      this.$store.commit("liveMatches/showClipboardNotification", {
+      this.$store.commit("snackbar/show", {
         type: "error",
         text: "Failed to copy command to clipboard",
       });

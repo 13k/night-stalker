@@ -13,15 +13,6 @@
         <LiveMatch :match="match" />
       </v-col>
     </v-row>
-
-    <v-snackbar
-      v-model="clipboardSnackbarShow"
-      :color="clipboardSnackbarColor"
-      :timeout="1500"
-      bottom
-    >
-      {{ clipboardSnackbarText }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -36,37 +27,8 @@ export default {
     LiveMatch,
   },
 
-  data: () => ({
-    clipboardSnackbarShow: false,
-  }),
-
   computed: mapState({
     matches: state => state.liveMatches.all,
-    clipboardNotificationShow: state => state.liveMatches.clipboardNotification.show,
-    clipboardSnackbarColor: state => {
-      const notificationType = state.liveMatches.clipboardNotification.type;
-
-      switch (notificationType) {
-        case "success":
-          return "primary";
-        case "error":
-          return "error";
-        default:
-          return "";
-      }
-    },
-    clipboardSnackbarText: state => state.liveMatches.clipboardNotification.text,
   }),
-
-  watch: {
-    clipboardNotificationShow(val) {
-      this.clipboardSnackbarShow = val;
-    },
-    clipboardSnackbarShow(val) {
-      if (!val) {
-        this.$store.commit("liveMatches/hideClipboardNotification");
-      }
-    },
-  },
 };
 </script>
