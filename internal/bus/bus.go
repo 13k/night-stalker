@@ -58,18 +58,15 @@ func (b *Bus) Shutdown() {
 }
 
 func (b *Bus) Pub(message Message) {
-	sent := b.Emitter.Emit(message.Topic, message.Payload)
-
 	select {
-	case <-sent:
-		break
+	case <-b.Emitter.Emit(message.Topic, message.Payload):
+		return
 	case <-time.After(b.options.PubTimeout):
 		b.log.WithFields(logrus.Fields{
-			"topic":   message.Topic,
 			"payload": fmt.Sprintf("%T", message.Payload),
+			"topic":   message.Topic,
+			"timeout": b.options.PubTimeout,
 		}).Warn("publish timeout")
-
-		close(sent)
 	}
 }
 
