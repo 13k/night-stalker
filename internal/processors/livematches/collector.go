@@ -44,15 +44,15 @@ type Collector struct {
 }
 
 func NewCollector(options CollectorOptions) *Collector {
-	proc := &Collector{
+	p := &Collector{
 		options: options,
 		log:     options.Log.WithPackage(processorName),
 		bus:     options.Bus,
 	}
 
-	proc.busSubscribe()
+	p.busSubscribe()
 
-	return proc
+	return p
 }
 
 func (p *Collector) ChildSpec() oversight.ChildProcessSpecification {
@@ -81,6 +81,8 @@ func (p *Collector) Start(ctx context.Context) error {
 		return err
 	}
 
+	p.busSubscribe()
+
 	return p.loop()
 }
 
@@ -97,10 +99,12 @@ func (p *Collector) busSubscribe() {
 func (p *Collector) busUnsubscribe() {
 	if p.busSubLiveMatchesAll != nil {
 		p.bus.Unsub(nsbus.TopicPatternLiveMatchesAll, p.busSubLiveMatchesAll)
+		p.busSubLiveMatchesAll = nil
 	}
 
 	if p.busSubLiveMatchStatsAll != nil {
-		p.bus.Unsub(nsbus.TopicLiveMatchStatsAdd, p.busSubLiveMatchStatsAll)
+		p.bus.Unsub(nsbus.TopicPatternLiveMatchStatsAll, p.busSubLiveMatchStatsAll)
+		p.busSubLiveMatchStatsAll = nil
 	}
 }
 
@@ -196,10 +200,7 @@ func (p *Collector) loop() error {
 		}
 	}()
 
-	defer func() {
-		p.busUnsubscribe()
-		p.log.Warn("stop")
-	}()
+	defer p.stop()
 
 	p.log.Info("start")
 
@@ -225,6 +226,11 @@ func (p *Collector) loop() error {
 			}
 		}
 	}
+}
+
+func (p *Collector) stop() {
+	p.busUnsubscribe()
+	p.log.Warn("stop")
 }
 
 func (p *Collector) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
@@ -307,7 +313,7 @@ func (p *Collector) addStats(stats nscol.LiveMatchStats) {
 }
 
 func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
-	p.busPublishAllMatches()
+	p.busPubAllMatches()
 
 	if err := p.rdsPubLiveMatchesAdd(liveMatches); err != nil {
 		p.log.WithError(err).Error("error publishing live matches change")
@@ -316,7 +322,7 @@ func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 }
 
 func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) {
-	p.busPublishAllMatches()
+	p.busPubAllMatches()
 
 	if err := p.rdsPubLiveMatchesRemove(matchIDs); err != nil {
 		p.log.WithError(err).Error("error publishing live matches change")
@@ -324,7 +330,7 @@ func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) {
 	}
 }
 
-func (p *Collector) busPublishAllMatches() {
+func (p *Collector) busPubAllMatches() {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesReplace,
 		Payload: &nsbus.LiveMatchesChangeMessage{

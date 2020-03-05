@@ -62,17 +62,16 @@ type Monitor struct {
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {
-	proc := &Monitor{
+	p := &Monitor{
 		options:    options,
 		log:        options.Log.WithPackage(processorName),
 		bus:        options.Bus,
 		activeReqs: make(map[nspb.MatchID]bool),
-		resultsCh:  make(chan *models.LiveMatchStats, resultsQueueSize),
 	}
 
-	proc.busSubscribe()
+	p.busSubscribe()
 
-	return proc
+	return p
 }
 
 func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
@@ -105,6 +104,11 @@ func (p *Monitor) Start(ctx context.Context) error {
 		return err
 	}
 
+	p.setupResults()
+	p.busSubscribe()
+
+	go p.resultsLoop()
+
 	return p.loop()
 }
 
@@ -117,6 +121,7 @@ func (p *Monitor) busSubscribe() {
 func (p *Monitor) busUnsubscribe() {
 	if p.busLiveMatchesReplace != nil {
 		p.bus.Unsub(nsbus.TopicLiveMatchesReplace, p.busLiveMatchesReplace)
+		p.busLiveMatchesReplace = nil
 	}
 }
 
@@ -164,6 +169,26 @@ func (p *Monitor) setupWorkerPool() error {
 	return nil
 }
 
+func (p *Monitor) teardownWorkerPool() {
+	if p.workerPool != nil {
+		p.workerPool.Release()
+		p.workerPool = nil
+	}
+}
+
+func (p *Monitor) setupResults() {
+	if p.resultsCh == nil {
+		p.resultsCh = make(chan *models.LiveMatchStats, resultsQueueSize)
+	}
+}
+
+func (p *Monitor) teardownResults() {
+	if p.resultsCh != nil {
+		close(p.resultsCh)
+		p.resultsCh = nil
+	}
+}
+
 func (p *Monitor) loop() error {
 	defer func() {
 		if err := recover(); err != nil {
@@ -172,16 +197,9 @@ func (p *Monitor) loop() error {
 		}
 	}()
 
-	tick := time.NewTicker(p.options.Interval)
+	t := time.NewTicker(p.options.Interval)
 
-	defer func() {
-		tick.Stop()
-		p.busUnsubscribe()
-		p.workerPool.Release()
-		p.log.Warn("stop")
-	}()
-
-	go p.resultsLoop()
+	defer p.stop(t)
 
 	p.log.Info("start")
 
@@ -189,7 +207,7 @@ func (p *Monitor) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case <-tick.C:
+		case <-t.C:
 			p.tick()
 		case busmsg, ok := <-p.busLiveMatchesReplace:
 			if !ok {
@@ -203,11 +221,19 @@ func (p *Monitor) loop() error {
 	}
 }
 
+func (p *Monitor) stop(t *time.Ticker) {
+	t.Stop()
+	p.busUnsubscribe()
+	p.teardownWorkerPool()
+	p.teardownResults()
+	p.log.Warn("stop")
+}
+
 func (p *Monitor) resultsLoop() {
-	tick := time.NewTicker(resultsBufferFlushInterval)
+	t := time.NewTicker(resultsBufferFlushInterval)
 
 	defer func() {
-		tick.Stop()
+		t.Stop()
 		p.log.Debug("stop results")
 	}()
 
@@ -215,9 +241,7 @@ func (p *Monitor) resultsLoop() {
 
 	for {
 		select {
-		case <-p.ctx.Done():
-			return
-		case <-tick.C:
+		case <-t.C:
 			p.flushResults()
 		case stats, ok := <-p.resultsCh:
 			if !ok {

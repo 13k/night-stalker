@@ -35,15 +35,15 @@ type Chat struct {
 }
 
 func NewChat(options ChatOptions) *Chat {
-	proc := &Chat{
+	p := &Chat{
 		options: options,
 		log:     options.Log.WithPackage(processorName),
 		bus:     options.Bus,
 	}
 
-	proc.busSubscribe()
+	p.busSubscribe()
 
-	return proc
+	return p
 }
 
 func (p *Chat) ChildSpec() oversight.ChildProcessSpecification {
@@ -66,6 +66,8 @@ func (p *Chat) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Chat) Start(ctx context.Context) error {
 	p.ctx = ctx
 
+	p.busSubscribe()
+
 	return p.loop()
 }
 
@@ -78,6 +80,7 @@ func (p *Chat) busSubscribe() {
 func (p *Chat) busUnsubscribe() {
 	if p.busSubSteamEvents != nil {
 		p.bus.Unsub(nsbus.TopicSteamEvents, p.busSubSteamEvents)
+		p.busSubSteamEvents = nil
 	}
 }
 
@@ -89,10 +92,7 @@ func (p *Chat) loop() error {
 		}
 	}()
 
-	defer func() {
-		p.busUnsubscribe()
-		p.log.Warn("stop")
-	}()
+	defer p.stop()
 
 	p.log.Info("start")
 
@@ -112,6 +112,11 @@ func (p *Chat) loop() error {
 			}
 		}
 	}
+}
+
+func (p *Chat) stop() {
+	p.busUnsubscribe()
+	p.log.Warn("stop")
 }
 
 func (p *Chat) handleChatMessage(chatmsg *steam.ChatMsgEvent) {

@@ -8,7 +8,6 @@ import (
 
 	"cirello.io/oversight"
 	"github.com/jinzhu/gorm"
-	"github.com/panjf2000/ants/v2"
 	"github.com/paralin/go-dota2/protocol"
 	"github.com/sirupsen/logrus"
 
@@ -43,24 +42,23 @@ type Monitor struct {
 	ctx                   context.Context
 	log                   *nslog.Logger
 	db                    *gorm.DB
-	workerPool            *ants.Pool
 	bus                   *nsbus.Bus
 	busLiveMatchesReplace <-chan nsbus.Message
 	busMatchesMinimalResp <-chan nsbus.Message
-	matchesMtx            sync.RWMutex
-	matches               nscol.LiveMatches
+	liveMatchesMtx        sync.RWMutex
+	liveMatches           nscol.LiveMatches
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {
-	proc := &Monitor{
+	p := &Monitor{
 		options: options,
 		log:     options.Log.WithPackage(processorName),
 		bus:     options.Bus,
 	}
 
-	proc.busSubscribe()
+	p.busSubscribe()
 
-	return proc
+	return p
 }
 
 func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
@@ -85,9 +83,7 @@ func (p *Monitor) Start(ctx context.Context) error {
 		return err
 	}
 
-	if err := p.setupWorkerPool(); err != nil {
-		return err
-	}
+	p.busSubscribe()
 
 	return p.loop()
 }
@@ -105,10 +101,12 @@ func (p *Monitor) busSubscribe() {
 func (p *Monitor) busUnsubscribe() {
 	if p.busLiveMatchesReplace != nil {
 		p.bus.Unsub(nsbus.TopicLiveMatchesReplace, p.busLiveMatchesReplace)
+		p.busLiveMatchesReplace = nil
 	}
 
 	if p.busMatchesMinimalResp != nil {
 		p.bus.Unsub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse, p.busMatchesMinimalResp)
+		p.busMatchesMinimalResp = nil
 	}
 }
 
@@ -122,19 +120,27 @@ func (p *Monitor) setupContext(ctx context.Context) error {
 	return nil
 }
 
-func (p *Monitor) setupWorkerPool() error {
-	if p.workerPool != nil {
+func (p *Monitor) setLiveMatches(liveMatches nscol.LiveMatches) {
+	p.liveMatchesMtx.Lock()
+	defer p.liveMatchesMtx.Unlock()
+	p.liveMatches = liveMatches
+}
+
+func (p *Monitor) getLiveMatchesCount() int {
+	p.liveMatchesMtx.RLock()
+	defer p.liveMatchesMtx.RUnlock()
+	return len(p.liveMatches)
+}
+
+func (p *Monitor) getLiveMatchesBatches() []nscol.LiveMatches {
+	p.liveMatchesMtx.RLock()
+	defer p.liveMatchesMtx.RUnlock()
+
+	if len(p.liveMatches) == 0 {
 		return nil
 	}
 
-	var err error
-
-	if p.workerPool, err = ants.NewPool(p.options.PoolSize); err != nil {
-		p.log.WithError(err).Error("error starting worker pool")
-		return err
-	}
-
-	return nil
+	return p.liveMatches.Batches(batchSize)
 }
 
 func (p *Monitor) loop() error {
@@ -145,14 +151,9 @@ func (p *Monitor) loop() error {
 		}
 	}()
 
-	tick := time.NewTicker(p.options.Interval)
+	t := time.NewTicker(p.options.Interval)
 
-	defer func() {
-		tick.Stop()
-		p.busUnsubscribe()
-		p.workerPool.Release()
-		p.log.Warn("stop")
-	}()
+	defer p.stop(t)
 
 	p.log.Info("start")
 
@@ -160,7 +161,7 @@ func (p *Monitor) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case <-tick.C:
+		case <-t.C:
 			p.tick()
 		case busmsg, ok := <-p.busLiveMatchesReplace:
 			if !ok {
@@ -184,6 +185,30 @@ func (p *Monitor) loop() error {
 	}
 }
 
+func (p *Monitor) stop(t *time.Ticker) {
+	t.Stop()
+	p.busUnsubscribe()
+	p.log.Warn("stop")
+}
+
+func (p *Monitor) tick() {
+	batches := p.getLiveMatchesBatches()
+
+	if len(batches) == 0 {
+		return
+	}
+
+	p.log.WithFields(logrus.Fields{
+		"batch_size": batchSize,
+		"batches":    len(batches),
+		"total":      p.getLiveMatchesCount(),
+	}).Debug("requesting matches details")
+
+	for _, batch := range batches {
+		p.busPubRequestMatchesMinimal(batch.MatchIDs())
+	}
+}
+
 func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 	if msg.Op != nspb.CollectionOp_COLLECTION_OP_REPLACE {
 		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
@@ -194,69 +219,7 @@ func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 		"count": len(msg.Matches),
 	}).Debug("received live matches")
 
-	p.matchesMtx.Lock()
-	defer p.matchesMtx.Unlock()
-	p.matches = msg.Matches
-}
-
-func (p *Monitor) tick() {
-	p.matchesMtx.RLock()
-	defer p.matchesMtx.RUnlock()
-
-	if len(p.matches) == 0 {
-		return
-	}
-
-	batches := p.matches.Batches(batchSize)
-
-	p.log.WithFields(logrus.Fields{
-		"count":      len(p.matches),
-		"batches":    len(batches),
-		"batch_size": batchSize,
-	}).Debug("requesting matches details")
-
-	for _, batch := range batches {
-		p.submitLiveMatchesBatch(batch)
-	}
-}
-
-func (p *Monitor) submitLiveMatchesBatch(matches []*models.LiveMatch) {
-	if err := p.ctx.Err(); err != nil {
-		p.log.WithError(err).Error()
-		return
-	}
-
-	err := p.workerPool.Submit(func() {
-		p.work(matches)
-	})
-
-	if err != nil {
-		p.log.WithError(err).Error("error creating worker")
-	}
-}
-
-func (p *Monitor) work(matches []*models.LiveMatch) {
-	matchIDs := make(nscol.MatchIDs, len(matches))
-
-	for i, match := range matches {
-		matchIDs[i] = match.MatchID
-	}
-
-	p.requestMatchesMinimal(matchIDs...)
-}
-
-func (p *Monitor) requestMatchesMinimal(matchIDs ...nspb.MatchID) {
-	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
-		MatchIds: matchIDs,
-	}
-
-	p.bus.Pub(nsbus.Message{
-		Topic: nsbus.TopicGCDispatcherSend,
-		Payload: &nsbus.GCDispatcherSendMessage{
-			MsgType: msgTypeMatchesMinimalRequest,
-			Message: req,
-		},
-	})
+	p.setLiveMatches(msg.Matches)
 }
 
 func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatchesMinimalResponse) {
@@ -275,11 +238,11 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 		return
 	}
 
-	p.notifyMatchesFinished(matches)
+	p.busPubLiveMatchesRemove(matches.MatchIDs())
 }
 
-func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) ([]*models.Match, error) {
-	matches := make([]*models.Match, len(minMatches))
+func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nscol.Matches, error) {
+	matches := make(nscol.Matches, len(minMatches))
 
 	for i, pbMatch := range minMatches {
 		if p.ctx.Err() != nil {
@@ -338,17 +301,21 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) ([]*m
 	return matches, nil
 }
 
-func (p *Monitor) notifyMatchesFinished(matches []*models.Match) {
-	matchIDs := make(nscol.MatchIDs, len(matches))
-
-	for i, match := range matches {
-		matchIDs[i] = match.ID
+func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) {
+	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
+		MatchIds: matchIDs,
 	}
 
-	p.busPublishLiveMatchesRemove(matchIDs)
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicGCDispatcherSend,
+		Payload: &nsbus.GCDispatcherSendMessage{
+			MsgType: msgTypeMatchesMinimalRequest,
+			Message: req,
+		},
+	})
 }
 
-func (p *Monitor) busPublishLiveMatchesRemove(matchIDs nscol.MatchIDs) {
+func (p *Monitor) busPubLiveMatchesRemove(matchIDs nscol.MatchIDs) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{

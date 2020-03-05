@@ -46,16 +46,16 @@ type Watcher struct {
 }
 
 func NewWatcher(options WatcherOptions) *Watcher {
-	proc := &Watcher{
+	p := &Watcher{
 		options:       options,
 		log:           options.Log.WithPackage(processorName),
 		bus:           options.Bus,
 		discoveryPage: &discoveryPage{},
 	}
 
-	proc.busSubscribe()
+	p.busSubscribe()
 
-	return proc
+	return p
 }
 
 func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
@@ -80,6 +80,8 @@ func (p *Watcher) Start(ctx context.Context) error {
 		return err
 	}
 
+	p.busSubscribe()
+
 	return p.loop()
 }
 
@@ -92,6 +94,7 @@ func (p *Watcher) busSubscribe() {
 func (p *Watcher) busUnsubscribe() {
 	if p.busTVGamesResp != nil {
 		p.bus.Unsub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse, p.busTVGamesResp)
+		p.busTVGamesResp = nil
 	}
 }
 
@@ -113,13 +116,9 @@ func (p *Watcher) loop() error {
 		}
 	}()
 
-	ticker := time.NewTicker(p.options.Interval)
+	t := time.NewTicker(p.options.Interval)
 
-	defer func() {
-		ticker.Stop()
-		p.busUnsubscribe()
-		p.log.Warn("stop")
-	}()
+	defer p.stop(t)
 
 	p.log.Info("start")
 	p.tick()
@@ -128,7 +127,7 @@ func (p *Watcher) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case <-ticker.C:
+		case <-t.C:
 			p.tick()
 		case busmsg, ok := <-p.busTVGamesResp:
 			if !ok {
@@ -144,10 +143,15 @@ func (p *Watcher) loop() error {
 	}
 }
 
-// TODO: investigate CMsgGCPlayerInfoRequest (k_EMsgGCPlayerInfoRequest) [async]
+func (p *Watcher) stop(t *time.Ticker) {
+	t.Stop()
+	p.busUnsubscribe()
+	p.log.Warn("stop")
+}
+
 func (p *Watcher) tick() {
 	if err := p.query(); err != nil {
-		p.log.WithError(err).Error("error querying live matches")
+		p.log.WithError(err).Error("error querying tv games")
 	}
 }
 
@@ -168,23 +172,12 @@ func (p *Watcher) queryPage(page *queryPage) error {
 		return p.ctx.Err()
 	}
 
-	req := &protocol.CMsgClientToGCFindTopSourceTVGames{
-		GameListIndex: proto.Uint32(page.index),
-		StartGame:     proto.Uint32(page.start),
-	}
-
 	p.log.WithFields(logrus.Fields{
-		"index": req.GetGameListIndex(),
-		"start": req.GetStartGame(),
-	}).Debug("requesting live matches")
+		"index": page.index,
+		"start": page.start,
+	}).Debug("requesting tv games")
 
-	p.bus.Pub(nsbus.Message{
-		Topic: nsbus.TopicGCDispatcherSend,
-		Payload: &nsbus.GCDispatcherSendMessage{
-			MsgType: msgTypeFindTopSourceTVGames,
-			Message: req,
-		},
-	})
+	p.busPubRequestTVGames(page)
 
 	return nil
 }
@@ -244,25 +237,25 @@ func (p *Watcher) handleResponse(page *queryPage) {
 
 	l.Debug("received tv games")
 
-	matches, err := p.saveGames(games)
+	liveMatches, err := p.saveGames(games)
 
 	if err != nil {
 		l.WithError(err).Error("error saving response")
 		return
 	}
 
-	deactivated := matches.RemoveDeactivated()
+	deactivated := liveMatches.RemoveDeactivated()
 
-	if len(matches) > 0 {
-		p.busPublishLiveMatchesAdd(matches)
+	if len(liveMatches) > 0 {
+		p.busPubLiveMatchesAdd(liveMatches)
 	}
 
 	if len(deactivated) > 0 {
-		p.busPublishLiveMatchesRemove(deactivated)
+		p.busPubLiveMatchesRemove(deactivated)
 	}
 }
 
-func (p *Watcher) saveGames(games []*protocol.CSourceTVGameSmall) (nscol.LiveMatches, error) {
+func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 	liveMatches := make(nscol.LiveMatches, 0, len(games))
 
 	for _, game := range games {
@@ -346,7 +339,23 @@ func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
 	return tvGames, nil
 }
 
-func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatches) {
+func (p *Watcher) busPubRequestTVGames(page *queryPage) {
+	req := &protocol.CMsgClientToGCFindTopSourceTVGames{
+		GameListIndex: proto.Uint32(page.index),
+		StartGame:     proto.Uint32(page.start),
+	}
+
+	p.bus.Pub(nsbus.Message{
+		Topic: nsbus.TopicGCDispatcherSend,
+		Payload: &nsbus.GCDispatcherSendMessage{
+			MsgType: msgTypeFindTopSourceTVGames,
+			Message: req,
+		},
+	})
+
+}
+
+func (p *Watcher) busPubLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesAdd,
 		Payload: &nsbus.LiveMatchesChangeMessage{
@@ -356,7 +365,7 @@ func (p *Watcher) busPublishLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	})
 }
 
-func (p *Watcher) busPublishLiveMatchesRemove(liveMatches nscol.LiveMatches) {
+func (p *Watcher) busPubLiveMatchesRemove(liveMatches nscol.LiveMatches) {
 	p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{
