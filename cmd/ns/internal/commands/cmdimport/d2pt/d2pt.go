@@ -21,7 +21,7 @@ import (
 
 const (
 	baseURL       = "http://www.dota2protracker.com"
-	dataPath      = "/static/search.json"
+	dataPath      = "/static/search_items.json"
 	playerPathFmt = "/player/%s"
 )
 
