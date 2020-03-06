@@ -72,7 +72,7 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	app, err := ns.New(ns.AppOptions{
-		Log:             log.WithPackage("ns"),
+		Log:             log,
 		DB:              db,
 		Redis:           rds,
 		Credentials:     credentials,
