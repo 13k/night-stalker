@@ -146,7 +146,6 @@ func (p *Manager) startSession() {
 	}
 
 	p.session = newSession(p.ctx)
-	p.busPubSession(true)
 	p.setupSupervisor()
 
 	go p.supervisor.start(p.session.ctx)
@@ -159,7 +158,6 @@ func (p *Manager) cancelSession() {
 	}
 
 	p.session.cancel()
-	p.busPubSession(false)
 
 	if p.supervisor != nil {
 		p.log.Debug("waiting for supervisor to stop")
@@ -242,7 +240,7 @@ func (p *Manager) handleEvent(ev interface{}) error {
 		p.log.WithError(e).Error("steam error")
 		err = e
 	default:
-		p.busPubEvent(ev)
+		err = p.busPubEvent(ev)
 	}
 
 	return err
@@ -575,15 +573,8 @@ func (p *Manager) onDotaGCStateChange(e events.ClientStateChanged) error { //nol
 	return nil
 }
 
-func (p *Manager) busPubSession(isReady bool) {
-	p.bus.Pub(nsbus.Message{
-		Topic:   nsbus.TopicSession,
-		Payload: &nsbus.SessionChangeMessage{IsReady: isReady},
-	})
-}
-
-func (p *Manager) busPubEvent(ev interface{}) {
-	p.bus.Pub(nsbus.Message{
+func (p *Manager) busPubEvent(ev interface{}) error {
+	return p.bus.Pub(nsbus.Message{
 		Topic:   nsbus.TopicSteamEvents,
 		Payload: &nsbus.SteamEventMessage{Event: ev},
 	})

@@ -39,8 +39,8 @@ type Collector struct {
 	db                      *gorm.DB
 	rds                     *redis.Client
 	bus                     *nsbus.Bus
-	busSubLiveMatchesAll    <-chan nsbus.Message
-	busSubLiveMatchStatsAll <-chan nsbus.Message
+	busSubLiveMatchesAll    *nsbus.Subscription
+	busSubLiveMatchStatsAll *nsbus.Subscription
 }
 
 func NewCollector(options CollectorOptions) *Collector {
@@ -98,12 +98,12 @@ func (p *Collector) busSubscribe() {
 
 func (p *Collector) busUnsubscribe() {
 	if p.busSubLiveMatchesAll != nil {
-		p.bus.Unsub(nsbus.TopicPatternLiveMatchesAll, p.busSubLiveMatchesAll)
+		p.bus.Unsub(p.busSubLiveMatchesAll)
 		p.busSubLiveMatchesAll = nil
 	}
 
 	if p.busSubLiveMatchStatsAll != nil {
-		p.bus.Unsub(nsbus.TopicPatternLiveMatchStatsAll, p.busSubLiveMatchStatsAll)
+		p.bus.Unsub(p.busSubLiveMatchStatsAll)
 		p.busSubLiveMatchStatsAll = nil
 	}
 }
@@ -208,7 +208,7 @@ func (p *Collector) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSubLiveMatchesAll:
+		case busmsg, ok := <-p.busSubLiveMatchesAll.C:
 			if !ok {
 				return nil
 			}
@@ -216,7 +216,7 @@ func (p *Collector) loop() error {
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
 				p.handleLiveMatchesChange(msg)
 			}
-		case busmsg, ok := <-p.busSubLiveMatchStatsAll:
+		case busmsg, ok := <-p.busSubLiveMatchStatsAll.C:
 			if !ok {
 				return nil
 			}
@@ -313,7 +313,10 @@ func (p *Collector) addStats(stats nscol.LiveMatchStats) {
 }
 
 func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
-	p.busPubAllMatches()
+	if err := p.busPubAllMatches(); err != nil {
+		p.log.WithError(err).Error()
+		return
+	}
 
 	if err := p.rdsPubLiveMatchesAdd(liveMatches); err != nil {
 		p.log.WithError(err).Error("error publishing live matches change")
@@ -322,7 +325,10 @@ func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 }
 
 func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) {
-	p.busPubAllMatches()
+	if err := p.busPubAllMatches(); err != nil {
+		p.log.WithError(err).Error()
+		return
+	}
 
 	if err := p.rdsPubLiveMatchesRemove(matchIDs); err != nil {
 		p.log.WithError(err).Error("error publishing live matches change")
@@ -330,8 +336,8 @@ func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) {
 	}
 }
 
-func (p *Collector) busPubAllMatches() {
-	p.bus.Pub(nsbus.Message{
+func (p *Collector) busPubAllMatches() error {
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesReplace,
 		Payload: &nsbus.LiveMatchesChangeMessage{
 			Op:      nspb.CollectionOp_COLLECTION_OP_REPLACE,

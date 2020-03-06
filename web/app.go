@@ -35,19 +35,17 @@ type AppOptions struct {
 }
 
 type App struct {
-	options                 AppOptions
-	log                     *nslog.Logger
-	wslog                   *nslog.Logger
-	db                      *gorm.DB
-	bus                     *nsbus.Bus
-	engine                  *echo.Echo
-	sv                      *http.Server
-	ctx                     context.Context
-	cancel                  context.CancelFunc
-	rds                     *redis.Client
-	rdsSubLiveMatchesAll    *redis.PubSub
-	rdsSubLiveMatchStatsAll *redis.PubSub
-	matches                 *nscol.LiveMatchesContainer
+	options AppOptions
+	log     *nslog.Logger
+	wslog   *nslog.Logger
+	db      *gorm.DB
+	bus     *nsbus.Bus
+	engine  *echo.Echo
+	sv      *http.Server
+	ctx     context.Context
+	cancel  context.CancelFunc
+	rds     *redis.Client
+	matches *nscol.LiveMatchesContainer
 }
 
 func New(options AppOptions) (*App, error) {
@@ -145,11 +143,11 @@ func (app *App) Start() error {
 		return err
 	}
 
-	if err := app.subscribeLiveMatches(); err != nil {
+	if err := app.watchLiveMatches(); err != nil {
 		return err
 	}
 
-	if err := app.subscribeLiveMatchStats(); err != nil {
+	if err := app.watchLiveMatchStats(); err != nil {
 		return err
 	}
 

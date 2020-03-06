@@ -50,7 +50,7 @@ func (app *App) serveWSConn(conn *WSConn) {
 	connClosed := make(chan bool)
 
 	defer func() {
-		app.bus.Unsub(nsbus.TopicWebPatternLiveMatchesAll, busSubLiveMatches)
+		app.bus.Unsub(busSubLiveMatches)
 		conn.Close()
 		l.Debug("stop")
 	}()
@@ -74,7 +74,7 @@ func (app *App) serveWSConn(conn *WSConn) {
 		case <-app.ctx.Done():
 			l.Debug("canceled")
 			return
-		case busmsg, ok := <-busSubLiveMatches:
+		case busmsg, ok := <-busSubLiveMatches.C:
 			if !ok {
 				l.Debug("live matches channel closed")
 				return

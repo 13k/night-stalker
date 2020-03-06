@@ -1,11 +1,9 @@
 package bus
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/olebedev/emitter"
-	"github.com/sirupsen/logrus"
 
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
@@ -14,12 +12,6 @@ const (
 	defaultCap        = uint(32)
 	defaultPubTimeout = 10 * time.Second
 )
-
-type Message struct {
-	Topic   string
-	Pattern string
-	Payload interface{}
-}
 
 type Options struct {
 	Cap        uint
@@ -32,7 +24,6 @@ type Bus struct {
 
 	options Options
 	log     *nslog.Logger
-	subs    map[<-chan Message]<-chan emitter.Event
 }
 
 func New(options Options) *Bus {
@@ -48,7 +39,6 @@ func New(options Options) *Bus {
 		Emitter: emitter.New(options.Cap),
 		options: options,
 		log:     options.Log.WithPackage("bus"),
-		subs:    make(map[<-chan Message]<-chan emitter.Event),
 	}
 }
 
@@ -57,16 +47,15 @@ func (b *Bus) Shutdown() {
 	b.Emitter.Off("*")
 }
 
-func (b *Bus) Pub(message Message) {
+func (b *Bus) Pub(message Message) error {
 	select {
 	case <-b.Emitter.Emit(message.Topic, message.Payload):
-		return
+		return nil
 	case <-time.After(b.options.PubTimeout):
-		b.log.WithFields(logrus.Fields{
-			"payload": fmt.Sprintf("%T", message.Payload),
-			"topic":   message.Topic,
-			"timeout": b.options.PubTimeout,
-		}).Warn("publish timeout")
+		return &PublishTimeoutError{
+			Message: message,
+			Timeout: b.options.PubTimeout,
+		}
 	}
 }
 
@@ -74,21 +63,21 @@ func (b *Bus) PubSync(message Message) {
 	<-b.Emitter.Emit(message.Topic, message.Payload)
 }
 
-func (b *Bus) Sub(topic string) <-chan Message {
+func (b *Bus) Sub(topic string) *Subscription {
 	b.log.WithField("topic", topic).Debug("sub")
-	eventsCh := b.Emitter.On(topic)
-	messagesCh := make(chan Message, b.Emitter.Cap)
-	b.subs[messagesCh] = eventsCh
+
+	events := b.Emitter.On(topic)
+	messages := make(chan Message, b.Emitter.Cap)
 
 	go func() {
-		for ev := range eventsCh {
+		for ev := range events {
 			var payload interface{}
 
 			if len(ev.Args) > 0 {
 				payload = ev.Args[0]
 			}
 
-			messagesCh <- Message{
+			messages <- Message{
 				Topic:   ev.Topic,
 				Pattern: ev.OriginalTopic,
 				Payload: payload,
@@ -96,16 +85,16 @@ func (b *Bus) Sub(topic string) <-chan Message {
 		}
 	}()
 
-	return messagesCh
+	return &Subscription{
+		Topic: topic,
+		C:     messages,
+		ev:    events,
+	}
 }
 
-func (b *Bus) Unsub(topic string, channels ...<-chan Message) {
-	b.log.WithField("topic", topic).Debug("unsub")
-	eventChannels := make([]<-chan emitter.Event, len(channels))
-
-	for i, ch := range channels {
-		eventChannels[i] = b.subs[ch]
+func (b *Bus) Unsub(subs ...*Subscription) {
+	for _, sub := range subs {
+		b.log.WithField("topic", sub.Topic).Debug("unsub")
+		b.Emitter.Off(sub.Topic, sub.ev)
 	}
-
-	b.Emitter.Off(topic, eventChannels...)
 }

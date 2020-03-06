@@ -43,8 +43,8 @@ type Monitor struct {
 	log                   *nslog.Logger
 	db                    *gorm.DB
 	bus                   *nsbus.Bus
-	busLiveMatchesReplace <-chan nsbus.Message
-	busMatchesMinimalResp <-chan nsbus.Message
+	busLiveMatchesReplace *nsbus.Subscription
+	busMatchesMinimalResp *nsbus.Subscription
 	liveMatchesMtx        sync.RWMutex
 	liveMatches           nscol.LiveMatches
 }
@@ -100,12 +100,12 @@ func (p *Monitor) busSubscribe() {
 
 func (p *Monitor) busUnsubscribe() {
 	if p.busLiveMatchesReplace != nil {
-		p.bus.Unsub(nsbus.TopicLiveMatchesReplace, p.busLiveMatchesReplace)
+		p.bus.Unsub(p.busLiveMatchesReplace)
 		p.busLiveMatchesReplace = nil
 	}
 
 	if p.busMatchesMinimalResp != nil {
-		p.bus.Unsub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse, p.busMatchesMinimalResp)
+		p.bus.Unsub(p.busMatchesMinimalResp)
 		p.busMatchesMinimalResp = nil
 	}
 }
@@ -163,7 +163,7 @@ func (p *Monitor) loop() error {
 			return nil
 		case <-t.C:
 			p.tick()
-		case busmsg, ok := <-p.busLiveMatchesReplace:
+		case busmsg, ok := <-p.busLiveMatchesReplace.C:
 			if !ok {
 				return nil
 			}
@@ -171,7 +171,7 @@ func (p *Monitor) loop() error {
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
 				p.handleLiveMatchesChange(msg)
 			}
-		case busmsg, ok := <-p.busMatchesMinimalResp:
+		case busmsg, ok := <-p.busMatchesMinimalResp.C:
 			if !ok {
 				return nil
 			}
@@ -205,7 +205,9 @@ func (p *Monitor) tick() {
 	}).Debug("requesting matches details")
 
 	for _, batch := range batches {
-		p.busPubRequestMatchesMinimal(batch.MatchIDs())
+		if err := p.busPubRequestMatchesMinimal(batch.MatchIDs()); err != nil {
+			p.log.WithError(err).Error()
+		}
 	}
 }
 
@@ -238,7 +240,9 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 		return
 	}
 
-	p.busPubLiveMatchesRemove(matches.MatchIDs())
+	if err := p.busPubLiveMatchesRemove(matches.MatchIDs()); err != nil {
+		p.log.WithError(err).Error()
+	}
 }
 
 func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nscol.Matches, error) {
@@ -301,12 +305,12 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nsco
 	return matches, nil
 }
 
-func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) {
+func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) error {
 	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
 		MatchIds: matchIDs,
 	}
 
-	p.bus.Pub(nsbus.Message{
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicGCDispatcherSend,
 		Payload: &nsbus.GCDispatcherSendMessage{
 			MsgType: msgTypeMatchesMinimalRequest,
@@ -315,8 +319,8 @@ func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) {
 	})
 }
 
-func (p *Monitor) busPubLiveMatchesRemove(matchIDs nscol.MatchIDs) {
-	p.bus.Pub(nsbus.Message{
+func (p *Monitor) busPubLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{
 			Op:       nspb.CollectionOp_COLLECTION_OP_REMOVE,

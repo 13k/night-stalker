@@ -52,7 +52,7 @@ type Monitor struct {
 	api                   *geyserd2.Client
 	apiMatchStats         *geyserd2.DOTA2MatchStats
 	bus                   *nsbus.Bus
-	busLiveMatchesReplace <-chan nsbus.Message
+	busLiveMatchesReplace *nsbus.Subscription
 	activeReqsMtx         sync.Mutex
 	activeReqs            map[nspb.MatchID]bool
 	liveMatchesMtx        sync.RWMutex
@@ -120,7 +120,7 @@ func (p *Monitor) busSubscribe() {
 
 func (p *Monitor) busUnsubscribe() {
 	if p.busLiveMatchesReplace != nil {
-		p.bus.Unsub(nsbus.TopicLiveMatchesReplace, p.busLiveMatchesReplace)
+		p.bus.Unsub(p.busLiveMatchesReplace)
 		p.busLiveMatchesReplace = nil
 	}
 }
@@ -209,7 +209,7 @@ func (p *Monitor) loop() error {
 			return nil
 		case <-t.C:
 			p.tick()
-		case busmsg, ok := <-p.busLiveMatchesReplace:
+		case busmsg, ok := <-p.busLiveMatchesReplace.C:
 			if !ok {
 				return nil
 			}
@@ -344,10 +344,6 @@ func (p *Monitor) work(liveMatch *models.LiveMatch) {
 	}
 
 	if result.GetMatch().GetMatchid() != liveMatch.MatchID {
-		l.
-			WithField("result_match_id", result.GetMatch().GetMatchid()).
-			Warn("ignoring result with invalid match ID")
-
 		return
 	}
 
@@ -366,7 +362,10 @@ func (p *Monitor) flushResults() {
 		return
 	}
 
-	p.busPublishLiveMatchStatsAdd(p.results...)
+	if err := p.busPublishLiveMatchStatsAdd(p.results...); err != nil {
+		p.log.WithError(err).Error()
+	}
+
 	p.results = nil
 }
 
@@ -441,8 +440,8 @@ func (p *Monitor) createLiveMatchStats(
 	return stats, nil
 }
 
-func (p *Monitor) busPublishLiveMatchStatsAdd(stats ...*models.LiveMatchStats) {
-	p.bus.Pub(nsbus.Message{
+func (p *Monitor) busPublishLiveMatchStatsAdd(stats ...*models.LiveMatchStats) error {
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchStatsAdd,
 		Payload: &nsbus.LiveMatchStatsChangeMessage{
 			Op:    nspb.CollectionOp_COLLECTION_OP_ADD,

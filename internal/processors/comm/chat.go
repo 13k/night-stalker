@@ -31,7 +31,7 @@ type Chat struct {
 	ctx               context.Context
 	log               *nslog.Logger
 	bus               *nsbus.Bus
-	busSubSteamEvents <-chan nsbus.Message
+	busSubSteamEvents *nsbus.Subscription
 }
 
 func NewChat(options ChatOptions) *Chat {
@@ -79,7 +79,7 @@ func (p *Chat) busSubscribe() {
 
 func (p *Chat) busUnsubscribe() {
 	if p.busSubSteamEvents != nil {
-		p.bus.Unsub(nsbus.TopicSteamEvents, p.busSubSteamEvents)
+		p.bus.Unsub(p.busSubSteamEvents)
 		p.busSubSteamEvents = nil
 	}
 }
@@ -100,7 +100,7 @@ func (p *Chat) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSubSteamEvents:
+		case busmsg, ok := <-p.busSubSteamEvents.C:
 			if !ok {
 				return nil
 			}

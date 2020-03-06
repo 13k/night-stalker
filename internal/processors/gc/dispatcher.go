@@ -40,7 +40,7 @@ type Dispatcher struct {
 	steam      *steam.Client
 	handling   bool
 	bus        *nsbus.Bus
-	busSubSend <-chan nsbus.Message
+	busSubSend *nsbus.Subscription
 	rx         chan *gc.GCPacket
 	tx         chan *nsbus.GCDispatcherSendMessage
 }
@@ -97,7 +97,7 @@ func (p *Dispatcher) busSubscribe() {
 
 func (p *Dispatcher) busUnsubscribe() {
 	if p.busSubSend != nil {
-		p.bus.Unsub(nsbus.TopicGCDispatcherSend, p.busSubSend)
+		p.bus.Unsub(p.busSubSend)
 		p.busSubSend = nil
 	}
 }
@@ -211,7 +211,7 @@ func (p *Dispatcher) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSubSend:
+		case busmsg, ok := <-p.busSubSend.C:
 			if !ok {
 				return nil
 			}
@@ -304,7 +304,9 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 		return err
 	}
 
-	p.busPubReceivedMessage(incoming)
+	if err := p.busPubReceivedMessage(incoming); err != nil {
+		return err
+	}
 
 	p.log.WithField("msg_type", incoming.Type).Debug("received message")
 
@@ -323,8 +325,8 @@ func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) er
 	return nil
 }
 
-func (p *Dispatcher) busPubReceivedMessage(incoming *IncomingMessage) {
-	p.bus.Pub(nsbus.Message{
+func (p *Dispatcher) busPubReceivedMessage(incoming *IncomingMessage) error {
+	return p.bus.Pub(nsbus.Message{
 		Topic: incoming.BusTopic,
 		Payload: &nsbus.GCDispatcherReceivedMessage{
 			MsgType: incoming.Type,

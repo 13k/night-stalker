@@ -42,7 +42,7 @@ type Watcher struct {
 	log            *nslog.Logger
 	db             *gorm.DB
 	bus            *nsbus.Bus
-	busTVGamesResp <-chan nsbus.Message
+	busTVGamesResp *nsbus.Subscription
 }
 
 func NewWatcher(options WatcherOptions) *Watcher {
@@ -93,7 +93,7 @@ func (p *Watcher) busSubscribe() {
 
 func (p *Watcher) busUnsubscribe() {
 	if p.busTVGamesResp != nil {
-		p.bus.Unsub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse, p.busTVGamesResp)
+		p.bus.Unsub(p.busTVGamesResp)
 		p.busTVGamesResp = nil
 	}
 }
@@ -129,7 +129,7 @@ func (p *Watcher) loop() error {
 			return nil
 		case <-t.C:
 			p.tick()
-		case busmsg, ok := <-p.busTVGamesResp:
+		case busmsg, ok := <-p.busTVGamesResp.C:
 			if !ok {
 				return nil
 			}
@@ -177,9 +177,7 @@ func (p *Watcher) queryPage(page *queryPage) error {
 		"start": page.start,
 	}).Debug("requesting tv games")
 
-	p.busPubRequestTVGames(page)
-
-	return nil
+	return p.busPubRequestTVGames(page)
 }
 
 func (p *Watcher) handleFindTopSourceTVGamesResponse(msg *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) {
@@ -247,11 +245,15 @@ func (p *Watcher) handleResponse(page *queryPage) {
 	deactivated := liveMatches.RemoveDeactivated()
 
 	if len(liveMatches) > 0 {
-		p.busPubLiveMatchesAdd(liveMatches)
+		if err := p.busPubLiveMatchesAdd(liveMatches); err != nil {
+			l.WithError(err).Error()
+		}
 	}
 
 	if len(deactivated) > 0 {
-		p.busPubLiveMatchesRemove(deactivated)
+		if err := p.busPubLiveMatchesRemove(deactivated); err != nil {
+			l.WithError(err).Error()
+		}
 	}
 }
 
@@ -264,8 +266,9 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 		}
 
 		l := p.log.WithFields(logrus.Fields{
-			"match_id":        game.GetMatchId(),
-			"server_steam_id": game.GetServerSteamId(),
+			"match_id":  game.GetMatchId(),
+			"server_id": game.GetServerSteamId(),
+			"lobby_id":  game.GetLobbyId(),
 		})
 
 		liveMatch := models.LiveMatchDotaProto(game)
@@ -339,24 +342,23 @@ func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
 	return tvGames, nil
 }
 
-func (p *Watcher) busPubRequestTVGames(page *queryPage) {
+func (p *Watcher) busPubRequestTVGames(page *queryPage) error {
 	req := &protocol.CMsgClientToGCFindTopSourceTVGames{
 		GameListIndex: proto.Uint32(page.index),
 		StartGame:     proto.Uint32(page.start),
 	}
 
-	p.bus.Pub(nsbus.Message{
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicGCDispatcherSend,
 		Payload: &nsbus.GCDispatcherSendMessage{
 			MsgType: msgTypeFindTopSourceTVGames,
 			Message: req,
 		},
 	})
-
 }
 
-func (p *Watcher) busPubLiveMatchesAdd(liveMatches nscol.LiveMatches) {
-	p.bus.Pub(nsbus.Message{
+func (p *Watcher) busPubLiveMatchesAdd(liveMatches nscol.LiveMatches) error {
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesAdd,
 		Payload: &nsbus.LiveMatchesChangeMessage{
 			Op:      nspb.CollectionOp_COLLECTION_OP_ADD,
@@ -365,8 +367,8 @@ func (p *Watcher) busPubLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	})
 }
 
-func (p *Watcher) busPubLiveMatchesRemove(liveMatches nscol.LiveMatches) {
-	p.bus.Pub(nsbus.Message{
+func (p *Watcher) busPubLiveMatchesRemove(liveMatches nscol.LiveMatches) error {
+	return p.bus.Pub(nsbus.Message{
 		Topic: nsbus.TopicLiveMatchesRemove,
 		Payload: &nsbus.LiveMatchesChangeMessage{
 			Op:      nspb.CollectionOp_COLLECTION_OP_REMOVE,
