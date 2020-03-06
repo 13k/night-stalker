@@ -28,6 +28,8 @@
               :content="match.match_id.toString()"
               :success="onClipboardSuccess"
               :error="onClipboardError"
+              icon
+              small
             />
           </span>
         </div>

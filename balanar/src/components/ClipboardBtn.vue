@@ -2,8 +2,10 @@
   <v-btn
     ref="btn"
     :title="title"
-    icon
-    small
+    :icon="icon"
+    :small="small"
+    :text="text"
+    :color="color"
   >
     <slot>
       <v-icon small>
@@ -44,10 +46,26 @@ export default {
       type: Function,
       default: () => {},
     },
+    icon: {
+      type: Boolean,
+      default: false,
+    },
+    small: {
+      type: Boolean,
+      default: false,
+    },
+    text: {
+      type: Boolean,
+      default: false,
+    },
+    color: {
+      type: String,
+      default: null,
+    },
   },
 
   computed: {
-    text() {
+    contentText() {
       let value;
 
       switch (typeof this.content) {
@@ -104,7 +122,7 @@ export default {
       const $vm = this;
 
       this.clipboard = new Clipboard(this.$refs.btn.$el, {
-        text: () => $vm.text,
+        text: () => $vm.contentText,
         action: () => $vm.action,
         container: this.container,
       });
