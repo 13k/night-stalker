@@ -11,44 +11,6 @@ import (
 	nsrds "github.com/13k/night-stalker/internal/redis"
 )
 
-func (app *App) rdsPSub(topic string) (*redis.PubSub, error) {
-	pubsub := app.rds.PSubscribe(topic)
-	msg, err := pubsub.Receive()
-
-	if err != nil {
-		err = xerrors.Errorf("error subscribing to topic %s: %w", topic, err)
-		return nil, err
-	}
-
-	switch m := msg.(type) {
-	case *redis.Subscription:
-		return pubsub, nil
-	case error:
-		err = xerrors.Errorf("error subscribing to topic %s: %w", topic, m)
-		return nil, err
-	default:
-		err = xerrors.Errorf("received invalid message %T when subscribing to topic %s", m, topic)
-		return nil, err
-	}
-}
-
-func (app *App) rdsWatchPubSub(pubsub *redis.PubSub, handler func(*redis.Message)) {
-	defer pubsub.Close()
-
-	for {
-		select {
-		case <-app.ctx.Done():
-			return
-		case msg, ok := <-pubsub.Channel():
-			if !ok {
-				return
-			}
-
-			go handler(msg)
-		}
-	}
-}
-
 func (app *App) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 	result := app.rds.ZRevRange(nsrds.KeyLiveMatches, 0, -1)
 
@@ -99,14 +61,14 @@ func (app *App) seedLiveMatches() error {
 }
 
 func (app *App) watchLiveMatches() error {
-	pubsub, err := app.rdsPSub(nsrds.TopicPatternLiveMatchesAll)
+	pubsub, err := nsrds.PSubscribe(app.rds, nsrds.TopicPatternLiveMatchesAll)
 
 	if err != nil {
 		err = xerrors.Errorf("error subscribing to live matches: %w", err)
 		return err
 	}
 
-	go app.rdsWatchPubSub(pubsub, app.handleLiveMatchesChange)
+	go nsrds.WatchPubsub(app.ctx, pubsub, app.handleLiveMatchesChange)
 
 	return nil
 }
@@ -226,14 +188,14 @@ func (app *App) removeLiveMatches(matchIDs nscol.MatchIDs) (*nspb.LiveMatches, e
 }
 
 func (app *App) watchLiveMatchStats() error {
-	pubsub, err := app.rdsPSub(nsrds.TopicPatternLiveMatchStatsAll)
+	pubsub, err := nsrds.PSubscribe(app.rds, nsrds.TopicPatternLiveMatchStatsAll)
 
 	if err != nil {
 		err = xerrors.Errorf("error subscribing to live matches: %w", err)
 		return err
 	}
 
-	go app.rdsWatchPubSub(pubsub, app.handleLiveMatchStatsChange)
+	go nsrds.WatchPubsub(app.ctx, pubsub, app.handleLiveMatchStatsChange)
 
 	return nil
 }
