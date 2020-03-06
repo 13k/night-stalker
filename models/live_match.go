@@ -19,7 +19,7 @@ type LiveMatch struct {
 	ID                         LiveMatchID        `gorm:"column:id;primary_key"`
 	MatchID                    nspb.MatchID       `gorm:"column:match_id;unique_index;not null"`
 	ServerSteamID              steamid.SteamId    `gorm:"column:server_steam_id;not null"`
-	LobbyID                    nspb.LobbyID       `gorm:"column:lobby_id;unique_index;not null"`
+	LobbyID                    nspb.LobbyID       `gorm:"column:lobby_id;not null"`
 	LobbyType                  nspb.LobbyType     `gorm:"column:lobby_type"`
 	LeagueID                   nspb.LeagueID      `gorm:"column:league_id"`
 	SeriesID                   nspb.SeriesID      `gorm:"column:series_id"`
