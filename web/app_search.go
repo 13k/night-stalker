@@ -34,7 +34,7 @@ func (app *App) loadSearchView(query string) (*nspb.Search, error) {
 	likePattern := "%" + query + "%"
 
 	err := app.db.
-		Where("localized_name ILIKE ?", likePattern).
+		Where("localized_name ILIKE ? OR ? = ANY(aliases)", likePattern, query).
 		Find(&heroes).
 		Error
 
