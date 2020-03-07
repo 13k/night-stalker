@@ -12,11 +12,11 @@ import (
 	"github.com/markbates/pkger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdhttpfsd "github.com/13k/night-stalker/cmd/ns/internal/httpfsd"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
 
@@ -132,7 +132,7 @@ func newMigrate(db *gorm.DB, log *nslog.Logger) *migrate.Migrate {
 		log.WithError(err).Fatal("error creating postgres db driver")
 	}
 
-	m, err := migrate.NewWithInstance("pkger", srcDriver, viper.GetString("db_driver"), dbDriver)
+	m, err := migrate.NewWithInstance("pkger", srcDriver, v.GetString(v.KeyDbDriver), dbDriver)
 
 	if err != nil {
 		log.WithError(err).Fatal("error creating migrator")

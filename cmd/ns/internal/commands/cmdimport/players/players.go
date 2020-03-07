@@ -5,11 +5,11 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 	nsjson "github.com/13k/night-stalker/internal/json"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
@@ -61,7 +61,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	defer db.Close()
 
-	apiKey := viper.GetString("opendota_api_key")
+	apiKey := v.GetString(v.KeyOpendotaAPIKey)
 
 	log.Info("fetching pro players ...")
 

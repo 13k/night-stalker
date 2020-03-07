@@ -1,11 +1,7 @@
 package cmdroot
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmddebug"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdfollow"
@@ -13,6 +9,7 @@ import (
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdmigrate"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdstart"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdweb"
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 )
 
 const (
@@ -34,27 +31,16 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	Cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default automatic detection).")
+	Cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default automatic detection)")
 	Cmd.PersistentFlags().StringP("db", "d", "", "database URL")
 	Cmd.PersistentFlags().StringP("log", "l", cfgDefaultLogFile, `log file. "-" logs to stdout`)
 	Cmd.PersistentFlags().BoolP("tee", "t", false, "when logging to a file, also log to stdout")
 	Cmd.PersistentFlags().BoolP("debug", "D", false, "enable debug logging")
 
-	if err := viper.BindPFlag("log.file", Cmd.PersistentFlags().Lookup("log")); err != nil {
-		panic(err)
-	}
-
-	if err := viper.BindPFlag("log.debug", Cmd.PersistentFlags().Lookup("debug")); err != nil {
-		panic(err)
-	}
-
-	if err := viper.BindPFlag("log.stdout", Cmd.PersistentFlags().Lookup("tee")); err != nil {
-		panic(err)
-	}
-
-	if err := viper.BindPFlag("db.url", Cmd.PersistentFlags().Lookup("db")); err != nil {
-		panic(err)
-	}
+	v.MustBindPersistentFlagLookup(v.KeyLogFile, Cmd, "log")
+	v.MustBindPersistentFlagLookup(v.KeyLogDebug, Cmd, "debug")
+	v.MustBindPersistentFlagLookup(v.KeyLogTee, Cmd, "tee")
+	v.MustBindPersistentFlagLookup(v.KeyDbURL, Cmd, "db")
 
 	Cmd.AddCommand(cmddebug.Cmd)
 	Cmd.AddCommand(cmdfollow.Cmd)
@@ -65,27 +51,7 @@ func init() {
 }
 
 func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		cwd, err := os.Getwd()
-
-		if err != nil {
-			fmt.Printf("Error determining current directory: %s\n", err)
-			os.Exit(1)
-		}
-
-		viper.AddConfigPath(cwd)
-		viper.SetConfigName(cfgBaseName)
-	}
-
-	viper.SetEnvPrefix(cfgEnvPrefix)
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading configuration: %s\n", err)
-		os.Exit(1)
-	}
+	v.AutoConfig(cfgBaseName, cfgEnvPrefix, cfgFile)
 }
 
 func run(cmd *cobra.Command, args []string) {

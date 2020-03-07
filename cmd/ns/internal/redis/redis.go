@@ -4,7 +4,8 @@ import (
 	"errors"
 
 	"github.com/go-redis/redis/v7"
-	"github.com/spf13/viper"
+
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 )
 
 var (
@@ -12,7 +13,7 @@ var (
 )
 
 func Connect() (*redis.Client, error) {
-	redisURL := viper.GetString("redis.url")
+	redisURL := v.GetString(v.KeyRedisURL)
 
 	if redisURL == "" {
 		return nil, ErrMissingRedisURL
@@ -24,18 +25,18 @@ func Connect() (*redis.Client, error) {
 		return nil, err
 	}
 
-	options.MaxRetries = viper.GetInt("redis.max_retries")
-	options.MinRetryBackoff = viper.GetDuration("redis.min_retry_backoff")
-	options.MaxRetryBackoff = viper.GetDuration("redis.max_retry_backoff")
-	options.DialTimeout = viper.GetDuration("redis.dial_timeout")
-	options.ReadTimeout = viper.GetDuration("redis.read_timeout")
-	options.WriteTimeout = viper.GetDuration("redis.write_timeout")
-	options.PoolSize = viper.GetInt("redis.pool_size")
-	options.MinIdleConns = viper.GetInt("redis.min_idle_conns")
-	options.MaxConnAge = viper.GetDuration("redis.max_conn_age")
-	options.PoolTimeout = viper.GetDuration("redis.pool_timeout")
-	options.IdleTimeout = viper.GetDuration("redis.idle_timeout")
-	options.IdleCheckFrequency = viper.GetDuration("redis.idle_check_freq")
+	options.MaxRetries = v.GetInt(v.KeyRedisMaxRetries)
+	options.MinRetryBackoff = v.GetDuration(v.KeyRedisMinRetryBackoff)
+	options.MaxRetryBackoff = v.GetDuration(v.KeyRedisMaxRetryBackoff)
+	options.DialTimeout = v.GetDuration(v.KeyRedisDialTimeout)
+	options.ReadTimeout = v.GetDuration(v.KeyRedisReadTimeout)
+	options.WriteTimeout = v.GetDuration(v.KeyRedisWriteTimeout)
+	options.PoolSize = v.GetInt(v.KeyRedisPoolSize)
+	options.MinIdleConns = v.GetInt(v.KeyRedisMinIdleConns)
+	options.MaxConnAge = v.GetDuration(v.KeyRedisMaxConnAge)
+	options.PoolTimeout = v.GetDuration(v.KeyRedisPoolTimeout)
+	options.IdleTimeout = v.GetDuration(v.KeyRedisIdleTimeout)
+	options.IdleCheckFrequency = v.GetDuration(v.KeyRedisIdleCheckFrequency)
 
 	client := redis.NewClient(options)
 

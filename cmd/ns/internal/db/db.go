@@ -6,7 +6,8 @@ import (
 	"net/url"
 
 	"github.com/jinzhu/gorm"
-	"github.com/spf13/viper"
+
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 )
 
 func ParseURL() error {
-	dbURL := viper.GetString("db.url")
+	dbURL := v.GetString(v.KeyDbURL)
 
 	if dbURL == "" {
 		return ErrMissingDatabaseURL
@@ -36,7 +37,7 @@ func ParseURL() error {
 		return fmt.Errorf("unknown database scheme %q", uri.Scheme)
 	}
 
-	viper.Set("db.driver", driver)
+	v.Set(v.KeyDbDriver, driver)
 
 	return nil
 }
@@ -46,21 +47,21 @@ func Connect() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db, err := gorm.Open(viper.GetString("db.driver"), viper.GetString("db.url"))
+	db, err := gorm.Open(v.GetString(v.KeyDbDriver), v.GetString(v.KeyDbURL))
 
 	if err != nil {
 		return nil, err
 	}
 
-	if n := viper.GetInt("db.max_total"); n > 0 {
+	if n := v.GetInt(v.KeyDbConnMaxTotal); n > 0 {
 		db.DB().SetMaxOpenConns(n)
 	}
 
-	if n := viper.GetInt("db.max_idle"); n > 0 {
+	if n := v.GetInt(v.KeyDbConnMaxIdle); n > 0 {
 		db.DB().SetMaxIdleConns(n)
 	}
 
-	if d := viper.GetDuration("db.max_lifetime"); d > 0 {
+	if d := v.GetDuration(v.KeyDbConnMaxLifetime); d > 0 {
 		db.DB().SetConnMaxLifetime(d)
 	}
 

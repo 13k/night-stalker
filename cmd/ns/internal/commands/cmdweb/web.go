@@ -8,12 +8,12 @@ import (
 
 	"github.com/markbates/pkger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	cmdwebroutes "github.com/13k/night-stalker/cmd/ns/internal/commands/cmdweb/routes"
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdrds "github.com/13k/night-stalker/cmd/ns/internal/redis"
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 	nsweb "github.com/13k/night-stalker/web"
 )
 
@@ -26,6 +26,7 @@ var Cmd = &cobra.Command{
 const (
 	defaultAddress         = ":3000"
 	defaultShutdownTimeout = 5 * time.Second
+	balanarBuildDir        = "/balanar/dist"
 )
 
 var (
@@ -46,9 +47,7 @@ func init() {
 	Cmd.Flags().StringSliceVar(&flagCertHosts, "crthost", nil, "certificate host(s)")
 	Cmd.Flags().DurationVar(&flagShutdownTimeout, "stimeout", defaultShutdownTimeout, "shutdown timeout")
 
-	if err := viper.BindPFlag("redis.url", Cmd.Flags().Lookup("redis")); err != nil {
-		panic(err)
-	}
+	v.MustBindFlagLookup(v.KeyRedisURL, Cmd, "redis")
 
 	Cmd.AddCommand(cmdwebroutes.Cmd)
 }
@@ -116,5 +115,5 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func assetsFS() (http.FileSystem, error) {
-	return pkger.Open("/balanar/dist")
+	return pkger.Open(balanarBuildDir)
 }

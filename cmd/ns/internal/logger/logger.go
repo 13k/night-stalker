@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 
+	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 	nsio "github.com/13k/night-stalker/internal/io"
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
@@ -14,7 +14,7 @@ import (
 func New() (*nslog.Logger, error) {
 	var out io.Writer = os.Stdout
 
-	logFile := viper.GetString("log.file")
+	logFile := v.GetString(v.KeyLogFile)
 
 	if logFile != "" && logFile != "-" {
 		f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -23,7 +23,7 @@ func New() (*nslog.Logger, error) {
 			return nil, err
 		}
 
-		if viper.GetBool("log.stdout") {
+		if v.GetBool(v.KeyLogTee) {
 			out = nsio.MultiWriteCloser(f, os.Stdout)
 		} else {
 			out = f
@@ -32,7 +32,7 @@ func New() (*nslog.Logger, error) {
 
 	level := logrus.InfoLevel
 
-	if viper.GetBool("log.debug") {
+	if v.GetBool(v.KeyLogDebug) {
 		level = logrus.DebugLevel
 	}
 
