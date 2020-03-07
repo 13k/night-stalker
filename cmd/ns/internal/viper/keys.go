@@ -11,6 +11,7 @@ type Key string
 const (
 	KeyLogFile                 Key = "log.file"
 	KeyLogDebug                Key = "log.debug"
+	KeyLogTrace                Key = "log.trace"
 	KeyLogTee                  Key = "log.tee"
 	KeyDbURL                   Key = "db.url"
 	KeyDbDriver                Key = "db.driver"

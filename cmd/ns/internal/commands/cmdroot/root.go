@@ -34,11 +34,13 @@ func init() {
 	Cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default automatic detection)")
 	Cmd.PersistentFlags().StringP("db", "d", "", "database URL")
 	Cmd.PersistentFlags().StringP("log", "l", cfgDefaultLogFile, `log file. "-" logs to stdout`)
-	Cmd.PersistentFlags().BoolP("tee", "t", false, "when logging to a file, also log to stdout")
 	Cmd.PersistentFlags().BoolP("debug", "D", false, "enable debug logging")
+	Cmd.PersistentFlags().BoolP("tee", "t", false, "when logging to a file, also log to stdout")
+	Cmd.PersistentFlags().BoolP("trace", "T", false, "enable tracing logging")
 
 	v.MustBindPersistentFlagLookup(v.KeyLogFile, Cmd, "log")
 	v.MustBindPersistentFlagLookup(v.KeyLogDebug, Cmd, "debug")
+	v.MustBindPersistentFlagLookup(v.KeyLogDebug, Cmd, "trace")
 	v.MustBindPersistentFlagLookup(v.KeyLogTee, Cmd, "tee")
 	v.MustBindPersistentFlagLookup(v.KeyDbURL, Cmd, "db")
 

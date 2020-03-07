@@ -36,5 +36,9 @@ func New() (*nslog.Logger, error) {
 		level = logrus.DebugLevel
 	}
 
+	if v.GetBool(v.KeyLogTrace) {
+		level = logrus.TraceLevel
+	}
+
 	return nslog.New(out, level)
 }
