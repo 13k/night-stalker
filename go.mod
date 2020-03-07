@@ -25,6 +25,7 @@ require (
 	github.com/paralin/go-dota2 v0.0.0-20191126225751-cae5acd7b08d
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.6
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
