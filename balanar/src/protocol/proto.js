@@ -1457,6 +1457,7 @@ export const protocol = $root.protocol = (() => {
              * @property {number|null} [gold] Player gold
              * @property {number|null} [net_worth] Player net_worth
              * @property {string|null} [label] Player label
+             * @property {string|null} [slug] Player slug
              */
 
             /**
@@ -1627,6 +1628,14 @@ export const protocol = $root.protocol = (() => {
             Player.prototype.label = "";
 
             /**
+             * Player slug.
+             * @member {string} slug
+             * @memberof protocol.LiveMatch.Player
+             * @instance
+             */
+            Player.prototype.slug = "";
+
+            /**
              * Creates a new Player instance using the specified properties.
              * @function create
              * @memberof protocol.LiveMatch.Player
@@ -1688,6 +1697,8 @@ export const protocol = $root.protocol = (() => {
                     writer.uint32(/* id 18, wireType 0 =*/144).uint32(message.net_worth);
                 if (message.label != null && message.hasOwnProperty("label"))
                     writer.uint32(/* id 19, wireType 2 =*/154).string(message.label);
+                if (message.slug != null && message.hasOwnProperty("slug"))
+                    writer.uint32(/* id 20, wireType 2 =*/162).string(message.slug);
                 return writer;
             };
 
@@ -1778,6 +1789,9 @@ export const protocol = $root.protocol = (() => {
                         break;
                     case 19:
                         message.label = reader.string();
+                        break;
+                    case 20:
+                        message.slug = reader.string();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -1887,6 +1901,9 @@ export const protocol = $root.protocol = (() => {
                 if (message.label != null && message.hasOwnProperty("label"))
                     if (!$util.isString(message.label))
                         return "label: string expected";
+                if (message.slug != null && message.hasOwnProperty("slug"))
+                    if (!$util.isString(message.slug))
+                        return "slug: string expected";
                 return null;
             };
 
@@ -1999,6 +2016,8 @@ export const protocol = $root.protocol = (() => {
                     message.net_worth = object.net_worth >>> 0;
                 if (object.label != null)
                     message.label = String(object.label);
+                if (object.slug != null)
+                    message.slug = String(object.slug);
                 return message;
             };
 
@@ -2039,6 +2058,7 @@ export const protocol = $root.protocol = (() => {
                     object.gold = 0;
                     object.net_worth = 0;
                     object.label = "";
+                    object.slug = "";
                 }
                 if (message.account_id != null && message.hasOwnProperty("account_id"))
                     object.account_id = message.account_id;
@@ -2081,6 +2101,8 @@ export const protocol = $root.protocol = (() => {
                     object.net_worth = message.net_worth;
                 if (message.label != null && message.hasOwnProperty("label"))
                     object.label = message.label;
+                if (message.slug != null && message.hasOwnProperty("slug"))
+                    object.slug = message.slug;
                 return object;
             };
 
@@ -3139,6 +3161,7 @@ export const protocol = $root.protocol = (() => {
              * @property {string|null} [avatar_medium_url] Player avatar_medium_url
              * @property {string|null} [avatar_full_url] Player avatar_full_url
              * @property {boolean|null} [is_pro] Player is_pro
+             * @property {string|null} [slug] Player slug
              */
 
             /**
@@ -3213,6 +3236,14 @@ export const protocol = $root.protocol = (() => {
             Player.prototype.is_pro = false;
 
             /**
+             * Player slug.
+             * @member {string} slug
+             * @memberof protocol.Search.Player
+             * @instance
+             */
+            Player.prototype.slug = "";
+
+            /**
              * Creates a new Player instance using the specified properties.
              * @function create
              * @memberof protocol.Search.Player
@@ -3250,6 +3281,8 @@ export const protocol = $root.protocol = (() => {
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.avatar_full_url);
                 if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                     writer.uint32(/* id 7, wireType 0 =*/56).bool(message.is_pro);
+                if (message.slug != null && message.hasOwnProperty("slug"))
+                    writer.uint32(/* id 8, wireType 2 =*/66).string(message.slug);
                 return writer;
             };
 
@@ -3304,6 +3337,9 @@ export const protocol = $root.protocol = (() => {
                         break;
                     case 7:
                         message.is_pro = reader.bool();
+                        break;
+                    case 8:
+                        message.slug = reader.string();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -3361,6 +3397,9 @@ export const protocol = $root.protocol = (() => {
                 if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                     if (typeof message.is_pro !== "boolean")
                         return "is_pro: boolean expected";
+                if (message.slug != null && message.hasOwnProperty("slug"))
+                    if (!$util.isString(message.slug))
+                        return "slug: string expected";
                 return null;
             };
 
@@ -3390,6 +3429,8 @@ export const protocol = $root.protocol = (() => {
                     message.avatar_full_url = String(object.avatar_full_url);
                 if (object.is_pro != null)
                     message.is_pro = Boolean(object.is_pro);
+                if (object.slug != null)
+                    message.slug = String(object.slug);
                 return message;
             };
 
@@ -3414,6 +3455,7 @@ export const protocol = $root.protocol = (() => {
                     object.avatar_medium_url = "";
                     object.avatar_full_url = "";
                     object.is_pro = false;
+                    object.slug = "";
                 }
                 if (message.account_id != null && message.hasOwnProperty("account_id"))
                     object.account_id = message.account_id;
@@ -3429,6 +3471,8 @@ export const protocol = $root.protocol = (() => {
                     object.avatar_full_url = message.avatar_full_url;
                 if (message.is_pro != null && message.hasOwnProperty("is_pro"))
                     object.is_pro = message.is_pro;
+                if (message.slug != null && message.hasOwnProperty("slug"))
+                    object.slug = message.slug;
                 return object;
             };
 
