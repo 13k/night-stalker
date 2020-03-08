@@ -1,23 +1,17 @@
 <template>
   <div
     :class="containerClasses"
-    class="live-match-player d-flex align-center"
+    class="d-flex align-center flex-grow-1"
   >
     <div
       :class="nameClasses"
-      class="d-flex"
+      class="d-flex flex-column"
     >
-      <span>{{ player.name }}</span>
-      <span
-        v-if="label"
-        class="ml-2"
-      >
-        ({{ label }})
-      </span>
+      <span>{{ name }}</span>
 
       <span
         v-if="kda"
-        class="ml-2 overline grey--text"
+        class="overline grey--text"
       >
         {{ kda }}
       </span>
@@ -86,6 +80,15 @@ export default {
 
       return null;
     },
+    name() {
+      let name = this.player.name;
+
+      if (this.label) {
+        name = `${name} (${this.label})`;
+      }
+
+      return name;
+    },
     kda() {
       const { kills = 0, deaths = 0, assists = 0 } = this.player || {};
 
@@ -108,7 +111,7 @@ export default {
     },
     nameClasses() {
       return {
-        "text-right": this.isRight,
+        "align-end": this.isRight,
       };
     },
     iconClasses() {
@@ -143,10 +146,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.live-match-player {
-  width: 100%;
-}
-
 .slot-bar {
   width: 10px;
   height: 36px;

@@ -1,14 +1,14 @@
 <template>
   <v-container>
-    <v-row align="stretch">
+    <v-row>
       <v-col
         v-for="match in matches"
         :key="match.match_id.toString()"
         cols="12"
         sm="6"
-        md="4"
+        md="6"
         lg="4"
-        xl="3"
+        xl="4"
       >
         <LiveMatch :match="match" />
       </v-col>
