@@ -30,6 +30,7 @@ message LiveMatch {
     uint32 gold = 17;
     uint32 net_worth = 18;
     string label = 19;
+    string slug = 20;
   }
 
   uint64 match_id = 1;
