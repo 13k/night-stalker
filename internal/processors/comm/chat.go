@@ -7,7 +7,6 @@ import (
 
 	"cirello.io/oversight"
 	"github.com/faceit/go-steam"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nslog "github.com/13k/night-stalker/internal/logger"
@@ -121,10 +120,10 @@ func (p *Chat) stop() {
 
 func (p *Chat) handleChatMessage(chatmsg *steam.ChatMsgEvent) {
 	if chatmsg.IsMessage() {
-		p.log.WithFields(logrus.Fields{
-			"from":    chatmsg.ChatterId,
-			"room":    chatmsg.ChatRoomId,
-			"message": chatmsg.Message,
-		}).Info("chat message")
+		p.log.WithOFields(
+			"room", chatmsg.ChatRoomId,
+			"from", chatmsg.ChatterId,
+			"message", chatmsg.Message,
+		).Info("chat message")
 	}
 }

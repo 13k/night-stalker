@@ -9,7 +9,6 @@ import (
 	"cirello.io/oversight"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2/protocol"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -198,15 +197,15 @@ func (p *Monitor) tick() {
 		return
 	}
 
-	p.log.WithFields(logrus.Fields{
-		"batch_size": batchSize,
-		"batches":    len(batches),
-		"total":      p.getLiveMatchesCount(),
-	}).Debug("requesting matches details")
+	p.log.WithOFields(
+		"batch_size", batchSize,
+		"batch_count", len(batches),
+		"total", p.getLiveMatchesCount(),
+	).Debug("requesting matches details")
 
 	for _, batch := range batches {
 		if err := p.busPubRequestMatchesMinimal(batch.MatchIDs()); err != nil {
-			p.log.WithError(err).Error()
+			p.log.WithError(err).Error("error publishing to bus")
 		}
 	}
 }
@@ -217,9 +216,7 @@ func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 		return
 	}
 
-	p.log.WithFields(logrus.Fields{
-		"count": len(msg.Matches),
-	}).Debug("received live matches")
+	p.log.WithField("count", len(msg.Matches)).Debug("received live matches")
 
 	p.setLiveMatches(msg.Matches)
 }
@@ -241,7 +238,7 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 	}
 
 	if err := p.busPubLiveMatchesRemove(matches.MatchIDs()); err != nil {
-		p.log.WithError(err).Error()
+		p.log.WithError(err).Error("error publishing to bus")
 	}
 }
 

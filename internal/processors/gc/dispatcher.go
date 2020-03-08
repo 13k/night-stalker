@@ -11,7 +11,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
@@ -275,17 +274,17 @@ func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) error {
 func (p *Dispatcher) handleQueueError(err error) {
 	switch e := err.(type) {
 	case *recvTimeoutError:
-		p.log.WithFields(logrus.Fields{
-			"msg_type": protocol.EDOTAGCMsg(e.Packet.MsgType),
-			"timeout":  e.Timeout,
-		}).Warn("ignored incoming packet (queue is full)")
+		p.log.WithOFields(
+			"msg_type", protocol.EDOTAGCMsg(e.Packet.MsgType),
+			"timeout", e.Timeout,
+		).Warn("ignored incoming packet (queue is full)")
 	case *sendTimeoutError:
-		p.log.WithFields(logrus.Fields{
-			"msg_type": e.BusMessage.MsgType,
-			"timeout":  e.Timeout,
-		}).Warn("ignored outgoing message (queue is full)")
+		p.log.WithOFields(
+			"msg_type", e.BusMessage.MsgType,
+			"timeout", e.Timeout,
+		).Warn("ignored outgoing message (queue is full)")
 	default:
-		p.log.WithError(err).Error()
+		p.log.WithError(err).Error("queue error")
 	}
 }
 

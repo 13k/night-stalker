@@ -3,7 +3,6 @@ package cmdfollow
 import (
 	"strconv"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
@@ -64,8 +63,8 @@ func run(cmd *cobra.Command, args []string) {
 		log.WithError(err).Fatal("error")
 	}
 
-	log.WithFields(logrus.Fields{
-		"account_id": followed.AccountID,
-		"label":      followed.Label,
-	}).Info("following player")
+	log.WithOFields(
+		"account_id", followed.AccountID,
+		"label", followed.Label,
+	).Info("following player")
 }

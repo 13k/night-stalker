@@ -4,41 +4,38 @@ import (
 	"io"
 	"os"
 
-	"github.com/sirupsen/logrus"
-
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
-	nsio "github.com/13k/night-stalker/internal/io"
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
 
 func New() (*nslog.Logger, error) {
-	var out io.Writer = os.Stdout
+	var outputs []io.Writer
 
 	logFile := v.GetString(v.KeyLogFile)
 
 	if logFile != "" && logFile != "-" {
-		f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 
 		if err != nil {
 			return nil, err
 		}
 
+		outputs = append(outputs, f)
+
 		if v.GetBool(v.KeyLogTee) {
-			out = nsio.MultiWriteCloser(f, os.Stdout)
-		} else {
-			out = f
+			outputs = append(outputs, os.Stdout)
 		}
 	}
 
-	level := logrus.InfoLevel
+	level := nslog.LevelInfo
 
 	if v.GetBool(v.KeyLogDebug) {
-		level = logrus.DebugLevel
+		level = nslog.LevelDebug
 	}
 
 	if v.GetBool(v.KeyLogTrace) {
-		level = logrus.TraceLevel
+		level = nslog.LevelTrace
 	}
 
-	return nslog.New(out, level)
+	return nslog.New(level, outputs...), nil
 }

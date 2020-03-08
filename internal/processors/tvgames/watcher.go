@@ -9,7 +9,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2/protocol"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -172,10 +171,10 @@ func (p *Watcher) queryPage(page *queryPage) error {
 		return p.ctx.Err()
 	}
 
-	p.log.WithFields(logrus.Fields{
-		"index": page.index,
-		"start": page.start,
-	}).Debug("requesting tv games")
+	p.log.WithOFields(
+		"index", page.index,
+		"start", page.start,
+	).Debug("requesting tv games")
 
 	return p.busPubRequestTVGames(page)
 }
@@ -185,12 +184,12 @@ func (p *Watcher) handleFindTopSourceTVGamesResponse(msg *protocol.CMsgGCToClien
 }
 
 func (p *Watcher) handleResponse(page *queryPage) {
-	l := p.log.WithFields(logrus.Fields{
-		"index": page.index,
-		"start": page.start,
-		"total": page.total,
-		"count": page.psize,
-	})
+	l := p.log.WithOFields(
+		"index", page.index,
+		"start", page.start,
+		"psize", page.psize,
+		"total", page.total,
+	)
 
 	if page.psize == 0 || page.total == 0 {
 		l.Warn("ignoring empty page")
@@ -211,50 +210,52 @@ func (p *Watcher) handleResponse(page *queryPage) {
 	}
 
 	games := nscol.TVGames(page.res.GetGameList())
-	originalLen := len(games)
-	games = games.Clean()
-	cleanLen := len(games)
-	cleanCount := originalLen - cleanLen
-	games, err := p.filterFinished(games)
+	cleaned := games.Clean()
+
+	l = l.WithOFields(
+		"games", len(games),
+		"cleaned", len(games)-len(cleaned),
+	)
+
+	inProgress, err := p.filterFinished(cleaned)
 
 	if err != nil {
-		l.WithError(err).Error("error filtering finished")
+		l.WithError(err).Error("error filtering finished tv games")
 		return
 	}
 
-	finalLen := len(games)
-	finishedCount := cleanLen - finalLen
-	l = l.WithField("count", finalLen)
+	l = l.WithOFields(
+		"finished", len(cleaned)-len(inProgress),
+		"in_progress", len(inProgress),
+	)
 
-	if originalLen != finalLen {
-		l.WithFields(logrus.Fields{
-			"cleaned":  cleanCount,
-			"finished": finishedCount,
-		}).Debug("filtered tv games")
-	}
-
-	l.Debug("received tv games")
-
-	liveMatches, err := p.saveGames(games)
+	liveMatches, err := p.saveGames(inProgress)
 
 	if err != nil {
-		l.WithError(err).Error("error saving response")
+		l.WithError(err).Error("error saving tv games")
 		return
 	}
 
 	deactivated := liveMatches.RemoveDeactivated()
 
+	l = l.WithOFields(
+		"deactivated", len(deactivated),
+		"live", len(liveMatches),
+	)
+
 	if len(liveMatches) > 0 {
 		if err := p.busPubLiveMatchesAdd(liveMatches); err != nil {
-			l.WithError(err).Error()
+			l.WithError(err).Error("error publishing to bus")
 		}
 	}
 
 	if len(deactivated) > 0 {
 		if err := p.busPubLiveMatchesRemove(deactivated); err != nil {
-			l.WithError(err).Error()
+			l.WithError(err).Error("error publishing to bus")
 		}
 	}
+
+	l.Debug("handled tv games")
 }
 
 func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
@@ -265,13 +266,13 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 			return nil, p.ctx.Err()
 		}
 
-		l := p.log.WithFields(logrus.Fields{
-			"match_id":  game.GetMatchId(),
-			"server_id": game.GetServerSteamId(),
-			"lobby_id":  game.GetLobbyId(),
-		})
-
 		liveMatch := models.LiveMatchDotaProto(game)
+
+		l := p.log.WithOFields(
+			"match_id", liveMatch.MatchID,
+			"server_id", liveMatch.ServerSteamID,
+			"lobby_id", liveMatch.LobbyID,
+		)
 
 		tx := p.db.Begin()
 

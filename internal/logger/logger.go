@@ -1,98 +1,222 @@
 package logger
 
 import (
+	"errors"
+	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
-	elog "github.com/labstack/gommon/log"
+	"cirello.io/oversight"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
-	pkgKey = "@pkg"
+	pkgKey   = "pkg"
+	pkgSep   = "/"
+	errorKey = "error"
+)
+
+var (
+	ErrChildClose = errors.New("cannot close child Logger")
 )
 
 type Logger struct {
-	logrus.FieldLogger
-
-	logger  *logrus.Logger
-	pkgPath []string
-	pkg     string
+	logger      log15.Logger
+	stdLogger   *log.Logger
+	level       Level
+	outputs     []io.Writer
+	multiOutput io.Writer
+	handler     log15.Handler
+	pkgPath     []string
+	pkg         string
+	parent      *Logger
 }
 
-func New(output io.Writer, level logrus.Level) (*Logger, error) {
-	logger := logrus.New()
-
-	logger.SetLevel(level)
-	logger.SetOutput(output)
-	logger.Formatter = &logrus.TextFormatter{
-		FullTimestamp:    true,
-		QuoteEmptyFields: true,
+func New(level Level, outputs ...io.Writer) *Logger {
+	if len(outputs) == 0 {
+		outputs = append(outputs, os.Stdout)
 	}
+
+	multiOutput := io.MultiWriter(outputs...)
 
 	l := &Logger{
-		FieldLogger: logger,
-		logger:      logger,
+		level:       level,
+		outputs:     outputs,
+		multiOutput: multiOutput,
+		handler:     createHandler(level, outputs...),
 	}
 
-	return l, nil
-}
+	l.logger = log15.New()
+	l.logger.SetHandler(l)
 
-func (l *Logger) isStdio() bool {
-	return l.logger.Out != os.Stdout && l.logger.Out != os.Stderr
-}
-
-func (l *Logger) Output() io.Writer {
-	return l.logger.Out
-}
-
-func (l *Logger) Debugging() bool {
-	return l.logger.IsLevelEnabled(logrus.DebugLevel)
+	return l
 }
 
 func (l *Logger) Close() error {
-	if closer, ok := l.logger.Out.(io.Closer); ok && !l.isStdio() {
-		return closer.Close()
+	if l.parent != nil {
+		return ErrChildClose
+	}
+
+	for _, output := range l.outputs {
+		if closer, ok := output.(io.Closer); ok && !isStdio(output) {
+			if err := closer.Close(); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func (l *Logger) Debugfn(fn func()) {
-	if !l.logger.IsLevelEnabled(logrus.DebugLevel) {
-		return
+func (l *Logger) child(fields ...interface{}) *Logger {
+	if len(fields)%2 != 0 {
+		panic("len(args) should be an even number")
 	}
 
-	fn()
+	child := &Logger{
+		logger:      l.logger.New(fields...),
+		level:       l.level,
+		outputs:     l.outputs,
+		multiOutput: l.multiOutput,
+		handler:     l.handler,
+		pkgPath:     l.pkgPath,
+		pkg:         l.pkg,
+		parent:      l,
+	}
+
+	child.logger.SetHandler(child)
+
+	return child
+}
+
+func (l *Logger) IsLevelEnabled(lvl Level) bool {
+	return l.level.Enables(lvl)
+}
+
+func (l *Logger) StdLogger() *log.Logger {
+	if l.stdLogger == nil {
+		l.stdLogger = log.New(l.multiOutput, l.pkg, 0)
+	}
+
+	return l.stdLogger
+}
+
+func (l *Logger) MigrateLogger() migrate.Logger {
+	return newMigrateLogger(l)
+}
+
+func (l *Logger) LogrusLogger() logrus.FieldLogger {
+	return newLogrusLogger(l)
+}
+
+func (l *Logger) EchoLogger() echo.Logger {
+	return newEchoLogger(l)
+}
+
+func (l *Logger) OversightLogger() oversight.Logger {
+	return newOversightLogger(l)
+}
+
+func (l *Logger) Log(r *log15.Record) error {
+	if l.pkg != "" {
+		r.Ctx = append([]interface{}{pkgKey, l.pkg}, r.Ctx...)
+	}
+
+	return l.handler.Log(r)
 }
 
 func (l *Logger) WithPackage(pkg string) *Logger {
-	pkgPath := append(l.pkgPath, pkg)
-	pkg = strings.Join(pkgPath, "/")
+	child := l.child()
+	child.pkgPath = append(child.pkgPath, pkg)
+	child.pkg = strings.Join(child.pkgPath, pkgSep)
+	return child
+}
 
-	return &Logger{
-		FieldLogger: l.WithField(pkgKey, pkg),
-		logger:      l.logger,
-		pkgPath:     pkgPath,
-		pkg:         pkg,
+func (l *Logger) WithFields(fieldSet ...Fields) *Logger {
+	fields := FieldSet(fieldSet).Merge()
+
+	if len(fields) == 0 {
+		return l
 	}
+
+	return l.child(log15.Ctx(fields))
 }
 
-func (l *Logger) MigrateLogger() *MigrateLogger {
-	return &MigrateLogger{
-		FieldLogger: l.WithPackage("migrate"),
-		verbose:     l.Debugging(),
+func (l *Logger) WithOFields(fields ...interface{}) *Logger {
+	if len(fields) == 0 {
+		return l
 	}
+
+	return l.child(fields...)
 }
 
-func (l *Logger) Dota2Logger() *logrus.Entry {
-	return l.WithPackage("dota2").WithFields(logrus.Fields{})
+func (l *Logger) WithField(key string, value interface{}) *Logger {
+	return l.child(key, value)
 }
 
-func (l *Logger) EchoLogger() *elog.Logger {
-	logger := elog.New(l.pkg)
-	logger.SetOutput(l.logger.Out)
+func (l *Logger) WithError(err error) *Logger {
+	return l.WithField(errorKey, err.Error())
+}
 
-	return logger
+func (l *Logger) Panic(msg string) {
+	l.logger.Crit(msg)
+	panic(msg)
+}
+
+func (l *Logger) Panicf(format string, args ...interface{}) {
+	l.Panic(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Fatal(msg string) {
+	l.logger.Crit(msg)
+	os.Exit(1)
+}
+
+func (l *Logger) Fatalf(format string, args ...interface{}) {
+	l.Fatal(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Error(msg string) {
+	l.logger.Error(msg)
+}
+
+func (l *Logger) Errorf(format string, args ...interface{}) {
+	l.Error(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Warn(msg string) {
+	l.logger.Warn(msg)
+}
+
+func (l *Logger) Warnf(format string, args ...interface{}) {
+	l.Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Info(msg string) {
+	l.logger.Info(msg)
+}
+
+func (l *Logger) Infof(format string, args ...interface{}) {
+	l.Info(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Debug(msg string) {
+	l.logger.Debug(msg)
+}
+
+func (l *Logger) Debugf(format string, args ...interface{}) {
+	l.Debug(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Trace(msg string) {
+	l.logger.Debug(msg)
+}
+
+func (l *Logger) Tracef(format string, args ...interface{}) {
+	l.Trace(fmt.Sprintf(format, args...))
 }

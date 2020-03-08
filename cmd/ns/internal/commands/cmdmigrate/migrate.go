@@ -10,7 +10,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jinzhu/gorm"
 	"github.com/markbates/pkger"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
@@ -179,7 +178,7 @@ func runMigrate(db *gorm.DB, log *nslog.Logger) {
 
 	defer m.Close()
 
-	var l logrus.FieldLogger = log
+	var l *nslog.Logger = log
 	var fn func() error
 
 	switch {

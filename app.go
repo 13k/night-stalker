@@ -107,7 +107,7 @@ func (ns *App) setupSteam() {
 }
 
 func (ns *App) setupDota() {
-	ns.dota = dota2.New(ns.steam, ns.log.Dota2Logger())
+	ns.dota = dota2.New(ns.steam, ns.log.WithPackage("dota2").LogrusLogger())
 }
 
 func (ns *App) setupSupervisor() {
@@ -127,7 +127,7 @@ func (ns *App) setupSupervisor() {
 
 	ns.supervisor = oversight.New(
 		oversight.WithRestartStrategy(oversight.OneForOne()),
-		oversight.WithLogger(ns.log.WithPackage("supervisor")),
+		oversight.WithLogger(ns.log.WithPackage("supervisor").OversightLogger()),
 		oversight.Process(session),
 	)
 }

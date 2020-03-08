@@ -15,7 +15,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
 	"github.com/paralin/go-dota2/protocol"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -263,9 +262,9 @@ func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 		return
 	}
 
-	p.log.WithFields(logrus.Fields{
-		"count": len(msg.Matches),
-	}).Debug("received live matches")
+	p.log.
+		WithField("count", len(msg.Matches)).
+		Debug("received live matches")
 
 	p.liveMatchesMtx.Lock()
 	defer p.liveMatchesMtx.Unlock()
@@ -280,9 +279,9 @@ func (p *Monitor) tick() {
 		return
 	}
 
-	p.log.WithFields(logrus.Fields{
-		"count": len(p.liveMatches),
-	}).Debug("requesting stats")
+	p.log.
+		WithField("count", len(p.liveMatches)).
+		Debug("requesting stats")
 
 	for _, liveMatch := range p.liveMatches {
 		p.submitLiveMatch(liveMatch)
@@ -293,7 +292,7 @@ func (p *Monitor) submitLiveMatch(liveMatch *models.LiveMatch) {
 	l := p.log.WithField("match_id", liveMatch.MatchID)
 
 	if err := p.ctx.Err(); err != nil {
-		l.WithError(err).Error()
+		l.WithError(err).Error("context canceled")
 		return
 	}
 
@@ -307,10 +306,10 @@ func (p *Monitor) submitLiveMatch(liveMatch *models.LiveMatch) {
 }
 
 func (p *Monitor) work(liveMatch *models.LiveMatch) {
-	l := p.log.WithFields(logrus.Fields{
-		"match_id":        liveMatch.MatchID,
-		"server_steam_id": liveMatch.ServerSteamID,
-	})
+	l := p.log.WithOFields(
+		"match_id", liveMatch.MatchID,
+		"server_id", liveMatch.ServerSteamID,
+	)
 
 	var skip bool
 	p.activeReqsMtx.Lock()
@@ -339,10 +338,6 @@ func (p *Monitor) work(liveMatch *models.LiveMatch) {
 		return
 	}
 
-	if result.GetMatch() == nil {
-		return
-	}
-
 	if result.GetMatch().GetMatchid() != liveMatch.MatchID {
 		return
 	}
@@ -363,7 +358,7 @@ func (p *Monitor) flushResults() {
 	}
 
 	if err := p.busPublishLiveMatchStatsAdd(p.results...); err != nil {
-		p.log.WithError(err).Error()
+		p.log.WithError(err).Error("error publishing to bus")
 	}
 
 	p.results = nil

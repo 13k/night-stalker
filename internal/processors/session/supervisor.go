@@ -80,7 +80,7 @@ func newSupervisor(options supervisorOptions) *supervisor {
 	tree := oversight.New(
 		oversight.NeverHalt(),
 		oversight.WithRestartStrategy(oversight.OneForOne()),
-		oversight.WithLogger(log),
+		oversight.WithLogger(log.OversightLogger()),
 		oversight.Process(
 			dispatcherSpec,
 			tvGamesSpec,
@@ -102,7 +102,7 @@ func (s *supervisor) start(ctx context.Context) {
 	defer s.finished()
 
 	if err := s.root.Start(ctx); err != nil {
-		s.log.WithError(err).Error()
+		s.log.WithError(err).Error("supervisor error")
 	}
 }
 

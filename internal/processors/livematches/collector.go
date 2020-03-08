@@ -8,7 +8,6 @@ import (
 	"cirello.io/oversight"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -254,15 +253,16 @@ func (p *Collector) add(matches nscol.LiveMatches) {
 		return
 	}
 
-	prevLen := p.matches.Len()
+	beforeLen := p.matches.Len()
 	change := p.matches.Add(matches...)
+	afterLen := p.matches.Len()
 
 	if len(change) > 0 {
-		p.log.WithFields(logrus.Fields{
-			"count":         len(change),
-			"total_before":  prevLen,
-			"total_current": p.matches.Len(),
-		}).Debug("matches added")
+		p.log.WithOFields(
+			"before", beforeLen,
+			"after", afterLen,
+			"change", len(change),
+		).Debug("matches added")
 
 		p.notifyLiveMatchesAdd(change)
 	}
@@ -278,15 +278,16 @@ func (p *Collector) remove(matchIDs nscol.MatchIDs) {
 		return
 	}
 
-	prevLen := p.matches.Len()
+	beforeLen := p.matches.Len()
 	change := p.matches.Remove(matchIDs...)
+	afterLen := p.matches.Len()
 
 	if len(change) > 0 {
-		p.log.WithFields(logrus.Fields{
-			"count":         len(change),
-			"total_before":  prevLen,
-			"total_current": p.matches.Len(),
-		}).Debug("matches removed")
+		p.log.WithOFields(
+			"before", beforeLen,
+			"after", afterLen,
+			"change", len(change),
+		).Debug("matches removed")
 
 		p.notifyLiveMatchesRemove(change)
 	}
@@ -314,7 +315,7 @@ func (p *Collector) addStats(stats nscol.LiveMatchStats) {
 
 func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 	if err := p.busPubAllMatches(); err != nil {
-		p.log.WithError(err).Error()
+		p.log.WithError(err).Error("error publishing to bus")
 		return
 	}
 
@@ -326,7 +327,7 @@ func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
 
 func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) {
 	if err := p.busPubAllMatches(); err != nil {
-		p.log.WithError(err).Error()
+		p.log.WithError(err).Error("error publishing to bus")
 		return
 	}
 

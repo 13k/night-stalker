@@ -3,7 +3,6 @@ package players
 import (
 	"github.com/faceit/go-steam/steamid"
 	"github.com/go-resty/resty/v2"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
@@ -78,19 +77,14 @@ func run(cmd *cobra.Command, args []string) {
 		Get(apiPath)
 
 	if err != nil {
-		log.WithError(err).Fatal()
+		log.WithError(err).Fatal("error")
 	}
 
 	if !resp.IsSuccess() {
-		log.WithFields(logrus.Fields{
-			"code":   resp.StatusCode(),
-			"status": resp.StatusCode(),
-		}).Fatal("HTTP error")
+		log.WithField("status", resp.Status()).Fatal("HTTP error")
 	}
 
-	log.
-		WithField("count", len(result)).
-		Info("importing pro players ...")
+	log.WithField("count", len(result)).Info("importing pro players ...")
 
 	tx := db.Begin()
 
@@ -116,7 +110,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		if err = result.Error; err != nil {
 			tx.Rollback()
-			l.WithError(err).Fatal()
+			l.WithError(err).Fatal("error")
 		}
 
 		pro := &models.ProPlayer{
@@ -137,7 +131,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		if err = result.Error; err != nil {
 			tx.Rollback()
-			l.WithError(err).Fatal()
+			l.WithError(err).Fatal("error")
 		}
 
 		followed := &models.FollowedPlayer{
@@ -150,7 +144,7 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			if err != nscmdutil.ErrFollowedPlayerAlreadyExists {
 				tx.Rollback()
-				l.WithError(err).Fatal()
+				l.WithError(err).Fatal("error")
 			}
 
 			l.Warn(err.Error())
@@ -161,7 +155,7 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tx.Commit().Error; err != nil {
-		log.WithError(err).Fatal()
+		log.WithError(err).Fatal("error")
 	}
 
 	log.Info("done")

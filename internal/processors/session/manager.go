@@ -191,7 +191,7 @@ func (p *Manager) loop() error {
 			}
 
 			if err := p.handleEvent(ev); err != nil {
-				p.log.WithError(err).Error()
+				p.log.WithError(err).Error("error handling event")
 				return err
 			}
 		}
@@ -525,7 +525,7 @@ func (p *Manager) connectDota() {
 func (p *Manager) dotaGreet() {
 	go func() {
 		if err := p.dotaGreeter.hello(); err != nil {
-			p.log.WithError(err).Error()
+			p.log.WithError(err).Error("error greeting dota GC")
 			p.stop()
 		}
 	}()
