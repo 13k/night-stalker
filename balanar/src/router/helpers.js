@@ -1,5 +1,5 @@
 export function heroParam(hero) {
-  return `${hero.id}-${hero.name.replace(/^npc_dota_hero_/, "")}`;
+  return `${hero.id}-${hero.slug}`;
 }
 
 export function heroRoute(hero) {
