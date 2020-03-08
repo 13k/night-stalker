@@ -17,6 +17,8 @@ func TestSlugify(t *testing.T) {
 		{"` AlaCrity -", "alacrity"},
 		{"Raging-_-Potato", "raging-potato"},
 		{"楚源Cy", "楚源cy"},
+		{"keeper_of_the_light", "keeper-of-the-light"},
+		{"monkey_king", "monkey-king"},
 	}
 
 	for testCaseIdx, testCase := range testCases {
