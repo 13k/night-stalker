@@ -4395,6 +4395,7 @@ export const protocol = $root.protocol = (() => {
          * @property {Long|null} [id] Hero id
          * @property {string|null} [name] Hero name
          * @property {string|null} [localized_name] Hero localized_name
+         * @property {string|null} [slug] Hero slug
          */
 
         /**
@@ -4437,6 +4438,14 @@ export const protocol = $root.protocol = (() => {
         Hero.prototype.localized_name = "";
 
         /**
+         * Hero slug.
+         * @member {string} slug
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.slug = "";
+
+        /**
          * Creates a new Hero instance using the specified properties.
          * @function create
          * @memberof protocol.Hero
@@ -4466,6 +4475,8 @@ export const protocol = $root.protocol = (() => {
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.localized_name);
+            if (message.slug != null && message.hasOwnProperty("slug"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.slug);
             return writer;
         };
 
@@ -4508,6 +4519,9 @@ export const protocol = $root.protocol = (() => {
                     break;
                 case 3:
                     message.localized_name = reader.string();
+                    break;
+                case 4:
+                    message.slug = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -4553,6 +4567,9 @@ export const protocol = $root.protocol = (() => {
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
                 if (!$util.isString(message.localized_name))
                     return "localized_name: string expected";
+            if (message.slug != null && message.hasOwnProperty("slug"))
+                if (!$util.isString(message.slug))
+                    return "slug: string expected";
             return null;
         };
 
@@ -4581,6 +4598,8 @@ export const protocol = $root.protocol = (() => {
                 message.name = String(object.name);
             if (object.localized_name != null)
                 message.localized_name = String(object.localized_name);
+            if (object.slug != null)
+                message.slug = String(object.slug);
             return message;
         };
 
@@ -4605,6 +4624,7 @@ export const protocol = $root.protocol = (() => {
                     object.id = options.longs === String ? "0" : 0;
                 object.name = "";
                 object.localized_name = "";
+                object.slug = "";
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 if (typeof message.id === "number")
@@ -4615,6 +4635,8 @@ export const protocol = $root.protocol = (() => {
                 object.name = message.name;
             if (message.localized_name != null && message.hasOwnProperty("localized_name"))
                 object.localized_name = message.localized_name;
+            if (message.slug != null && message.hasOwnProperty("slug"))
+                object.slug = message.slug;
             return object;
         };
 
