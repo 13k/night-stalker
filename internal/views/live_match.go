@@ -179,6 +179,7 @@ func NewLiveMatchPlayer(
 		AccountId: followed.AccountID,
 		Name:      followed.Label,
 		Label:     followed.Label,
+		Slug:      followed.Slug,
 		HeroId:    uint64(livePlayer.HeroID),
 	}
 

@@ -51,6 +51,7 @@ func NewSearchPlayer(
 	pb := &nspb.Search_Player{
 		AccountId: followed.AccountID,
 		Name:      followed.Label,
+		Slug:      followed.Slug,
 		IsPro:     proPlayer != nil,
 	}
 
