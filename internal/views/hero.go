@@ -11,6 +11,7 @@ func NewHero(h *models.Hero) *nspb.Hero {
 	return &nspb.Hero{
 		Id:            uint64(h.ID),
 		Name:          h.Name,
+		Slug:          h.Slug,
 		LocalizedName: h.LocalizedName,
 	}
 }
