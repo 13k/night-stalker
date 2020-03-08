@@ -15,6 +15,7 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nslog "github.com/13k/night-stalker/internal/logger"
+	nsmw "github.com/13k/night-stalker/web/middleware"
 )
 
 const (
@@ -65,9 +66,7 @@ func New(options AppOptions) (*App, error) {
 		bus:     bus,
 	}
 
-	if err := app.configureEngine(); err != nil {
-		return nil, err
-	}
+	app.configureEngine()
 
 	if err := app.configureServer(); err != nil {
 		return nil, err
@@ -76,13 +75,12 @@ func New(options AppOptions) (*App, error) {
 	return app, nil
 }
 
-func (app *App) configureEngine() error { //nolint: unparam
+func (app *App) configureEngine() {
 	app.engine.Logger = app.log.EchoLogger()
-	app.engine.Debug = app.log.Debugging()
+	app.engine.StdLogger = app.log.StdLogger()
+	app.engine.Debug = app.log.IsLevelEnabled(nslog.LevelDebug)
 
-	app.engine.Use(mw.LoggerWithConfig(mw.LoggerConfig{
-		Output: app.log.Output(),
-	}))
+	app.engine.Use(nsmw.Logger(app.log))
 
 	app.engine.Use(mw.RecoverWithConfig(mw.RecoverConfig{
 		DisableStackAll: true,
@@ -105,8 +103,6 @@ func (app *App) configureEngine() error { //nolint: unparam
 
 	root.GET("/", echo.WrapHandler(assetHandler))
 	root.GET("/*", echo.WrapHandler(assetHandler))
-
-	return nil
 }
 
 func (app *App) configureServer() error {

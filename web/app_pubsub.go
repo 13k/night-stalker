@@ -2,7 +2,6 @@ package web
 
 import (
 	"github.com/go-redis/redis/v7"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
@@ -74,11 +73,11 @@ func (app *App) watchLiveMatches() error {
 }
 
 func (app *App) handleLiveMatchesChange(rmsg *redis.Message) {
-	l := app.log.WithFields(logrus.Fields{
-		"channel": rmsg.Channel,
-		"pattern": rmsg.Pattern,
-		"payload": rmsg.Payload,
-	})
+	l := app.log.WithOFields(
+		"channel", rmsg.Channel,
+		"pattern", rmsg.Pattern,
+		"payload", rmsg.Payload,
+	)
 
 	matchIDs, err := nscol.NewMatchIDsFromString(rmsg.Payload, ",")
 
@@ -201,11 +200,11 @@ func (app *App) watchLiveMatchStats() error {
 }
 
 func (app *App) handleLiveMatchStatsChange(rmsg *redis.Message) {
-	l := app.log.WithFields(logrus.Fields{
-		"channel": rmsg.Channel,
-		"pattern": rmsg.Pattern,
-		"payload": rmsg.Payload,
-	})
+	l := app.log.WithOFields(
+		"channel", rmsg.Channel,
+		"pattern", rmsg.Pattern,
+		"payload", rmsg.Payload,
+	)
 
 	matchIDs, err := nscol.NewMatchIDsFromString(rmsg.Payload, ",")
 

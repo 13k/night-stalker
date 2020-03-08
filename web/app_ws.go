@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -88,11 +87,11 @@ func (app *App) serveWSConn(conn *WSConn) {
 }
 
 func (app *App) pushWSLiveMatches(conn *WSConn, msg *nspb.LiveMatchesChange) {
-	l := app.wslog.WithFields(logrus.Fields{
-		"id":    conn.id.String(),
-		"op":    msg.Op.String(),
-		"count": len(msg.Change.Matches),
-	})
+	l := app.wslog.WithOFields(
+		"id", conn.id.String(),
+		"op", msg.Op.String(),
+		"count", len(msg.Change.Matches),
+	)
 
 	wsmsg, err := json.Marshal(msg)
 
@@ -106,5 +105,5 @@ func (app *App) pushWSLiveMatches(conn *WSConn, msg *nspb.LiveMatchesChange) {
 		return
 	}
 
-	l.Debug("sent message")
+	l.WithField("bytes_out", len(wsmsg)).Debug("sent message")
 }
