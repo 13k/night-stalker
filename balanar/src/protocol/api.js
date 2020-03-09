@@ -2,14 +2,12 @@ import _ from "lodash";
 
 import api from "@/api";
 import pb from "@/protocol/proto";
+import * as $t from "@/protocol/transform";
 import { preprocessMatches } from "@/protocol/preprocess";
-import {
-  transformHero,
-  transformHeroMatches,
-  transformLiveMatches,
-  transformPlayerMatches,
-  transformSearch,
-} from "@/protocol/transform";
+
+const {
+  protocol: { Hero, League, LiveMatches, PlayerMatches, HeroMatches, Search },
+} = pb;
 
 export function fetchHeroes() {
   return api.heroes().then(res => {
@@ -17,10 +15,17 @@ export function fetchHeroes() {
       throw new TypeError("received non-array response", res);
     }
 
-    return res.map(attrs => {
-      const hero = pb.protocol.Hero.fromObject(attrs);
-      return transformHero(hero);
-    });
+    return res.map(attrs => $t.transformHero(Hero.fromObject(attrs)));
+  });
+}
+
+export function fetchLeagues(id) {
+  return api.leagues(id).then(res => {
+    if (!_.isArray(res)) {
+      throw new TypeError("received non-array response", res);
+    }
+
+    return res.map(attrs => $t.transformLeague(League.fromObject(attrs)));
   });
 }
 
@@ -32,9 +37,9 @@ export function fetchLiveMatches(state) {
 
     preprocessMatches(res.matches);
 
-    const liveMatches = pb.protocol.LiveMatches.fromObject(res);
+    const liveMatches = LiveMatches.fromObject(res);
 
-    transformLiveMatches(liveMatches, state);
+    $t.transformLiveMatches(liveMatches, state);
 
     return liveMatches;
   });
@@ -48,9 +53,9 @@ export function fetchPlayerMatches(state, accountId) {
 
     preprocessMatches(res.matches);
 
-    const playerMatches = pb.protocol.PlayerMatches.fromObject(res);
+    const playerMatches = PlayerMatches.fromObject(res);
 
-    transformPlayerMatches(playerMatches, state);
+    $t.transformPlayerMatches(playerMatches, state);
 
     return playerMatches;
   });
@@ -64,9 +69,9 @@ export function fetchHeroMatches(state, heroId) {
 
     preprocessMatches(res.matches);
 
-    const heroMatches = pb.protocol.HeroMatches.fromObject(res);
+    const heroMatches = HeroMatches.fromObject(res);
 
-    transformHeroMatches(heroMatches, state);
+    $t.transformHeroMatches(heroMatches, state);
 
     return heroMatches;
   });
@@ -78,9 +83,9 @@ export function search(state, query) {
       throw new TypeError("received non-object response", res);
     }
 
-    const search = pb.protocol.Search.fromObject(res);
+    const search = Search.fromObject(res);
 
-    transformSearch(search, state);
+    $t.transformSearch(search, state);
 
     return search;
   });

@@ -100,9 +100,9 @@ function createLiveMatchTeam({ number, liveMatch, players }) {
   return _.assign({ number, players, side }, createliveMatchTeamAttributes(liveMatch, side));
 }
 
-export function transformHero(hero) {
-  return hero;
-}
+export const transformHero = hero => hero;
+export const transformLeague = league => league;
+export const transformPlayer = player => player;
 
 export function transformLiveMatch(liveMatch, state) {
   transformMatchTimestamps(liveMatch);
@@ -166,10 +166,6 @@ export function transformMatchPlayer(match, player, { heroes }) {
   set(player, "victory", victory);
   transformProperty(player, "hero_id", "hero", heroId => _.get(heroes, ["byId", heroId]));
 
-  return player;
-}
-
-export function transformPlayer(player) {
   return player;
 }
 
