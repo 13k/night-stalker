@@ -3,7 +3,7 @@ import _ from "lodash";
 import api from "@/api";
 import pb from "@/protocol/proto";
 import * as $t from "@/protocol/transform";
-import { preprocessMatches } from "@/protocol/preprocess";
+import { preprocessMatches, preprocessLeagues } from "@/protocol/preprocess";
 
 const {
   protocol: { Hero, League, LiveMatches, PlayerMatches, HeroMatches, Search },
@@ -24,6 +24,8 @@ export function fetchLeagues(id) {
     if (!_.isArray(res)) {
       throw new TypeError("received non-array response", res);
     }
+
+    preprocessLeagues(res);
 
     return res.map(attrs => $t.transformLeague(League.fromObject(attrs)));
   });
