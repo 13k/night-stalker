@@ -19,6 +19,9 @@ const ROUTES = {
     index: compile("heroes"),
     matches: compile("heroes/:id/matches"),
   },
+  leagues: {
+    index: compile("leagues"),
+  },
   live_matches: {
     index: compile("live_matches"),
   },
@@ -62,29 +65,36 @@ class API {
     return this.request("get", route, options);
   }
 
-  search(query) {
-    const route = { name: "search.index" };
-    return this.get(route, { searchParams: { q: query } });
-  }
-
-  liveMatches() {
-    const route = { name: "live_matches.index" };
-    return this.get(route);
-  }
-
   heroes() {
-    const route = { name: "heroes.index" };
-    return this.get(route);
-  }
-
-  playerMatches(accountId) {
-    const route = { name: "players.matches", params: { accountId } };
-    return this.get(route);
+    return this.get({ name: "heroes.index" });
   }
 
   heroMatches(id) {
-    const route = { name: "heroes.matches", params: { id } };
-    return this.get(route);
+    return this.get({ name: "heroes.matches", params: { id } });
+  }
+
+  leagues(id) {
+    const searchParams = new URLSearchParams();
+
+    if (_.isString(id)) {
+      searchParams.set("id", id);
+    } else if (_.isArray(id)) {
+      _.each(id, id => searchParams.append("id", id));
+    }
+
+    return this.get({ name: "leagues.index" }, { searchParams });
+  }
+
+  liveMatches() {
+    return this.get({ name: "live_matches.index" });
+  }
+
+  playerMatches(accountId) {
+    return this.get({ name: "players.matches", params: { accountId } });
+  }
+
+  search(query) {
+    return this.get({ name: "search.index" }, { searchParams: { q: query } });
   }
 }
 
