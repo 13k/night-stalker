@@ -4,6 +4,7 @@ package protocol;
 
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
+import "protocol/enums.proto";
 import "protocol/match.proto";
 import "protocol/player.proto";
 
@@ -12,6 +13,13 @@ message Hero {
   string name = 2;
   string localized_name = 3;
   string slug = 4;
+  repeated string aliases = 5;
+  repeated protocol.HeroRole roles = 6;
+  repeated int64 role_levels = 7;
+  int64 complexity = 8;
+  int64 legs = 9;
+  protocol.DotaAttribute attribute_primary = 10;
+  protocol.DotaUnitCap attack_capabilities = 11;
 }
 
 message HeroMatches {
