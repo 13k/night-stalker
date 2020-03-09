@@ -17,9 +17,9 @@ func newOversightLogger(l *Logger) *oversightLogger {
 }
 
 func (l *oversightLogger) Printf(format string, args ...interface{}) {
-	l.logger.Infof(format, args...)
+	l.logger.Debugf(format, args...)
 }
 
 func (l *oversightLogger) Println(args ...interface{}) {
-	l.logger.Info(fmt.Sprint(args...))
+	l.logger.Debug(fmt.Sprint(args...))
 }
