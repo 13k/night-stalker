@@ -92,6 +92,7 @@ func (app *App) configureEngine() {
 
 	apiV1 := api.Group("/v1")
 	apiV1.GET("/search", app.serveSearch)
+	apiV1.GET("/leagues", app.serveLeagues)
 	apiV1.GET("/heroes", app.serveHeroes)
 	apiV1.GET("/heroes/:id/matches", app.serveHeroMatches)
 	apiV1.GET("/live_matches", app.serveLiveMatches)
