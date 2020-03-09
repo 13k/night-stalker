@@ -3,9 +3,9 @@
     class="d-flex flex-column"
     height="100%"
   >
-    <template v-if="!match.league_id.isZero()">
+    <template v-if="league">
       <v-img
-        :src="match.league_id | leagueImageURL"
+        :src="league.id | leagueImageURL"
         :aspect-ratio="512/200"
         min-height="148"
         height="148"
@@ -23,17 +23,18 @@
     </template>
 
     <v-card-subtitle
-      v-if="!match.league_id.isZero()"
+      v-if="league"
       class="d-flex"
     >
       <v-img
         :src="leagueIcon"
         max-width="16"
         class="mr-2"
+        title="Tournament"
         contain
       />
 
-      Tournament
+      {{ league.name }}
     </v-card-subtitle>
 
     <v-card-subtitle
@@ -44,6 +45,7 @@
         :src="mmrIcon"
         max-width="16"
         class="mr-2"
+        title="Ranked match"
         contain
       />
 
@@ -58,6 +60,7 @@
         :src="battlecupIcon"
         max-width="16"
         class="mr-2"
+        title="Battlecup"
         contain
       />
 
@@ -176,19 +179,6 @@ export default {
     colonDuration,
     humanDuration,
     leagueImageURL,
-    playersColWidth(team) {
-      return team.tag || team.name ? 9 : 12;
-    },
-    playersColClasses(team) {
-      if (!(team.tag || team.name)) {
-        return {};
-      }
-
-      return {
-        left: team.number % 2 === 0,
-        right: team.number % 2 !== 0,
-      };
-    },
   },
 
   props: {
@@ -208,6 +198,9 @@ export default {
   computed: {
     teams() {
       return $t.get(this.match, "teams");
+    },
+    league() {
+      return $t.get(this.match, "league");
     },
     watchCommand() {
       return `watch_server ${this.match.server_steam_id}`;
