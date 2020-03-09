@@ -16,6 +16,513 @@ export const protocol = $root.protocol = (() => {
      */
     const protocol = {};
 
+    protocol.League = (function() {
+
+        /**
+         * Properties of a League.
+         * @memberof protocol
+         * @interface ILeague
+         * @property {Long|null} [id] League id
+         * @property {string|null} [name] League name
+         * @property {protocol.LeagueTier|null} [tier] League tier
+         * @property {protocol.LeagueRegion|null} [region] League region
+         * @property {protocol.LeagueStatus|null} [status] League status
+         * @property {number|null} [total_prize_pool] League total_prize_pool
+         * @property {google.protobuf.ITimestamp|null} [last_activity_at] League last_activity_at
+         * @property {google.protobuf.ITimestamp|null} [start_at] League start_at
+         * @property {google.protobuf.ITimestamp|null} [finish_at] League finish_at
+         */
+
+        /**
+         * Constructs a new League.
+         * @memberof protocol
+         * @classdesc Represents a League.
+         * @implements ILeague
+         * @constructor
+         * @param {protocol.ILeague=} [properties] Properties to set
+         */
+        function League(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * League id.
+         * @member {Long} id
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * League name.
+         * @member {string} name
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.name = "";
+
+        /**
+         * League tier.
+         * @member {protocol.LeagueTier} tier
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.tier = 0;
+
+        /**
+         * League region.
+         * @member {protocol.LeagueRegion} region
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.region = 0;
+
+        /**
+         * League status.
+         * @member {protocol.LeagueStatus} status
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.status = 0;
+
+        /**
+         * League total_prize_pool.
+         * @member {number} total_prize_pool
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.total_prize_pool = 0;
+
+        /**
+         * League last_activity_at.
+         * @member {google.protobuf.ITimestamp|null|undefined} last_activity_at
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.last_activity_at = null;
+
+        /**
+         * League start_at.
+         * @member {google.protobuf.ITimestamp|null|undefined} start_at
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.start_at = null;
+
+        /**
+         * League finish_at.
+         * @member {google.protobuf.ITimestamp|null|undefined} finish_at
+         * @memberof protocol.League
+         * @instance
+         */
+        League.prototype.finish_at = null;
+
+        /**
+         * Creates a new League instance using the specified properties.
+         * @function create
+         * @memberof protocol.League
+         * @static
+         * @param {protocol.ILeague=} [properties] Properties to set
+         * @returns {protocol.League} League instance
+         */
+        League.create = function create(properties) {
+            return new League(properties);
+        };
+
+        /**
+         * Encodes the specified League message. Does not implicitly {@link protocol.League.verify|verify} messages.
+         * @function encode
+         * @memberof protocol.League
+         * @static
+         * @param {protocol.ILeague} message League message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        League.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && message.hasOwnProperty("id"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
+            if (message.name != null && message.hasOwnProperty("name"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
+            if (message.tier != null && message.hasOwnProperty("tier"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.tier);
+            if (message.region != null && message.hasOwnProperty("region"))
+                writer.uint32(/* id 4, wireType 0 =*/32).int32(message.region);
+            if (message.status != null && message.hasOwnProperty("status"))
+                writer.uint32(/* id 5, wireType 0 =*/40).int32(message.status);
+            if (message.total_prize_pool != null && message.hasOwnProperty("total_prize_pool"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.total_prize_pool);
+            if (message.last_activity_at != null && message.hasOwnProperty("last_activity_at"))
+                $root.google.protobuf.Timestamp.encode(message.last_activity_at, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+            if (message.start_at != null && message.hasOwnProperty("start_at"))
+                $root.google.protobuf.Timestamp.encode(message.start_at, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
+            if (message.finish_at != null && message.hasOwnProperty("finish_at"))
+                $root.google.protobuf.Timestamp.encode(message.finish_at, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified League message, length delimited. Does not implicitly {@link protocol.League.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof protocol.League
+         * @static
+         * @param {protocol.ILeague} message League message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        League.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a League message from the specified reader or buffer.
+         * @function decode
+         * @memberof protocol.League
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {protocol.League} League
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        League.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.League();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.id = reader.uint64();
+                    break;
+                case 2:
+                    message.name = reader.string();
+                    break;
+                case 3:
+                    message.tier = reader.int32();
+                    break;
+                case 4:
+                    message.region = reader.int32();
+                    break;
+                case 5:
+                    message.status = reader.int32();
+                    break;
+                case 6:
+                    message.total_prize_pool = reader.uint32();
+                    break;
+                case 7:
+                    message.last_activity_at = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                case 8:
+                    message.start_at = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                case 9:
+                    message.finish_at = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a League message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof protocol.League
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {protocol.League} League
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        League.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a League message.
+         * @function verify
+         * @memberof protocol.League
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        League.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
+                    return "id: integer|Long expected";
+            if (message.name != null && message.hasOwnProperty("name"))
+                if (!$util.isString(message.name))
+                    return "name: string expected";
+            if (message.tier != null && message.hasOwnProperty("tier"))
+                switch (message.tier) {
+                default:
+                    return "tier: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    break;
+                }
+            if (message.region != null && message.hasOwnProperty("region"))
+                switch (message.region) {
+                default:
+                    return "region: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    break;
+                }
+            if (message.status != null && message.hasOwnProperty("status"))
+                switch (message.status) {
+                default:
+                    return "status: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    break;
+                }
+            if (message.total_prize_pool != null && message.hasOwnProperty("total_prize_pool"))
+                if (!$util.isInteger(message.total_prize_pool))
+                    return "total_prize_pool: integer expected";
+            if (message.last_activity_at != null && message.hasOwnProperty("last_activity_at")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.last_activity_at);
+                if (error)
+                    return "last_activity_at." + error;
+            }
+            if (message.start_at != null && message.hasOwnProperty("start_at")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.start_at);
+                if (error)
+                    return "start_at." + error;
+            }
+            if (message.finish_at != null && message.hasOwnProperty("finish_at")) {
+                let error = $root.google.protobuf.Timestamp.verify(message.finish_at);
+                if (error)
+                    return "finish_at." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a League message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof protocol.League
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {protocol.League} League
+         */
+        League.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.League)
+                return object;
+            let message = new $root.protocol.League();
+            if (object.id != null)
+                if ($util.Long)
+                    (message.id = $util.Long.fromValue(object.id)).unsigned = true;
+                else if (typeof object.id === "string")
+                    message.id = parseInt(object.id, 10);
+                else if (typeof object.id === "number")
+                    message.id = object.id;
+                else if (typeof object.id === "object")
+                    message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
+            if (object.name != null)
+                message.name = String(object.name);
+            switch (object.tier) {
+            case "LEAGUE_TIER_UNSET":
+            case 0:
+                message.tier = 0;
+                break;
+            case "LEAGUE_TIER_AMATEUR":
+            case 1:
+                message.tier = 1;
+                break;
+            case "LEAGUE_TIER_PROFESSIONAL":
+            case 2:
+                message.tier = 2;
+                break;
+            case "LEAGUE_TIER_MINOR":
+            case 3:
+                message.tier = 3;
+                break;
+            case "LEAGUE_TIER_MAJOR":
+            case 4:
+                message.tier = 4;
+                break;
+            case "LEAGUE_TIER_INTERNATIONAL":
+            case 5:
+                message.tier = 5;
+                break;
+            case "LEAGUE_TIER_DPC_QUALIFIER":
+            case 6:
+                message.tier = 6;
+                break;
+            }
+            switch (object.region) {
+            case "LEAGUE_REGION_UNSET":
+            case 0:
+                message.region = 0;
+                break;
+            case "LEAGUE_REGION_NA":
+            case 1:
+                message.region = 1;
+                break;
+            case "LEAGUE_REGION_SA":
+            case 2:
+                message.region = 2;
+                break;
+            case "LEAGUE_REGION_EUROPE":
+            case 3:
+                message.region = 3;
+                break;
+            case "LEAGUE_REGION_CIS":
+            case 4:
+                message.region = 4;
+                break;
+            case "LEAGUE_REGION_CHINA":
+            case 5:
+                message.region = 5;
+                break;
+            case "LEAGUE_REGION_SEA":
+            case 6:
+                message.region = 6;
+                break;
+            }
+            switch (object.status) {
+            case "LEAGUE_STATUS_UNSET":
+            case 0:
+                message.status = 0;
+                break;
+            case "LEAGUE_STATUS_UNSUBMITTED":
+            case 1:
+                message.status = 1;
+                break;
+            case "LEAGUE_STATUS_SUBMITTED":
+            case 2:
+                message.status = 2;
+                break;
+            case "LEAGUE_STATUS_ACCEPTED":
+            case 3:
+                message.status = 3;
+                break;
+            case "LEAGUE_STATUS_REJECTED":
+            case 4:
+                message.status = 4;
+                break;
+            case "LEAGUE_STATUS_CONCLUDED":
+            case 5:
+                message.status = 5;
+                break;
+            case "LEAGUE_STATUS_DELETED":
+            case 6:
+                message.status = 6;
+                break;
+            }
+            if (object.total_prize_pool != null)
+                message.total_prize_pool = object.total_prize_pool >>> 0;
+            if (object.last_activity_at != null) {
+                if (typeof object.last_activity_at !== "object")
+                    throw TypeError(".protocol.League.last_activity_at: object expected");
+                message.last_activity_at = $root.google.protobuf.Timestamp.fromObject(object.last_activity_at);
+            }
+            if (object.start_at != null) {
+                if (typeof object.start_at !== "object")
+                    throw TypeError(".protocol.League.start_at: object expected");
+                message.start_at = $root.google.protobuf.Timestamp.fromObject(object.start_at);
+            }
+            if (object.finish_at != null) {
+                if (typeof object.finish_at !== "object")
+                    throw TypeError(".protocol.League.finish_at: object expected");
+                message.finish_at = $root.google.protobuf.Timestamp.fromObject(object.finish_at);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a League message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof protocol.League
+         * @static
+         * @param {protocol.League} message League
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        League.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.id = options.longs === String ? "0" : 0;
+                object.name = "";
+                object.tier = options.enums === String ? "LEAGUE_TIER_UNSET" : 0;
+                object.region = options.enums === String ? "LEAGUE_REGION_UNSET" : 0;
+                object.status = options.enums === String ? "LEAGUE_STATUS_UNSET" : 0;
+                object.total_prize_pool = 0;
+                object.last_activity_at = null;
+                object.start_at = null;
+                object.finish_at = null;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (typeof message.id === "number")
+                    object.id = options.longs === String ? String(message.id) : message.id;
+                else
+                    object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
+            if (message.name != null && message.hasOwnProperty("name"))
+                object.name = message.name;
+            if (message.tier != null && message.hasOwnProperty("tier"))
+                object.tier = options.enums === String ? $root.protocol.LeagueTier[message.tier] : message.tier;
+            if (message.region != null && message.hasOwnProperty("region"))
+                object.region = options.enums === String ? $root.protocol.LeagueRegion[message.region] : message.region;
+            if (message.status != null && message.hasOwnProperty("status"))
+                object.status = options.enums === String ? $root.protocol.LeagueStatus[message.status] : message.status;
+            if (message.total_prize_pool != null && message.hasOwnProperty("total_prize_pool"))
+                object.total_prize_pool = message.total_prize_pool;
+            if (message.last_activity_at != null && message.hasOwnProperty("last_activity_at"))
+                object.last_activity_at = $root.google.protobuf.Timestamp.toObject(message.last_activity_at, options);
+            if (message.start_at != null && message.hasOwnProperty("start_at"))
+                object.start_at = $root.google.protobuf.Timestamp.toObject(message.start_at, options);
+            if (message.finish_at != null && message.hasOwnProperty("finish_at"))
+                object.finish_at = $root.google.protobuf.Timestamp.toObject(message.finish_at, options);
+            return object;
+        };
+
+        /**
+         * Converts this League to JSON.
+         * @function toJSON
+         * @memberof protocol.League
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        League.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return League;
+    })();
+
     protocol.LiveMatch = (function() {
 
         /**
@@ -4548,6 +5055,13 @@ export const protocol = $root.protocol = (() => {
          * @property {string|null} [name] Hero name
          * @property {string|null} [localized_name] Hero localized_name
          * @property {string|null} [slug] Hero slug
+         * @property {Array.<string>|null} [aliases] Hero aliases
+         * @property {Array.<protocol.HeroRole>|null} [roles] Hero roles
+         * @property {Array.<Long>|null} [role_levels] Hero role_levels
+         * @property {Long|null} [complexity] Hero complexity
+         * @property {Long|null} [legs] Hero legs
+         * @property {protocol.DotaAttribute|null} [attribute_primary] Hero attribute_primary
+         * @property {protocol.DotaUnitCap|null} [attack_capabilities] Hero attack_capabilities
          */
 
         /**
@@ -4559,6 +5073,9 @@ export const protocol = $root.protocol = (() => {
          * @param {protocol.IHero=} [properties] Properties to set
          */
         function Hero(properties) {
+            this.aliases = [];
+            this.roles = [];
+            this.role_levels = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4598,6 +5115,62 @@ export const protocol = $root.protocol = (() => {
         Hero.prototype.slug = "";
 
         /**
+         * Hero aliases.
+         * @member {Array.<string>} aliases
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.aliases = $util.emptyArray;
+
+        /**
+         * Hero roles.
+         * @member {Array.<protocol.HeroRole>} roles
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.roles = $util.emptyArray;
+
+        /**
+         * Hero role_levels.
+         * @member {Array.<Long>} role_levels
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.role_levels = $util.emptyArray;
+
+        /**
+         * Hero complexity.
+         * @member {Long} complexity
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.complexity = $util.Long ? $util.Long.fromBits(0,0,false) : 0;
+
+        /**
+         * Hero legs.
+         * @member {Long} legs
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.legs = $util.Long ? $util.Long.fromBits(0,0,false) : 0;
+
+        /**
+         * Hero attribute_primary.
+         * @member {protocol.DotaAttribute} attribute_primary
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.attribute_primary = 0;
+
+        /**
+         * Hero attack_capabilities.
+         * @member {protocol.DotaUnitCap} attack_capabilities
+         * @memberof protocol.Hero
+         * @instance
+         */
+        Hero.prototype.attack_capabilities = 0;
+
+        /**
          * Creates a new Hero instance using the specified properties.
          * @function create
          * @memberof protocol.Hero
@@ -4629,6 +5202,29 @@ export const protocol = $root.protocol = (() => {
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.localized_name);
             if (message.slug != null && message.hasOwnProperty("slug"))
                 writer.uint32(/* id 4, wireType 2 =*/34).string(message.slug);
+            if (message.aliases != null && message.aliases.length)
+                for (let i = 0; i < message.aliases.length; ++i)
+                    writer.uint32(/* id 5, wireType 2 =*/42).string(message.aliases[i]);
+            if (message.roles != null && message.roles.length) {
+                writer.uint32(/* id 6, wireType 2 =*/50).fork();
+                for (let i = 0; i < message.roles.length; ++i)
+                    writer.int32(message.roles[i]);
+                writer.ldelim();
+            }
+            if (message.role_levels != null && message.role_levels.length) {
+                writer.uint32(/* id 7, wireType 2 =*/58).fork();
+                for (let i = 0; i < message.role_levels.length; ++i)
+                    writer.int64(message.role_levels[i]);
+                writer.ldelim();
+            }
+            if (message.complexity != null && message.hasOwnProperty("complexity"))
+                writer.uint32(/* id 8, wireType 0 =*/64).int64(message.complexity);
+            if (message.legs != null && message.hasOwnProperty("legs"))
+                writer.uint32(/* id 9, wireType 0 =*/72).int64(message.legs);
+            if (message.attribute_primary != null && message.hasOwnProperty("attribute_primary"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.attribute_primary);
+            if (message.attack_capabilities != null && message.hasOwnProperty("attack_capabilities"))
+                writer.uint32(/* id 11, wireType 0 =*/88).int32(message.attack_capabilities);
             return writer;
         };
 
@@ -4674,6 +5270,43 @@ export const protocol = $root.protocol = (() => {
                     break;
                 case 4:
                     message.slug = reader.string();
+                    break;
+                case 5:
+                    if (!(message.aliases && message.aliases.length))
+                        message.aliases = [];
+                    message.aliases.push(reader.string());
+                    break;
+                case 6:
+                    if (!(message.roles && message.roles.length))
+                        message.roles = [];
+                    if ((tag & 7) === 2) {
+                        let end2 = reader.uint32() + reader.pos;
+                        while (reader.pos < end2)
+                            message.roles.push(reader.int32());
+                    } else
+                        message.roles.push(reader.int32());
+                    break;
+                case 7:
+                    if (!(message.role_levels && message.role_levels.length))
+                        message.role_levels = [];
+                    if ((tag & 7) === 2) {
+                        let end2 = reader.uint32() + reader.pos;
+                        while (reader.pos < end2)
+                            message.role_levels.push(reader.int64());
+                    } else
+                        message.role_levels.push(reader.int64());
+                    break;
+                case 8:
+                    message.complexity = reader.int64();
+                    break;
+                case 9:
+                    message.legs = reader.int64();
+                    break;
+                case 10:
+                    message.attribute_primary = reader.int32();
+                    break;
+                case 11:
+                    message.attack_capabilities = reader.int32();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -4722,6 +5355,65 @@ export const protocol = $root.protocol = (() => {
             if (message.slug != null && message.hasOwnProperty("slug"))
                 if (!$util.isString(message.slug))
                     return "slug: string expected";
+            if (message.aliases != null && message.hasOwnProperty("aliases")) {
+                if (!Array.isArray(message.aliases))
+                    return "aliases: array expected";
+                for (let i = 0; i < message.aliases.length; ++i)
+                    if (!$util.isString(message.aliases[i]))
+                        return "aliases: string[] expected";
+            }
+            if (message.roles != null && message.hasOwnProperty("roles")) {
+                if (!Array.isArray(message.roles))
+                    return "roles: array expected";
+                for (let i = 0; i < message.roles.length; ++i)
+                    switch (message.roles[i]) {
+                    default:
+                        return "roles: enum value[] expected";
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                        break;
+                    }
+            }
+            if (message.role_levels != null && message.hasOwnProperty("role_levels")) {
+                if (!Array.isArray(message.role_levels))
+                    return "role_levels: array expected";
+                for (let i = 0; i < message.role_levels.length; ++i)
+                    if (!$util.isInteger(message.role_levels[i]) && !(message.role_levels[i] && $util.isInteger(message.role_levels[i].low) && $util.isInteger(message.role_levels[i].high)))
+                        return "role_levels: integer|Long[] expected";
+            }
+            if (message.complexity != null && message.hasOwnProperty("complexity"))
+                if (!$util.isInteger(message.complexity) && !(message.complexity && $util.isInteger(message.complexity.low) && $util.isInteger(message.complexity.high)))
+                    return "complexity: integer|Long expected";
+            if (message.legs != null && message.hasOwnProperty("legs"))
+                if (!$util.isInteger(message.legs) && !(message.legs && $util.isInteger(message.legs.low) && $util.isInteger(message.legs.high)))
+                    return "legs: integer|Long expected";
+            if (message.attribute_primary != null && message.hasOwnProperty("attribute_primary"))
+                switch (message.attribute_primary) {
+                default:
+                    return "attribute_primary: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    break;
+                }
+            if (message.attack_capabilities != null && message.hasOwnProperty("attack_capabilities"))
+                switch (message.attack_capabilities) {
+                default:
+                    return "attack_capabilities: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
             return null;
         };
 
@@ -4752,6 +5444,126 @@ export const protocol = $root.protocol = (() => {
                 message.localized_name = String(object.localized_name);
             if (object.slug != null)
                 message.slug = String(object.slug);
+            if (object.aliases) {
+                if (!Array.isArray(object.aliases))
+                    throw TypeError(".protocol.Hero.aliases: array expected");
+                message.aliases = [];
+                for (let i = 0; i < object.aliases.length; ++i)
+                    message.aliases[i] = String(object.aliases[i]);
+            }
+            if (object.roles) {
+                if (!Array.isArray(object.roles))
+                    throw TypeError(".protocol.Hero.roles: array expected");
+                message.roles = [];
+                for (let i = 0; i < object.roles.length; ++i)
+                    switch (object.roles[i]) {
+                    default:
+                    case "HERO_ROLE_UNSPECIFIED":
+                    case 0:
+                        message.roles[i] = 0;
+                        break;
+                    case "HERO_ROLE_CARRY":
+                    case 1:
+                        message.roles[i] = 1;
+                        break;
+                    case "HERO_ROLE_DISABLER":
+                    case 2:
+                        message.roles[i] = 2;
+                        break;
+                    case "HERO_ROLE_DURABLE":
+                    case 3:
+                        message.roles[i] = 3;
+                        break;
+                    case "HERO_ROLE_ESCAPE":
+                    case 4:
+                        message.roles[i] = 4;
+                        break;
+                    case "HERO_ROLE_INITIATOR":
+                    case 5:
+                        message.roles[i] = 5;
+                        break;
+                    case "HERO_ROLE_JUNGLER":
+                    case 6:
+                        message.roles[i] = 6;
+                        break;
+                    case "HERO_ROLE_NUKER":
+                    case 7:
+                        message.roles[i] = 7;
+                        break;
+                    case "HERO_ROLE_PUSHER":
+                    case 8:
+                        message.roles[i] = 8;
+                        break;
+                    case "HERO_ROLE_SUPPORT":
+                    case 9:
+                        message.roles[i] = 9;
+                        break;
+                    }
+            }
+            if (object.role_levels) {
+                if (!Array.isArray(object.role_levels))
+                    throw TypeError(".protocol.Hero.role_levels: array expected");
+                message.role_levels = [];
+                for (let i = 0; i < object.role_levels.length; ++i)
+                    if ($util.Long)
+                        (message.role_levels[i] = $util.Long.fromValue(object.role_levels[i])).unsigned = false;
+                    else if (typeof object.role_levels[i] === "string")
+                        message.role_levels[i] = parseInt(object.role_levels[i], 10);
+                    else if (typeof object.role_levels[i] === "number")
+                        message.role_levels[i] = object.role_levels[i];
+                    else if (typeof object.role_levels[i] === "object")
+                        message.role_levels[i] = new $util.LongBits(object.role_levels[i].low >>> 0, object.role_levels[i].high >>> 0).toNumber();
+            }
+            if (object.complexity != null)
+                if ($util.Long)
+                    (message.complexity = $util.Long.fromValue(object.complexity)).unsigned = false;
+                else if (typeof object.complexity === "string")
+                    message.complexity = parseInt(object.complexity, 10);
+                else if (typeof object.complexity === "number")
+                    message.complexity = object.complexity;
+                else if (typeof object.complexity === "object")
+                    message.complexity = new $util.LongBits(object.complexity.low >>> 0, object.complexity.high >>> 0).toNumber();
+            if (object.legs != null)
+                if ($util.Long)
+                    (message.legs = $util.Long.fromValue(object.legs)).unsigned = false;
+                else if (typeof object.legs === "string")
+                    message.legs = parseInt(object.legs, 10);
+                else if (typeof object.legs === "number")
+                    message.legs = object.legs;
+                else if (typeof object.legs === "object")
+                    message.legs = new $util.LongBits(object.legs.low >>> 0, object.legs.high >>> 0).toNumber();
+            switch (object.attribute_primary) {
+            case "DOTA_ATTRIBUTE_UNSPECIFIED":
+            case 0:
+                message.attribute_primary = 0;
+                break;
+            case "DOTA_ATTRIBUTE_STRENGTH":
+            case 1:
+                message.attribute_primary = 1;
+                break;
+            case "DOTA_ATTRIBUTE_AGILITY":
+            case 2:
+                message.attribute_primary = 2;
+                break;
+            case "DOTA_ATTRIBUTE_INTELLECT":
+            case 3:
+                message.attribute_primary = 3;
+                break;
+            }
+            switch (object.attack_capabilities) {
+            case "DOTA_UNIT_CAP_NO_ATTACK":
+            case 0:
+                message.attack_capabilities = 0;
+                break;
+            case "DOTA_UNIT_CAP_MELEE_ATTACK":
+            case 1:
+                message.attack_capabilities = 1;
+                break;
+            case "DOTA_UNIT_CAP_RANGED_ATTACK":
+            case 2:
+                message.attack_capabilities = 2;
+                break;
+            }
             return message;
         };
 
@@ -4768,6 +5580,11 @@ export const protocol = $root.protocol = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults) {
+                object.aliases = [];
+                object.roles = [];
+                object.role_levels = [];
+            }
             if (options.defaults) {
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
@@ -4777,6 +5594,18 @@ export const protocol = $root.protocol = (() => {
                 object.name = "";
                 object.localized_name = "";
                 object.slug = "";
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, false);
+                    object.complexity = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.complexity = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, false);
+                    object.legs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.legs = options.longs === String ? "0" : 0;
+                object.attribute_primary = options.enums === String ? "DOTA_ATTRIBUTE_UNSPECIFIED" : 0;
+                object.attack_capabilities = options.enums === String ? "DOTA_UNIT_CAP_NO_ATTACK" : 0;
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 if (typeof message.id === "number")
@@ -4789,6 +5618,38 @@ export const protocol = $root.protocol = (() => {
                 object.localized_name = message.localized_name;
             if (message.slug != null && message.hasOwnProperty("slug"))
                 object.slug = message.slug;
+            if (message.aliases && message.aliases.length) {
+                object.aliases = [];
+                for (let j = 0; j < message.aliases.length; ++j)
+                    object.aliases[j] = message.aliases[j];
+            }
+            if (message.roles && message.roles.length) {
+                object.roles = [];
+                for (let j = 0; j < message.roles.length; ++j)
+                    object.roles[j] = options.enums === String ? $root.protocol.HeroRole[message.roles[j]] : message.roles[j];
+            }
+            if (message.role_levels && message.role_levels.length) {
+                object.role_levels = [];
+                for (let j = 0; j < message.role_levels.length; ++j)
+                    if (typeof message.role_levels[j] === "number")
+                        object.role_levels[j] = options.longs === String ? String(message.role_levels[j]) : message.role_levels[j];
+                    else
+                        object.role_levels[j] = options.longs === String ? $util.Long.prototype.toString.call(message.role_levels[j]) : options.longs === Number ? new $util.LongBits(message.role_levels[j].low >>> 0, message.role_levels[j].high >>> 0).toNumber() : message.role_levels[j];
+            }
+            if (message.complexity != null && message.hasOwnProperty("complexity"))
+                if (typeof message.complexity === "number")
+                    object.complexity = options.longs === String ? String(message.complexity) : message.complexity;
+                else
+                    object.complexity = options.longs === String ? $util.Long.prototype.toString.call(message.complexity) : options.longs === Number ? new $util.LongBits(message.complexity.low >>> 0, message.complexity.high >>> 0).toNumber() : message.complexity;
+            if (message.legs != null && message.hasOwnProperty("legs"))
+                if (typeof message.legs === "number")
+                    object.legs = options.longs === String ? String(message.legs) : message.legs;
+                else
+                    object.legs = options.longs === String ? $util.Long.prototype.toString.call(message.legs) : options.longs === Number ? new $util.LongBits(message.legs.low >>> 0, message.legs.high >>> 0).toNumber() : message.legs;
+            if (message.attribute_primary != null && message.hasOwnProperty("attribute_primary"))
+                object.attribute_primary = options.enums === String ? $root.protocol.DotaAttribute[message.attribute_primary] : message.attribute_primary;
+            if (message.attack_capabilities != null && message.hasOwnProperty("attack_capabilities"))
+                object.attack_capabilities = options.enums === String ? $root.protocol.DotaUnitCap[message.attack_capabilities] : message.attack_capabilities;
             return object;
         };
 
