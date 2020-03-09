@@ -3,7 +3,24 @@
     class="d-flex flex-column"
     height="100%"
   >
-    <v-card-title>{{ match.match_id }}</v-card-title>
+    <template v-if="!match.league_id.isZero()">
+      <v-img
+        :src="match.league_id | leagueImageURL"
+        :aspect-ratio="512/200"
+        min-height="148"
+        height="148"
+        max-height="148"
+        class="white--text align-end"
+      >
+        <v-card-title>
+          <span class="title--shadow">{{ match.match_id }}</span>
+        </v-card-title>
+      </v-img>
+    </template>
+
+    <template v-else>
+      <v-card-title>{{ match.match_id }}</v-card-title>
+    </template>
 
     <v-card-subtitle
       v-if="!match.league_id.isZero()"
@@ -143,7 +160,7 @@
 import * as $t from "@/protocol/transform";
 import pb from "@/protocol/proto";
 import { image } from "@/assets/helpers";
-import { colonDuration, humanDuration } from "@/filters";
+import { colonDuration, humanDuration, leagueImageURL } from "@/filters";
 import ClipboardBtn from "@/components/ClipboardBtn.vue";
 import LiveMatchTeam from "@/components/LiveMatchTeam.vue";
 
@@ -158,6 +175,7 @@ export default {
   filters: {
     colonDuration,
     humanDuration,
+    leagueImageURL,
     playersColWidth(team) {
       return team.tag || team.name ? 9 : 12;
     },
@@ -212,3 +230,9 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.title--shadow {
+  text-shadow: 1px 3px 3px rgba(0, 0, 0, 0.8);
+}
+</style>
