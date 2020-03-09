@@ -1,8 +1,9 @@
 import _ from "lodash";
 
 import pb from "@/protocol/proto";
+import * as $t from "@/protocol/transform";
 import { preprocessMatches } from "@/protocol/preprocess";
-import { transformLiveMatchesChange } from "@/protocol/transform";
+import { prefetchMatchesLeagues } from "@/protocol/prefetch";
 
 export function handleLiveMatchesChange(state, ev) {
   if (!_.isPlainObject(ev.body)) {
@@ -13,7 +14,11 @@ export function handleLiveMatchesChange(state, ev) {
 
   const liveMatchesChange = pb.protocol.LiveMatchesChange.fromObject(ev.body);
 
-  transformLiveMatchesChange(liveMatchesChange, state);
+  $t.transformLiveMatchesChange(liveMatchesChange, state);
 
-  return liveMatchesChange;
+  if (liveMatchesChange.op === pb.protocol.CollectionOp.COLLECTION_OP_REMOVE) {
+    return Promise.resolve(liveMatchesChange);
+  }
+
+  return prefetchMatchesLeagues(liveMatchesChange.change.matches).then(() => liveMatchesChange);
 }

@@ -18,31 +18,31 @@ const actions = {
     log.debug("<watch>", rootState.ws);
 
     rootState.ws.addEventListener("message", ev => {
-      const liveMatchesChange = handleLiveMatchesChange(rootState, ev);
+      handleLiveMatchesChange(rootState, ev).then(liveMatchesChange => {
+        log.debug("<watch:message>", liveMatchesChange);
 
-      log.debug("<watch:message>", liveMatchesChange);
+        let mutation;
 
-      let mutation;
+        switch (liveMatchesChange.op) {
+          case pb.protocol.CollectionOp.COLLECTION_OP_REPLACE:
+            mutation = "setLiveMatches";
+            break;
+          case pb.protocol.CollectionOp.COLLECTION_OP_ADD:
+            mutation = "addLiveMatches";
+            break;
+          case pb.protocol.CollectionOp.COLLECTION_OP_UPDATE:
+            mutation = "updateLiveMatches";
+            break;
+          case pb.protocol.CollectionOp.COLLECTION_OP_REMOVE:
+            mutation = "removeLiveMatches";
+            break;
+          default:
+            log.error("<watch:message> unknown LiveMatchesChange.op:", liveMatchesChange.op);
+            break;
+        }
 
-      switch (liveMatchesChange.op) {
-        case pb.protocol.CollectionOp.COLLECTION_OP_REPLACE:
-          mutation = "setLiveMatches";
-          break;
-        case pb.protocol.CollectionOp.COLLECTION_OP_ADD:
-          mutation = "addLiveMatches";
-          break;
-        case pb.protocol.CollectionOp.COLLECTION_OP_UPDATE:
-          mutation = "updateLiveMatches";
-          break;
-        case pb.protocol.CollectionOp.COLLECTION_OP_REMOVE:
-          mutation = "removeLiveMatches";
-          break;
-        default:
-          log.error("<watch:message> unknown LiveMatchesChange.op:", liveMatchesChange.op);
-          break;
-      }
-
-      commit(mutation, liveMatchesChange.change);
+        commit(mutation, liveMatchesChange.change);
+      });
     });
   },
 

@@ -3,6 +3,7 @@ import _ from "lodash";
 import api from "@/api";
 import pb from "@/protocol/proto";
 import * as $t from "@/protocol/transform";
+import { prefetchMatchesLeagues } from "@/protocol/prefetch";
 import { preprocessMatches, preprocessLeagues } from "@/protocol/preprocess";
 
 const {
@@ -43,7 +44,7 @@ export function fetchLiveMatches(state) {
 
     $t.transformLiveMatches(liveMatches, state);
 
-    return liveMatches;
+    return prefetchMatchesLeagues(liveMatches.matches).then(() => liveMatches);
   });
 }
 
