@@ -5,6 +5,7 @@ import (
 
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdimport/d2pt"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdimport/heroes"
+	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdimport/leagues"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdimport/players"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdimport/teams"
 )
@@ -20,6 +21,7 @@ func init() {
 	Cmd.AddCommand(heroes.Cmd)
 	Cmd.AddCommand(players.Cmd)
 	Cmd.AddCommand(teams.Cmd)
+	Cmd.AddCommand(leagues.Cmd)
 }
 
 func run(cmd *cobra.Command, args []string) {
