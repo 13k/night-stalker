@@ -9,8 +9,6 @@ import (
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
-	nsjson "github.com/13k/night-stalker/internal/json"
-	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -23,24 +21,6 @@ var Cmd = &cobra.Command{
 	Use:   "players",
 	Short: "Import players from OpenDota API",
 	Run:   run,
-}
-
-type response []*responseEntry
-
-type responseEntry struct {
-	AccountID    nspb.AccountID    `json:"account_id,omitempty"`
-	SteamID      nsjson.StringUint `json:"steamid,omitempty"`
-	TeamID       models.TeamID     `json:"team_id,omitempty"`
-	Name         string            `json:"name,omitempty"`
-	PersonaName  string            `json:"personaname,omitempty"`
-	Avatar       string            `json:"avatar,omitempty"`
-	AvatarMedium string            `json:"avatarmedium,omitempty"`
-	AvatarFull   string            `json:"avatarfull,omitempty"`
-	ProfileURL   string            `json:"profileurl,omitempty"`
-	CountryCode  string            `json:"loccountrycode,omitempty"`
-	FantasyRole  nspb.FantasyRole  `json:"fantasy_role,omitempty"`
-	IsLocked     bool              `json:"is_locked,omitempty"`
-	LockedUntil  *nsjson.UnixTime  `json:"locked_until,omitempty"`
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -70,9 +50,9 @@ func run(cmd *cobra.Command, args []string) {
 		client.SetQueryParam("api_key", apiKey)
 	}
 
-	result := response{}
+	result := apiResult{}
 
-	resp, err := client.R().
+	res, err := client.R().
 		SetResult(&result).
 		Get(apiPath)
 
@@ -80,16 +60,34 @@ func run(cmd *cobra.Command, args []string) {
 		log.WithError(err).Fatal("error")
 	}
 
-	if !resp.IsSuccess() {
-		log.WithField("status", resp.Status()).Fatal("HTTP error")
+	if !res.IsSuccess() {
+		log.WithField("status", res.Status()).Fatal("HTTP error")
 	}
 
 	log.WithField("count", len(result)).Info("importing pro players ...")
 
-	tx := db.Begin()
-
 	for _, entry := range result {
 		l := log.WithField("account_id", entry.AccountID)
+		tx := db.Begin()
+
+		followed := &models.FollowedPlayer{
+			AccountID: entry.AccountID,
+			Label:     entry.Name,
+		}
+
+		followed, err = nscmdutil.FollowPlayer(db, followed, false)
+
+		if err != nil {
+			if err != nscmdutil.ErrFollowedPlayerAlreadyExists {
+				tx.Rollback()
+				l.WithError(err).Fatal("error")
+			}
+
+			tx.Rollback()
+			l.Warn(err.Error())
+
+			continue
+		}
 
 		player := &models.Player{
 			AccountID:       entry.AccountID,
@@ -103,12 +101,12 @@ func run(cmd *cobra.Command, args []string) {
 			CountryCode:     entry.CountryCode,
 		}
 
-		result := tx.
+		dbres := tx.
 			Where(models.Player{AccountID: entry.AccountID}).
-			Attrs(player).
+			Assign(player).
 			FirstOrCreate(player)
 
-		if err = result.Error; err != nil {
+		if err = dbres.Error; err != nil {
 			tx.Rollback()
 			l.WithError(err).Fatal("error")
 		}
@@ -124,38 +122,21 @@ func run(cmd *cobra.Command, args []string) {
 			pro.LockedUntil = entry.LockedUntil.Time
 		}
 
-		result = tx.
+		dbres = tx.
 			Where(models.ProPlayer{AccountID: entry.AccountID}).
-			Attrs(pro).
+			Assign(pro).
 			FirstOrCreate(pro)
 
-		if err = result.Error; err != nil {
+		if err = dbres.Error; err != nil {
 			tx.Rollback()
 			l.WithError(err).Fatal("error")
 		}
 
-		followed := &models.FollowedPlayer{
-			AccountID: entry.AccountID,
-			Label:     entry.Name,
-		}
-
-		followed, err = nscmdutil.FollowPlayer(db, followed, false)
-
-		if err != nil {
-			if err != nscmdutil.ErrFollowedPlayerAlreadyExists {
-				tx.Rollback()
-				l.WithError(err).Fatal("error")
-			}
-
-			l.Warn(err.Error())
-			continue
+		if err = tx.Commit().Error; err != nil {
+			log.WithError(err).Fatal("error")
 		}
 
 		l.WithField("label", followed.Label).Info("imported")
-	}
-
-	if err = tx.Commit().Error; err != nil {
-		log.WithError(err).Fatal("error")
 	}
 
 	log.Info("done")
