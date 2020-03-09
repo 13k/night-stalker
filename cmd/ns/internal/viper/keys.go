@@ -33,6 +33,7 @@ const (
 	KeyRedisIdleCheckFrequency Key = "redis.idle_check_freq"
 	KeySteamUser               Key = "steam.user"
 	KeySteamPassword           Key = "steam.password"
+	KeySteamAPIKey             Key = "steam.api_key"
 	KeyOpendotaAPIKey          Key = "opendota.api_key"
 )
 
