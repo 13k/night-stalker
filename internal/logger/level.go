@@ -18,6 +18,10 @@ const (
 	LevelTrace
 )
 
+const (
+	levelUnknownName = "unknown"
+)
+
 var (
 	levelNames = map[Level]string{
 		LevelPanic: "panic",
@@ -37,6 +41,14 @@ var (
 		LevelInfo:  log15.LvlInfo,
 		LevelDebug: log15.LvlDebug,
 		LevelTrace: log15.LvlDebug,
+	}
+
+	log15LevelsReverseMapping = map[log15.Lvl]Level{
+		log15.LvlCrit:  LevelFatal,
+		log15.LvlError: LevelError,
+		log15.LvlWarn:  LevelWarn,
+		log15.LvlInfo:  LevelInfo,
+		log15.LvlDebug: LevelDebug,
 	}
 
 	logrusLevelsMapping = map[Level]logrus.Level{
@@ -60,12 +72,43 @@ var (
 	}
 )
 
+func LevelFromLog15(lvl log15.Lvl) Level {
+	if l, ok := log15LevelsReverseMapping[lvl]; ok {
+		return l
+	}
+
+	return LevelInfo
+}
+
 func (l Level) String() string {
-	return levelNames[l]
+	if s, ok := levelNames[l]; ok {
+		return s
+	}
+
+	return levelUnknownName
 }
 
 func (l Level) Enables(other Level) bool {
 	return other <= l
+}
+
+func (l Level) Color() int {
+	switch l {
+	case LevelPanic:
+		return 35
+	case LevelFatal:
+		return 35
+	case LevelError:
+		return 31
+	case LevelWarn:
+		return 33
+	case LevelInfo:
+		return 32
+	case LevelDebug:
+		return 36
+	default:
+		return 0
+	}
 }
 
 func (l Level) toLog15() log15.Lvl {

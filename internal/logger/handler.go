@@ -18,9 +18,9 @@ func createHandler(level Level, outputs ...io.Writer) log15.Handler {
 		var format log15.Format
 
 		if isStdio(output) {
-			format = log15.TerminalFormat()
+			format = TerminalFormat()
 		} else {
-			format = log15.LogfmtFormat()
+			format = LogfmtFormat()
 		}
 
 		handlers[i] = log15.StreamHandler(output, format)
