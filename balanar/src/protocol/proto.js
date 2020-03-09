@@ -2886,6 +2886,114 @@ export const protocol = $root.protocol = (() => {
         return values;
     })();
 
+    /**
+     * LeagueStatus enum.
+     * @name protocol.LeagueStatus
+     * @enum {string}
+     * @property {number} LEAGUE_STATUS_UNSET=0 LEAGUE_STATUS_UNSET value
+     * @property {number} LEAGUE_STATUS_UNSUBMITTED=1 LEAGUE_STATUS_UNSUBMITTED value
+     * @property {number} LEAGUE_STATUS_SUBMITTED=2 LEAGUE_STATUS_SUBMITTED value
+     * @property {number} LEAGUE_STATUS_ACCEPTED=3 LEAGUE_STATUS_ACCEPTED value
+     * @property {number} LEAGUE_STATUS_REJECTED=4 LEAGUE_STATUS_REJECTED value
+     * @property {number} LEAGUE_STATUS_CONCLUDED=5 LEAGUE_STATUS_CONCLUDED value
+     * @property {number} LEAGUE_STATUS_DELETED=6 LEAGUE_STATUS_DELETED value
+     */
+    protocol.LeagueStatus = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "LEAGUE_STATUS_UNSET"] = 0;
+        values[valuesById[1] = "LEAGUE_STATUS_UNSUBMITTED"] = 1;
+        values[valuesById[2] = "LEAGUE_STATUS_SUBMITTED"] = 2;
+        values[valuesById[3] = "LEAGUE_STATUS_ACCEPTED"] = 3;
+        values[valuesById[4] = "LEAGUE_STATUS_REJECTED"] = 4;
+        values[valuesById[5] = "LEAGUE_STATUS_CONCLUDED"] = 5;
+        values[valuesById[6] = "LEAGUE_STATUS_DELETED"] = 6;
+        return values;
+    })();
+
+    /**
+     * LeagueRegion enum.
+     * @name protocol.LeagueRegion
+     * @enum {string}
+     * @property {number} LEAGUE_REGION_UNSET=0 LEAGUE_REGION_UNSET value
+     * @property {number} LEAGUE_REGION_NA=1 LEAGUE_REGION_NA value
+     * @property {number} LEAGUE_REGION_SA=2 LEAGUE_REGION_SA value
+     * @property {number} LEAGUE_REGION_EUROPE=3 LEAGUE_REGION_EUROPE value
+     * @property {number} LEAGUE_REGION_CIS=4 LEAGUE_REGION_CIS value
+     * @property {number} LEAGUE_REGION_CHINA=5 LEAGUE_REGION_CHINA value
+     * @property {number} LEAGUE_REGION_SEA=6 LEAGUE_REGION_SEA value
+     */
+    protocol.LeagueRegion = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "LEAGUE_REGION_UNSET"] = 0;
+        values[valuesById[1] = "LEAGUE_REGION_NA"] = 1;
+        values[valuesById[2] = "LEAGUE_REGION_SA"] = 2;
+        values[valuesById[3] = "LEAGUE_REGION_EUROPE"] = 3;
+        values[valuesById[4] = "LEAGUE_REGION_CIS"] = 4;
+        values[valuesById[5] = "LEAGUE_REGION_CHINA"] = 5;
+        values[valuesById[6] = "LEAGUE_REGION_SEA"] = 6;
+        return values;
+    })();
+
+    /**
+     * LeagueTier enum.
+     * @name protocol.LeagueTier
+     * @enum {string}
+     * @property {number} LEAGUE_TIER_UNSET=0 LEAGUE_TIER_UNSET value
+     * @property {number} LEAGUE_TIER_AMATEUR=1 LEAGUE_TIER_AMATEUR value
+     * @property {number} LEAGUE_TIER_PROFESSIONAL=2 LEAGUE_TIER_PROFESSIONAL value
+     * @property {number} LEAGUE_TIER_MINOR=3 LEAGUE_TIER_MINOR value
+     * @property {number} LEAGUE_TIER_MAJOR=4 LEAGUE_TIER_MAJOR value
+     * @property {number} LEAGUE_TIER_INTERNATIONAL=5 LEAGUE_TIER_INTERNATIONAL value
+     * @property {number} LEAGUE_TIER_DPC_QUALIFIER=6 LEAGUE_TIER_DPC_QUALIFIER value
+     */
+    protocol.LeagueTier = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "LEAGUE_TIER_UNSET"] = 0;
+        values[valuesById[1] = "LEAGUE_TIER_AMATEUR"] = 1;
+        values[valuesById[2] = "LEAGUE_TIER_PROFESSIONAL"] = 2;
+        values[valuesById[3] = "LEAGUE_TIER_MINOR"] = 3;
+        values[valuesById[4] = "LEAGUE_TIER_MAJOR"] = 4;
+        values[valuesById[5] = "LEAGUE_TIER_INTERNATIONAL"] = 5;
+        values[valuesById[6] = "LEAGUE_TIER_DPC_QUALIFIER"] = 6;
+        return values;
+    })();
+
+    /**
+     * LeagueTierCategory enum.
+     * @name protocol.LeagueTierCategory
+     * @enum {string}
+     * @property {number} LEAGUE_TIER_CATEGORY_UNSPECIFIED=0 LEAGUE_TIER_CATEGORY_UNSPECIFIED value
+     * @property {number} LEAGUE_TIER_CATEGORY_AMATEUR=1 LEAGUE_TIER_CATEGORY_AMATEUR value
+     * @property {number} LEAGUE_TIER_CATEGORY_PROFESSIONAL=2 LEAGUE_TIER_CATEGORY_PROFESSIONAL value
+     * @property {number} LEAGUE_TIER_CATEGORY_DPC=3 LEAGUE_TIER_CATEGORY_DPC value
+     */
+    protocol.LeagueTierCategory = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "LEAGUE_TIER_CATEGORY_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "LEAGUE_TIER_CATEGORY_AMATEUR"] = 1;
+        values[valuesById[2] = "LEAGUE_TIER_CATEGORY_PROFESSIONAL"] = 2;
+        values[valuesById[3] = "LEAGUE_TIER_CATEGORY_DPC"] = 3;
+        return values;
+    })();
+
+    /**
+     * CDNLeagueImageVersion enum.
+     * @name protocol.CDNLeagueImageVersion
+     * @enum {string}
+     * @property {number} CDN_LEAGUE_IMAGE_VERSION_UNSPECIFIED=0 CDN_LEAGUE_IMAGE_VERSION_UNSPECIFIED value
+     * @property {number} CDN_LEAGUE_IMAGE_VERSION_LOGO_LANDSCAPE=1 CDN_LEAGUE_IMAGE_VERSION_LOGO_LANDSCAPE value
+     * @property {number} CDN_LEAGUE_IMAGE_VERSION_BANNER=8 CDN_LEAGUE_IMAGE_VERSION_BANNER value
+     * @property {number} CDN_LEAGUE_IMAGE_VERSION_LOGO_PORTRAIT=9 CDN_LEAGUE_IMAGE_VERSION_LOGO_PORTRAIT value
+     */
+    protocol.CDNLeagueImageVersion = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "CDN_LEAGUE_IMAGE_VERSION_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "CDN_LEAGUE_IMAGE_VERSION_LOGO_LANDSCAPE"] = 1;
+        values[valuesById[8] = "CDN_LEAGUE_IMAGE_VERSION_BANNER"] = 8;
+        values[valuesById[9] = "CDN_LEAGUE_IMAGE_VERSION_LOGO_PORTRAIT"] = 9;
+        return values;
+    })();
+
     protocol.Search = (function() {
 
         /**
