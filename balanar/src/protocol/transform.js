@@ -2,7 +2,6 @@ import _ from "lodash";
 
 import pb from "@/protocol/proto";
 import { PlayerSlot } from "@/dota2/flags";
-import heroAliases from "@/dota2/hero_aliases.json";
 import { MATCH_TIMESTAMP_FIELDS } from "@/protocol/preprocess";
 
 const TRANSFORM_KEY = "$t";
@@ -102,7 +101,6 @@ function createLiveMatchTeam({ number, liveMatch, players }) {
 }
 
 export function transformHero(hero) {
-  set(hero, "aliases", heroAliases[hero.name]);
   return hero;
 }
 
