@@ -14,7 +14,7 @@ func NewLiveMatch(
 	players map[nspb.AccountID]*models.Player,
 	proPlayers map[nspb.AccountID]*models.ProPlayer,
 ) (*nspb.LiveMatch, error) {
-	pb, err := LiveMatchProto(match)
+	pb, err := LiveMatchFromModel(match)
 
 	if err != nil {
 		err = xerrors.Errorf("error creating LiveMatch view: %w", err)
@@ -118,7 +118,7 @@ func NewLiveMatch(
 	return pb, nil
 }
 
-func LiveMatchProto(m *models.LiveMatch) (*nspb.LiveMatch, error) {
+func LiveMatchFromModel(m *models.LiveMatch) (*nspb.LiveMatch, error) {
 	pb := &nspb.LiveMatch{
 		MatchId:                    m.MatchID,
 		ServerSteamId:              uint64(m.ServerSteamID),
