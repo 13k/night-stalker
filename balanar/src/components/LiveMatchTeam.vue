@@ -11,14 +11,14 @@
         v-if="team.logo_url"
         :src="team.logo_url"
         :title="team.name"
-        max-width="48"
-        max-height="48"
+        max-width="64"
+        class="mr-3"
         contain
       />
 
       <span class="caption">{{ teamLabel }}</span>
 
-      <v-divider class="ml-2" />
+      <v-divider class="ml-3" />
     </v-subheader>
 
     <v-list-item
