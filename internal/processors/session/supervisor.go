@@ -75,7 +75,7 @@ func newSupervisor(options supervisorOptions) *supervisor {
 		ShutdownTimeout: options.ShutdownTimeout,
 	}).ChildSpec()
 
-	log := options.Log.WithPackage("supervisor")
+	log := options.Log.WithPackage(processorName).WithPackage("supervisor")
 
 	tree := oversight.New(
 		oversight.NeverHalt(),

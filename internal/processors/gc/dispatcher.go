@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	processorName = "gc.dispatcher"
+	processorName = "gc_dispatch"
 	queueSize     = 4
 	queueTimeout  = 10 * time.Second
 )
@@ -307,7 +307,7 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 		return err
 	}
 
-	p.log.WithField("msg_type", incoming.Type).Debug("received message")
+	p.log.WithField("msg_type", incoming.Type).Trace("received message")
 
 	return nil
 }
@@ -319,7 +319,7 @@ func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) er
 
 	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), message))
 
-	p.log.WithField("msg_type", msgType).Debug("sent message")
+	p.log.WithField("msg_type", msgType).Trace("sent message")
 
 	return nil
 }
