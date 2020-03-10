@@ -38,3 +38,7 @@ go-install-tools: $(TOOLS_PATH)
 .PHONY: go-mod-update
 go-mod-update:
 	hack/go-mod-update.sh
+
+.PHONY: go-lint
+go-lint:
+	golangci-lint run
