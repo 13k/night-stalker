@@ -52,10 +52,7 @@ func (b *Bus) Pub(message Message) error {
 	case <-b.Emitter.Emit(message.Topic, message.Payload):
 		return nil
 	case <-time.After(b.options.PubTimeout):
-		return &PublishTimeoutError{
-			Message: message,
-			Timeout: b.options.PubTimeout,
-		}
+		return NewPublishTimeoutErrorX(message, b.options.PubTimeout)
 	}
 }
 
@@ -64,7 +61,7 @@ func (b *Bus) PubSync(message Message) {
 }
 
 func (b *Bus) Sub(topic string) *Subscription {
-	b.log.WithField("topic", topic).Debug("sub")
+	b.log.WithField("topic", topic).Trace("sub")
 
 	events := b.Emitter.On(topic)
 	messages := make(chan Message, b.Emitter.Cap)
@@ -94,7 +91,7 @@ func (b *Bus) Sub(topic string) *Subscription {
 
 func (b *Bus) Unsub(subs ...*Subscription) {
 	for _, sub := range subs {
-		b.log.WithField("topic", sub.Topic).Debug("unsub")
+		b.log.WithField("topic", sub.Topic).Trace("unsub")
 		b.Emitter.Off(sub.Topic, sub.ev)
 	}
 }
