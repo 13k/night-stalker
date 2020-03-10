@@ -19,6 +19,10 @@ const (
 )
 
 const (
+	levelLog15Trace = log15.LvlDebug + 1
+)
+
+const (
 	levelUnknownName = "unknown"
 )
 
@@ -40,15 +44,16 @@ var (
 		LevelWarn:  log15.LvlWarn,
 		LevelInfo:  log15.LvlInfo,
 		LevelDebug: log15.LvlDebug,
-		LevelTrace: log15.LvlDebug,
+		LevelTrace: levelLog15Trace,
 	}
 
 	log15LevelsReverseMapping = map[log15.Lvl]Level{
-		log15.LvlCrit:  LevelFatal,
-		log15.LvlError: LevelError,
-		log15.LvlWarn:  LevelWarn,
-		log15.LvlInfo:  LevelInfo,
-		log15.LvlDebug: LevelDebug,
+		log15.LvlCrit:   LevelFatal,
+		log15.LvlError:  LevelError,
+		log15.LvlWarn:   LevelWarn,
+		log15.LvlInfo:   LevelInfo,
+		log15.LvlDebug:  LevelDebug,
+		levelLog15Trace: LevelTrace,
 	}
 
 	logrusLevelsMapping = map[Level]logrus.Level{
@@ -59,6 +64,16 @@ var (
 		LevelInfo:  logrus.InfoLevel,
 		LevelDebug: logrus.DebugLevel,
 		LevelTrace: logrus.TraceLevel,
+	}
+
+	logrusLevelsReverseMapping = map[logrus.Level]Level{
+		logrus.PanicLevel: LevelPanic,
+		logrus.FatalLevel: LevelFatal,
+		logrus.ErrorLevel: LevelError,
+		logrus.WarnLevel:  LevelWarn,
+		logrus.InfoLevel:  LevelInfo,
+		logrus.DebugLevel: LevelDebug,
+		logrus.TraceLevel: LevelTrace,
 	}
 
 	echoLevelsMapping = map[Level]elog.Lvl{
@@ -72,8 +87,16 @@ var (
 	}
 )
 
-func LevelFromLog15(lvl log15.Lvl) Level {
+func levelFromLog15(lvl log15.Lvl) Level {
 	if l, ok := log15LevelsReverseMapping[lvl]; ok {
+		return l
+	}
+
+	return LevelInfo
+}
+
+func levelFromLogrus(lvl logrus.Level) Level {
+	if l, ok := logrusLevelsReverseMapping[lvl]; ok {
 		return l
 	}
 
@@ -90,25 +113,6 @@ func (l Level) String() string {
 
 func (l Level) Enables(other Level) bool {
 	return other <= l
-}
-
-func (l Level) Color() int {
-	switch l {
-	case LevelPanic:
-		return 35
-	case LevelFatal:
-		return 35
-	case LevelError:
-		return 31
-	case LevelWarn:
-		return 33
-	case LevelInfo:
-		return 32
-	case LevelDebug:
-		return 36
-	default:
-		return 0
-	}
 }
 
 func (l Level) toLog15() log15.Lvl {

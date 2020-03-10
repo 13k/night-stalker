@@ -3,17 +3,80 @@ package logger
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
+	"time"
 
+	"github.com/fatih/color"
 	"github.com/go-logfmt/logfmt"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
-	// termTimeFormat = "02-01|15:04:05"
-	termTimeFormat = "0102T150405"
-	pkgColor       = 34
+	termTimeFormat = "01-02|15:04:05"
+
+	recordKeyTime    = "t"
+	recordKeyLevel   = "level"
+	recordKeyPackage = "pkg"
+	recordKeyMessage = "msg"
 )
+
+var (
+	levelColorAttrs = map[Level][]color.Attribute{
+		LevelPanic: {color.FgHiMagenta},
+		LevelFatal: {color.FgMagenta},
+		LevelError: {color.FgRed},
+		LevelWarn:  {color.FgYellow},
+		LevelInfo:  {color.FgGreen},
+		LevelDebug: {color.FgCyan},
+		LevelTrace: {color.FgHiBlack},
+	}
+
+	pkgColorAttrs = map[Level][]color.Attribute{
+		LevelPanic: {color.FgHiMagenta},
+		LevelFatal: {color.FgMagenta},
+		LevelError: {color.FgRed},
+		LevelWarn:  {color.FgYellow},
+		LevelInfo:  {color.FgBlue},
+		LevelDebug: {color.FgHiBlack},
+		LevelTrace: {color.FgHiBlack},
+	}
+)
+
+type logfmtRecord struct {
+	time      time.Time
+	lvl       Level
+	pkg       string
+	msg       string
+	keyvalues []interface{}
+}
+
+func encodeLogfmt(w io.Writer, r *logfmtRecord, endRecord bool) error {
+	header := []interface{}{
+		recordKeyTime, r.time,
+		recordKeyLevel, r.lvl,
+	}
+
+	if r.pkg != "" {
+		header = append(header, recordKeyPackage, r.pkg)
+	}
+
+	header = append(header, recordKeyMessage, strings.TrimRight(r.msg, "\n"))
+	keyvalues := append(header, r.keyvalues...)
+	enc := logfmt.NewEncoder(w)
+
+	if err := enc.EncodeKeyvals(keyvalues...); err != nil {
+		return err
+	}
+
+	if endRecord {
+		if err := enc.EndRecord(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func extractPkgKeyvals(r *log15.Record) ([]interface{}, []interface{}) {
 	var pkgkv []interface{}
@@ -32,74 +95,42 @@ func extractPkgKeyvals(r *log15.Record) ([]interface{}, []interface{}) {
 func LogfmtFormat() log15.Format {
 	return log15.FormatFunc(func(r *log15.Record) []byte {
 		ctx, pkgkv := extractPkgKeyvals(r)
-		common := []interface{}{
-			r.KeyNames.Time, r.Time,
-			r.KeyNames.Lvl, LevelFromLog15(r.Lvl),
+
+		lfmtr := &logfmtRecord{
+			time:      r.Time,
+			lvl:       levelFromLog15(r.Lvl),
+			msg:       r.Msg,
+			keyvalues: ctx,
 		}
 
-		if len(pkgkv) > 0 {
-			common = append(common, pkgkv...)
+		if len(pkgkv) > 1 {
+			lfmtr.pkg = pkgkv[1].(string)
 		}
 
-		common = append(common, r.KeyNames.Msg, r.Msg)
-		data, err := logfmt.MarshalKeyvals(append(common, ctx...)...)
+		b := &bytes.Buffer{}
 
-		if err != nil {
+		if err := encodeLogfmt(b, lfmtr, true); err != nil {
 			panic(err)
 		}
 
-		return append(data, '\n')
+		return b.Bytes()
 	})
 }
 
 func TerminalFormat() log15.Format {
 	return log15.FormatFunc(func(r *log15.Record) []byte {
-		lvl := LevelFromLog15(r.Lvl)
-		lvlstr := strings.ToUpper(lvl.String())
-		color := lvl.Color()
+		lvl := levelFromLog15(r.Lvl)
+		lvlColor := color.New(levelColorAttrs[lvl]...)
 		ctx, pkgkv := extractPkgKeyvals(r)
-		values := []interface{}{lvlstr, r.Time.Format(termTimeFormat), r.Msg}
-
-		if color > 0 {
-			values = append([]interface{}{color}, values...)
-		}
-
-		var format string
-
-		if len(pkgkv) > 1 {
-			if color > 0 {
-				format = "\x1b[%dm%5s\x1b[0m[%s] %-40s \x1b[%dm[%s]\x1b[0m "
-				values = append(values, pkgColor, pkgkv[1])
-			} else {
-				format = "%5s[%s] %-40s [%s] "
-				values = append(values, pkgkv[1])
-			}
-		} else {
-			if color > 0 {
-				format = "\x1b[%dm%5s\x1b[0m[%s] %-40s "
-			} else {
-				format = "%5s[%s] %-40s "
-			}
-		}
-
 		b := &bytes.Buffer{}
 
-		if _, err := fmt.Fprintf(b, format, values...); err != nil {
-			panic(err)
+		lvlColor.Fprintf(b, "%5s", strings.ToUpper(lvl.String()))
+		fmt.Fprintf(b, "[%s] %-40s ", r.Time.Format(termTimeFormat), strings.TrimRight(r.Msg, "\n"))
+
+		if len(pkgkv) > 1 {
+			pkgColor := color.New(pkgColorAttrs[lvl]...)
+			pkgColor.Fprintf(b, "[%s] ", pkgkv[1])
 		}
-
-		/*
-			if color > 0 {
-				fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %s ", color, lvlstr, r.Time.Format(termTimeFormat), r.Msg)
-			} else {
-				fmt.Fprintf(b, "[%s] [%s] %s ", lvlstr, r.Time.Format(termTimeFormat), r.Msg)
-			}
-
-			// try to justify the log output for short messages
-			if len(ctx) > 0 && len(r.Msg) < termMsgJust {
-				b.Write(bytes.Repeat([]byte{' '}, termMsgJust-len(r.Msg)))
-			}
-		*/
 
 		enc := logfmt.NewEncoder(b)
 

@@ -1,8 +1,6 @@
 package logger
 
 import (
-	"strings"
-
 	"github.com/golang-migrate/migrate/v4"
 )
 
@@ -21,6 +19,5 @@ func (l *migrateLogger) Verbose() bool {
 }
 
 func (l *migrateLogger) Printf(format string, v ...interface{}) {
-	format = strings.TrimSpace(format)
 	l.logger.Infof(format, v...)
 }

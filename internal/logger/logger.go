@@ -26,7 +26,7 @@ var (
 )
 
 type Logger struct {
-	logger      log15.Logger
+	logger      *log15Logger
 	stdLogger   *log.Logger
 	level       Level
 	outputs     []io.Writer
@@ -51,7 +51,7 @@ func New(level Level, outputs ...io.Writer) *Logger {
 		handler:     createHandler(level, outputs...),
 	}
 
-	l.logger = log15.New()
+	l.logger = newLog15Logger()
 	l.logger.SetHandler(l)
 
 	return l
@@ -73,13 +73,13 @@ func (l *Logger) Close() error {
 	return nil
 }
 
-func (l *Logger) child(fields ...interface{}) *Logger {
-	if len(fields)%2 != 0 {
-		panic("len(args) should be an even number")
+func (l *Logger) child(keyvalues ...interface{}) *Logger {
+	if len(keyvalues)%2 != 0 {
+		panic("len(keyvalues) should be an even number")
 	}
 
 	child := &Logger{
-		logger:      l.logger.New(fields...),
+		logger:      l.logger.child(keyvalues...),
 		level:       l.level,
 		outputs:     l.outputs,
 		multiOutput: l.multiOutput,
@@ -172,6 +172,10 @@ func (l *Logger) Panicf(format string, args ...interface{}) {
 	l.Panic(fmt.Sprintf(format, args...))
 }
 
+func (l *Logger) Panicln(args ...interface{}) {
+	l.Panic(fmt.Sprintln(args...))
+}
+
 func (l *Logger) Fatal(msg string) {
 	l.logger.Crit(msg)
 	os.Exit(1)
@@ -179,6 +183,10 @@ func (l *Logger) Fatal(msg string) {
 
 func (l *Logger) Fatalf(format string, args ...interface{}) {
 	l.Fatal(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Fatalln(args ...interface{}) {
+	l.Fatal(fmt.Sprintln(args...))
 }
 
 func (l *Logger) Error(msg string) {
@@ -189,12 +197,20 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.Error(fmt.Sprintf(format, args...))
 }
 
+func (l *Logger) Errorln(args ...interface{}) {
+	l.Error(fmt.Sprintln(args...))
+}
+
 func (l *Logger) Warn(msg string) {
 	l.logger.Warn(msg)
 }
 
 func (l *Logger) Warnf(format string, args ...interface{}) {
 	l.Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Warnln(args ...interface{}) {
+	l.Warn(fmt.Sprintln(args...))
 }
 
 func (l *Logger) Info(msg string) {
@@ -205,6 +221,10 @@ func (l *Logger) Infof(format string, args ...interface{}) {
 	l.Info(fmt.Sprintf(format, args...))
 }
 
+func (l *Logger) Infoln(args ...interface{}) {
+	l.Info(fmt.Sprintln(args...))
+}
+
 func (l *Logger) Debug(msg string) {
 	l.logger.Debug(msg)
 }
@@ -213,10 +233,30 @@ func (l *Logger) Debugf(format string, args ...interface{}) {
 	l.Debug(fmt.Sprintf(format, args...))
 }
 
+func (l *Logger) Debugln(args ...interface{}) {
+	l.Debug(fmt.Sprintln(args...))
+}
+
 func (l *Logger) Trace(msg string) {
-	l.logger.Debug(msg)
+	l.logger.Trace(msg)
 }
 
 func (l *Logger) Tracef(format string, args ...interface{}) {
 	l.Trace(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Traceln(args ...interface{}) {
+	l.Trace(fmt.Sprintln(args...))
+}
+
+func (l *Logger) Print(msg string) {
+	l.Info(msg)
+}
+
+func (l *Logger) Printf(format string, args ...interface{}) {
+	l.Infof(format, args...)
+}
+
+func (l *Logger) Println(args ...interface{}) {
+	l.Infoln(args...)
 }

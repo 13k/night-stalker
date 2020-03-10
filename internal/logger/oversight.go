@@ -21,5 +21,5 @@ func (l *oversightLogger) Printf(format string, args ...interface{}) {
 }
 
 func (l *oversightLogger) Println(args ...interface{}) {
-	l.logger.Debug(fmt.Sprint(args...))
+	l.logger.Debug(fmt.Sprintln(args...))
 }
