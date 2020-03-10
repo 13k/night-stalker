@@ -2,7 +2,6 @@ package gc
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -16,10 +15,11 @@ import (
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
+	nsrt "github.com/13k/night-stalker/internal/runtime"
 )
 
 const (
-	processorName = "gc_dispatch"
+	processorName = "gc.dispatch"
 	queueSize     = 4
 	queueTimeout  = 10 * time.Second
 )
@@ -73,7 +73,9 @@ func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Dispatcher) Start(ctx context.Context) error {
+func (p *Dispatcher) Start(ctx context.Context) (err error) {
+	defer nsrt.RecoverError(p.log, &err)
+
 	if err := p.setupContext(ctx); err != nil {
 		return err
 	}
@@ -195,13 +197,6 @@ func (p *Dispatcher) stop() {
 }
 
 func (p *Dispatcher) loop() error {
-	defer func() {
-		if err := recover(); err != nil {
-			p.log.WithField("error", err).Error("recovered panic")
-			p.log.Error(string(debug.Stack()))
-		}
-	}()
-
 	defer p.stop()
 
 	p.log.Info("start")
@@ -212,7 +207,7 @@ func (p *Dispatcher) loop() error {
 			return nil
 		case busmsg, ok := <-p.busSubSend.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busSubSend)
 			}
 
 			if sendmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherSendMessage); ok {

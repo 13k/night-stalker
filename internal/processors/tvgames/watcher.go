@@ -2,7 +2,6 @@ package tvgames
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -16,6 +15,7 @@ import (
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nsrt "github.com/13k/night-stalker/internal/runtime"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -74,7 +74,9 @@ func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Watcher) Start(ctx context.Context) error {
+func (p *Watcher) Start(ctx context.Context) (err error) {
+	defer nsrt.RecoverError(p.log, &err)
+
 	if err := p.setupContext(ctx); err != nil {
 		return err
 	}
@@ -108,13 +110,6 @@ func (p *Watcher) setupContext(ctx context.Context) error {
 }
 
 func (p *Watcher) loop() error {
-	defer func() {
-		if err := recover(); err != nil {
-			p.log.WithField("error", err).Error("recovered panic")
-			p.log.Error(string(debug.Stack()))
-		}
-	}()
-
 	t := time.NewTicker(p.options.Interval)
 
 	defer p.stop(t)
@@ -130,7 +125,7 @@ func (p *Watcher) loop() error {
 			p.tick()
 		case busmsg, ok := <-p.busTVGamesResp.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busTVGamesResp)
 			}
 
 			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {

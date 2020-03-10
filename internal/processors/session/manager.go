@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -18,6 +17,7 @@ import (
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
+	nsrt "github.com/13k/night-stalker/internal/runtime"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -79,7 +79,9 @@ func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Manager) Start(ctx context.Context) error {
+func (p *Manager) Start(ctx context.Context) (err error) {
+	defer nsrt.RecoverError(p.log, &err)
+
 	if err := p.setupContext(ctx); err != nil {
 		return err
 	}
@@ -170,13 +172,6 @@ func (p *Manager) cancelSession() {
 }
 
 func (p *Manager) loop() error {
-	defer func() {
-		if err := recover(); err != nil {
-			p.log.WithField("error", err).Error("recovered panic")
-			p.log.Error(string(debug.Stack()))
-		}
-	}()
-
 	defer p.stop()
 
 	p.log.Info("start")

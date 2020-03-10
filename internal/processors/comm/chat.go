@@ -2,7 +2,6 @@ package comm
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -11,6 +10,7 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
+	nsrt "github.com/13k/night-stalker/internal/runtime"
 )
 
 const (
@@ -62,9 +62,10 @@ func (p *Chat) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Chat) Start(ctx context.Context) error {
-	p.ctx = ctx
+func (p *Chat) Start(ctx context.Context) (err error) {
+	defer nsrt.RecoverError(p.log, &err)
 
+	p.ctx = ctx
 	p.busSubscribe()
 
 	return p.loop()
@@ -84,13 +85,6 @@ func (p *Chat) busUnsubscribe() {
 }
 
 func (p *Chat) loop() error {
-	defer func() {
-		if err := recover(); err != nil {
-			p.log.WithField("error", err).Error("recovered panic")
-			p.log.Error(string(debug.Stack()))
-		}
-	}()
-
 	defer p.stop()
 
 	p.log.Info("start")
@@ -101,7 +95,7 @@ func (p *Chat) loop() error {
 			return nil
 		case busmsg, ok := <-p.busSubSteamEvents.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busSubSteamEvents)
 			}
 
 			if steammsg, ok := busmsg.Payload.(*nsbus.SteamEventMessage); ok {

@@ -2,7 +2,6 @@ package livematches
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"cirello.io/oversight"
@@ -16,6 +15,7 @@ import (
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsrds "github.com/13k/night-stalker/internal/redis"
+	nsrt "github.com/13k/night-stalker/internal/runtime"
 )
 
 const (
@@ -71,7 +71,9 @@ func (p *Collector) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Collector) Start(ctx context.Context) error {
+func (p *Collector) Start(ctx context.Context) (err error) {
+	defer nsrt.RecoverError(p.log, &err)
+
 	if err := p.setupContext(ctx); err != nil {
 		return err
 	}
@@ -192,13 +194,6 @@ func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatches,
 }
 
 func (p *Collector) loop() error {
-	defer func() {
-		if err := recover(); err != nil {
-			p.log.WithField("error", err).Error("recovered panic")
-			p.log.Error(string(debug.Stack()))
-		}
-	}()
-
 	defer p.stop()
 
 	p.log.Info("start")
@@ -209,7 +204,7 @@ func (p *Collector) loop() error {
 			return nil
 		case busmsg, ok := <-p.busSubLiveMatchesAll.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busSubLiveMatchesAll)
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
@@ -217,7 +212,7 @@ func (p *Collector) loop() error {
 			}
 		case busmsg, ok := <-p.busSubLiveMatchStatsAll.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busSubLiveMatchStatsAll)
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchStatsChangeMessage); ok {

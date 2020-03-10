@@ -2,7 +2,6 @@ package matchdetails
 
 import (
 	"context"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nsrt "github.com/13k/night-stalker/internal/runtime"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -77,7 +77,9 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 	}
 }
 
-func (p *Monitor) Start(ctx context.Context) error {
+func (p *Monitor) Start(ctx context.Context) (err error) {
+	defer nsrt.RecoverError(p.log, &err)
+
 	if err := p.setupContext(ctx); err != nil {
 		return err
 	}
@@ -143,13 +145,6 @@ func (p *Monitor) getLiveMatchesBatches() []nscol.LiveMatches {
 }
 
 func (p *Monitor) loop() error {
-	defer func() {
-		if err := recover(); err != nil {
-			p.log.WithField("error", err).Error("recovered panic")
-			p.log.Error(string(debug.Stack()))
-		}
-	}()
-
 	t := time.NewTicker(p.options.Interval)
 
 	defer p.stop(t)
@@ -164,7 +159,7 @@ func (p *Monitor) loop() error {
 			p.tick()
 		case busmsg, ok := <-p.busLiveMatchesReplace.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busLiveMatchesReplace)
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
@@ -172,7 +167,7 @@ func (p *Monitor) loop() error {
 			}
 		case busmsg, ok := <-p.busMatchesMinimalResp.C:
 			if !ok {
-				return nil
+				return nsbus.NewSubscriptionExpiredErrorX(p.busMatchesMinimalResp)
 			}
 
 			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
