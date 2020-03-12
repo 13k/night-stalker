@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -17,7 +16,8 @@ func (app *App) serveLiveMatches(c echo.Context) error {
 	matchIDs, err := app.rdsLiveMatchIDs()
 
 	if err != nil {
-		app.log.Error(fmt.Sprintf("%+v", err))
+		app.log.WithError(err).Error("error fetching live match IDs from redis")
+		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
@@ -29,7 +29,8 @@ func (app *App) serveLiveMatches(c echo.Context) error {
 	view, err := app.loadLiveMatchesView(matchIDs...)
 
 	if err != nil {
-		app.log.Error(fmt.Sprintf("%+v", err))
+		app.log.WithError(err).Error("error loading LiveMatches view")
+		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,

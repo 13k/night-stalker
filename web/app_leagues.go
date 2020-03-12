@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -28,7 +27,8 @@ func (app *App) serveLeagues(c echo.Context) error {
 	view, err := app.loadLeaguesView(params.LeagueIDs...)
 
 	if err != nil {
-		app.log.Error(fmt.Sprintf("%+v", err))
+		app.log.WithError(err).Error("error loading Leagues view")
+		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,

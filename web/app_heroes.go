@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -17,7 +16,8 @@ func (app *App) serveHeroes(c echo.Context) error {
 	view, err := app.loadHeroesView()
 
 	if err != nil {
-		app.log.Error(fmt.Sprintf("%+v", err))
+		app.log.WithError(err).Error("error loading Heroes view")
+		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
@@ -51,7 +51,8 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 	view, err := app.loadHeroMatchesView(pathParams.ID)
 
 	if err != nil {
-		app.log.Error(fmt.Sprintf("%+v", err))
+		app.log.WithError(err).Error("error loading HeroMatches view")
+		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
