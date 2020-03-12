@@ -12,6 +12,7 @@ import (
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/events"
 	"github.com/paralin/go-dota2/protocol"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
@@ -92,8 +93,8 @@ func (p *Manager) Start(ctx context.Context) (err error) {
 	}
 
 	if p.isSuspended() {
-		p.log.WithError(ErrDotaClientSuspended).Error("client suspended")
-		return ErrDotaClientSuspended
+		p.log.WithField("until", p.login.SuspendedUntil).Error("client suspended")
+		return NewErrDotaClientSuspendedX(p.login.SuspendedUntil)
 	}
 
 	if err := p.connectSteam(); err != nil {
@@ -182,11 +183,10 @@ func (p *Manager) loop() error {
 			return nil
 		case ev, ok := <-p.steam.Events():
 			if !ok {
-				return nil
+				return xerrors.New("Steam events closed")
 			}
 
 			if err := p.handleEvent(ev); err != nil {
-				p.log.WithError(err).Error("error handling event")
 				return err
 			}
 		}
@@ -198,6 +198,7 @@ func (p *Manager) stop() {
 	p.dota.Close()
 	p.steam.Disconnect()
 	p.cancelSession()
+	p.ctx = nil
 	p.log.Warn("stop")
 }
 
@@ -210,7 +211,7 @@ func (p *Manager) handleEvent(ev interface{}) error {
 	case *steam.ConnectedEvent:
 		err = p.onSteamConnect()
 	case *steam.DisconnectedEvent:
-		err = p.onSteamDisconnect()
+		err = p.onSteamDisconnect(e)
 	case *steam.LoggedOnEvent:
 		err = p.onSteamLogOn(e)
 	case *steam.LoginKeyEvent:
@@ -232,8 +233,7 @@ func (p *Manager) handleEvent(ev interface{}) error {
 	case *events.ClientWelcomed:
 		err = p.onDotaWelcome(e)
 	case steam.FatalErrorEvent:
-		p.log.WithError(e).Error("steam error")
-		err = e
+		err = xerrors.Errorf("steam fatal error: %w", e)
 	default:
 		err = p.busPubEvent(ev)
 	}
@@ -329,22 +329,20 @@ func (p *Manager) connectSteam() error {
 	server, err := p.randomServer()
 
 	if err != nil {
-		p.log.WithError(err).Error("error loading steam server")
-		return err
+		return xerrors.Errorf("error loading steam server: %w", err)
 	}
 
 	if server != nil {
 		addr := netutil.ParsePortAddr(server.Address)
 
 		if addr == nil {
-			p.log.WithError(err).WithField("address", server.Address).Error("error parsing server address")
-			return ErrInvalidServerAddress
+			return NewErrInvalidServerAddressX(server.Address)
 		}
 
 		p.steam.ConnectTo(addr)
 	} else {
 		if err := steam.InitializeSteamDirectory(); err != nil {
-			return err
+			return xerrors.Errorf("error initializing steam directory: %w", err)
 		}
 
 		p.steam.Connect()
@@ -376,9 +374,9 @@ func (p *Manager) onSteamConnect() error { //nolint: unparam
 	return nil
 }
 
-func (p *Manager) onSteamDisconnect() error {
+func (p *Manager) onSteamDisconnect(_ *steam.DisconnectedEvent) error {
 	p.log.Warn("disconnected")
-	return ErrSteamDisconnected
+	return NewErrSteamDisconnectedX()
 }
 
 func (p *Manager) onSteamServerList(e *steam.ClientCMListEvent) error {
@@ -449,22 +447,12 @@ func (p *Manager) onSteamWebLogOn(_ *steam.WebLoggedOnEvent) error {
 	return nil
 }
 
-func (p *Manager) onSteamLogOnFail(e *steam.LogOnFailedEvent) error {
-	p.log.
-		WithError(ErrSteamLogOnFailed).
-		WithField("reason", e.Result.String()).
-		Error("steam error")
-
-	return ErrSteamLogOnFailed
+func (p *Manager) onSteamLogOnFail(ev *steam.LogOnFailedEvent) error {
+	return NewErrSteamLogOnFailedX(ev.Result.String())
 }
 
-func (p *Manager) onSteamLogOff(e *steam.LoggedOffEvent) error {
-	p.log.
-		WithError(ErrSteamLoggedOff).
-		WithField("reason", e.Result.String()).
-		Error("steam error")
-
-	return ErrSteamLoggedOff
+func (p *Manager) onSteamLogOff(ev *steam.LoggedOffEvent) error {
+	return NewErrSteamLoggedOffX(ev.Result.String())
 }
 
 func (p *Manager) onSteamLogOn(e *steam.LoggedOnEvent) error {
@@ -536,23 +524,17 @@ func (p *Manager) onDotaWelcome(e *events.ClientWelcomed) error {
 	return nil
 }
 
-func (p *Manager) onDotaClientSuspended(e *events.ClientSuspended) error {
-	until := time.Unix(int64(e.GetTimeEnd()), 0)
-
-	p.log.
-		WithError(ErrDotaClientSuspended).
-		WithField("until", until).
-		Error("dota error")
-
+func (p *Manager) onDotaClientSuspended(ev *events.ClientSuspended) error {
 	p.cancelSession()
 
-	update := &models.SteamLogin{SuspendedUntil: &until}
+	until := models.NullUnixTimestamp(int64(ev.GetTimeEnd()))
+	update := &models.SteamLogin{SuspendedUntil: until}
 
 	if err := p.updateLogin(update); err != nil {
 		return err
 	}
 
-	return ErrDotaClientSuspended
+	return NewErrDotaClientSuspendedX(until)
 }
 
 func (p *Manager) onDotaGCStateChange(e events.ClientStateChanged) error { //nolint: unparam

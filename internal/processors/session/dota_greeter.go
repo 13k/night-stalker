@@ -35,11 +35,11 @@ func (c *dotaGreeter) hello() error {
 	t := time.NewTicker(helloRetryInterval)
 
 	defer func() {
-		c.log.Debug("hello() stop")
+		c.log.Trace("hello() stop")
 		t.Stop()
 	}()
 
-	c.log.Debug("hello() start")
+	c.log.Trace("hello() start")
 
 	for {
 		c.dota.SayHello()
@@ -50,7 +50,7 @@ func (c *dotaGreeter) hello() error {
 			return nil
 		case <-t.C:
 			if retryCount >= helloRetryCount {
-				return ErrDotaGCWelcomeTimeout
+				return NewErrDotaGCWelcomeTimeoutX(retryCount, helloRetryInterval)
 			}
 		}
 	}
