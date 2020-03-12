@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
@@ -159,10 +160,7 @@ func (p *Dispatcher) recvLoop() {
 		msgType := protocol.EDOTAGCMsg(packet.MsgType)
 
 		if err := p.recv(msgType, packet); err != nil {
-			p.log.
-				WithField("msg_type", msgType).
-				WithError(err).
-				Error("error receiving message")
+			p.handleCommError(&recvError{MsgType: msgType, Packet: packet, Err: err})
 		}
 	}
 }
@@ -182,18 +180,9 @@ func (p *Dispatcher) sendLoop() {
 		}
 
 		if err := p.send(sendmsg.MsgType, sendmsg.Message); err != nil {
-			p.log.
-				WithField("msg_type", sendmsg.MsgType).
-				WithError(err).
-				Error("error sending message")
+			p.handleCommError(&sendError{MsgType: sendmsg.MsgType, Message: sendmsg.Message, Err: err})
 		}
 	}
-}
-
-func (p *Dispatcher) stop() {
-	p.busUnsubscribe()
-	p.teardownRxTx()
-	p.log.Warn("stop")
 }
 
 func (p *Dispatcher) loop() error {
@@ -219,9 +208,17 @@ func (p *Dispatcher) loop() error {
 	}
 }
 
+func (p *Dispatcher) stop() {
+	p.busUnsubscribe()
+	p.teardownRxTx()
+	p.ctx = nil
+	p.log.Warn("stop")
+}
+
 // runs in the steam client goroutine
 func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
 	if p.ctx == nil {
+		p.log.Warn("received packet while stopped")
 		return
 	}
 
@@ -236,14 +233,14 @@ func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
 
 func (p *Dispatcher) enqueueRx(packet *gc.GCPacket) error {
 	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+		return xerrors.Errorf("error enqueuing rx: %w", p.ctx.Err())
 	}
 
 	select {
 	case p.rx <- packet:
 		return nil
 	case <-time.After(queueTimeout):
-		return &recvTimeoutError{
+		return &recvQueueTimeoutError{
 			Packet:  packet,
 			Timeout: queueTimeout,
 		}
@@ -252,40 +249,23 @@ func (p *Dispatcher) enqueueRx(packet *gc.GCPacket) error {
 
 func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) error {
 	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+		return xerrors.Errorf("error enqueuing tx: %w", p.ctx.Err())
 	}
 
 	select {
 	case p.tx <- sendmsg:
 		return nil
 	case <-time.After(queueTimeout):
-		return &sendTimeoutError{
+		return &sendQueueTimeoutError{
 			BusMessage: sendmsg,
 			Timeout:    queueTimeout,
 		}
 	}
 }
 
-func (p *Dispatcher) handleQueueError(err error) {
-	switch e := err.(type) {
-	case *recvTimeoutError:
-		p.log.WithOFields(
-			"msg_type", protocol.EDOTAGCMsg(e.Packet.MsgType),
-			"timeout", e.Timeout,
-		).Warn("ignored incoming packet (queue is full)")
-	case *sendTimeoutError:
-		p.log.WithOFields(
-			"msg_type", e.BusMessage.MsgType,
-			"timeout", e.Timeout,
-		).Warn("ignored outgoing message (queue is full)")
-	default:
-		p.log.WithError(err).Error("queue error")
-	}
-}
-
 func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) error {
 	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+		return xerrors.Errorf("error receiving message: %w", p.ctx.Err())
 	}
 
 	incoming := NewIncomingMessage(msgType)
@@ -295,10 +275,11 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 	}
 
 	if err := incoming.UnmarshalPacket(packet); err != nil {
-		return err
+		return xerrors.Errorf("error unmarshaling packet: %w", err)
 	}
 
 	if err := p.busPubReceivedMessage(incoming); err != nil {
+		err = xerrors.Errorf("error publishing bus message: %w", err)
 		return err
 	}
 
@@ -309,7 +290,7 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 
 func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) error {
 	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+		return xerrors.Errorf("error sending message: %w", p.ctx.Err())
 	}
 
 	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), message))
@@ -327,4 +308,42 @@ func (p *Dispatcher) busPubReceivedMessage(incoming *IncomingMessage) error {
 			Message: incoming.Message,
 		},
 	})
+}
+
+func (p *Dispatcher) handleQueueError(err error) {
+	switch e := err.(type) {
+	case *recvQueueTimeoutError:
+		p.log.WithOFields(
+			"msg_type", protocol.EDOTAGCMsg(e.Packet.MsgType),
+			"timeout", e.Timeout,
+		).Warn("ignored incoming packet (queue is full)")
+	case *sendQueueTimeoutError:
+		p.log.WithOFields(
+			"msg_type", e.BusMessage.MsgType,
+			"timeout", e.Timeout,
+		).Warn("ignored outgoing message (queue is full)")
+	default:
+		p.log.WithError(err).Error("queue error")
+	}
+
+	p.log.Errorx(err)
+}
+
+func (p *Dispatcher) handleCommError(err error) {
+	switch e := err.(type) {
+	case *recvError:
+		p.log.
+			WithField("msg_type", e.MsgType).
+			WithError(e.Err).
+			Error("error receiving message")
+	case *sendError:
+		p.log.
+			WithField("msg_type", e.MsgType).
+			WithError(e.Err).
+			Error("error sending message")
+	default:
+		p.log.WithError(err).Error("comm error")
+	}
+
+	p.log.Errorx(err)
 }
