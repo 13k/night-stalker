@@ -1,6 +1,8 @@
 package cmdroot
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmddebug"
@@ -9,6 +11,7 @@ import (
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdmigrate"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdstart"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdweb"
+	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 )
 
@@ -19,9 +22,10 @@ const (
 )
 
 var Cmd = &cobra.Command{
-	Use:   "ns <command>",
-	Short: "Stalk dota2 players",
-	Run:   run,
+	Use:              "ns <command>",
+	Short:            "Stalk dota2 players",
+	Run:              run,
+	PersistentPreRun: preRun,
 }
 
 var (
@@ -58,6 +62,29 @@ func initConfig() {
 
 func run(cmd *cobra.Command, args []string) {
 	if err := cmd.Usage(); err != nil {
+		panic(err)
+	}
+}
+
+func preRun(cmd *cobra.Command, args []string) {
+	flagLog := cmd.Flags().Lookup("log")
+
+	if flagLog == nil {
+		return
+	}
+
+	var cmdNames []string
+	c := cmd
+
+	for c != nil {
+		cmdNames = append([]string{c.Name()}, cmdNames...)
+		c = c.Parent()
+	}
+
+	cmdName := strings.Join(cmdNames, "-")
+	lpath := nscmdlog.ParseLogfilePath(flagLog.Value.String(), cmdName)
+
+	if err := flagLog.Value.Set(lpath); err != nil {
 		panic(err)
 	}
 }
