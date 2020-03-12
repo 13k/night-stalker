@@ -257,7 +257,7 @@ func (p *Collector) add(matches nscol.LiveMatches) {
 		p.log.WithOFields(
 			"before", beforeLen,
 			"after", afterLen,
-			"change", len(change),
+			"change", afterLen-beforeLen,
 		).Debug("matches added")
 
 		p.notifyLiveMatchesAdd(change)
@@ -282,7 +282,7 @@ func (p *Collector) remove(matchIDs nscol.MatchIDs) {
 		p.log.WithOFields(
 			"before", beforeLen,
 			"after", afterLen,
-			"change", len(change),
+			"change", afterLen-beforeLen,
 		).Debug("matches removed")
 
 		p.notifyLiveMatchesRemove(change)
