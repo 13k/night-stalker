@@ -220,6 +220,7 @@ func (p *Monitor) stop(t *time.Ticker) {
 	p.busUnsubscribe()
 	p.teardownWorkerPool()
 	p.teardownResults()
+	p.ctx = nil
 	p.log.Warn("stop")
 }
 

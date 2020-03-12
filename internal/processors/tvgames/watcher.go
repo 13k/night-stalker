@@ -140,6 +140,7 @@ func (p *Watcher) loop() error {
 func (p *Watcher) stop(t *time.Ticker) {
 	t.Stop()
 	p.busUnsubscribe()
+	p.ctx = nil
 	p.log.Warn("stop")
 }
 

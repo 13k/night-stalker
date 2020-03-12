@@ -224,6 +224,7 @@ func (p *Collector) loop() error {
 
 func (p *Collector) stop() {
 	p.busUnsubscribe()
+	p.ctx = nil
 	p.log.Warn("stop")
 }
 
