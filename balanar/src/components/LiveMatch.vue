@@ -38,7 +38,7 @@
     </v-card-subtitle>
 
     <v-card-subtitle
-      v-else-if="match.average_mmr"
+      v-else-if="match.average_mmr > 0"
       class="d-flex"
     >
       <v-img
@@ -53,7 +53,7 @@
     </v-card-subtitle>
 
     <v-card-subtitle
-      v-else-if="match.weekend_tourney_tournament_id"
+      v-else-if="match.weekend_tourney_tournament_id > 0"
       class="d-flex"
     >
       <v-img
@@ -70,6 +70,7 @@
     <LiveMatchTeam
       v-for="team in teams"
       :key="team.number"
+      :match="match"
       :team="team"
     />
 

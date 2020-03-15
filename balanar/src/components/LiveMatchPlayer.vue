@@ -53,6 +53,10 @@ export default {
   },
 
   props: {
+    match: {
+      type: pb.protocol.LiveMatch,
+      required: true,
+    },
     team: {
       type: Object,
       required: true,
@@ -90,13 +94,13 @@ export default {
       return name;
     },
     kda() {
-      const { kills = 0, deaths = 0, assists = 0 } = this.player || {};
-
-      if (kills > 0 || deaths > 0 || assists > 0) {
-        return `${kills}/${deaths}/${assists}`;
+      if (this.match.game_time <= 0) {
+        return null;
       }
 
-      return null;
+      const { kills = 0, deaths = 0, assists = 0 } = this.player || {};
+
+      return `${kills}/${deaths}/${assists}`;
     },
     isLeft() {
       return this.team.number % 2 === 0;

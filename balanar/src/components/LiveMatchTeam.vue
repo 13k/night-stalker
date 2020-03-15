@@ -27,6 +27,7 @@
       :to="player | playerRoute"
     >
       <LiveMatchPlayer
+        :match="match"
         :team="team"
         :player="player"
       />
@@ -35,6 +36,7 @@
 </template>
 
 <script>
+import pb from "@/protocol/proto";
 import { playerRoute } from "@/router/helpers";
 import LiveMatchPlayer from "@/components/LiveMatchPlayer.vue";
 
@@ -50,6 +52,10 @@ export default {
   },
 
   props: {
+    match: {
+      type: pb.protocol.LiveMatch,
+      required: true,
+    },
     team: {
       type: Object,
       required: true,
