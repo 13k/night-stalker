@@ -311,6 +311,32 @@ func (p *Monitor) tick() {
 	}
 }
 
+func (p *Monitor) workerFunc(w *worker) func() {
+	return func() {
+		var err error
+		var stats *models.LiveMatchStats
+
+		defer func() {
+			if v := recover(); v != nil {
+				err = xerrors.Errorf("worker panic: %w", &errWorkerPanic{
+					LiveMatch: w.liveMatch,
+					Value:     v,
+				})
+			}
+
+			if err != nil {
+				p.handleError(xerrors.Errorf("worker error: %w", err))
+			}
+		}()
+
+		stats, err = w.Run(p.ctx)
+
+		if err == nil && stats != nil {
+			p.resultsCh <- stats
+		}
+	}
+}
+
 func (p *Monitor) enqueueWorker(liveMatch *models.LiveMatch) error {
 	if p.ctx.Err() != nil {
 		return xerrors.Errorf("error enqueuing worker: %w", &errWorkerSubmitFailure{
@@ -326,18 +352,7 @@ func (p *Monitor) enqueueWorker(liveMatch *models.LiveMatch) error {
 		liveMatch:  liveMatch,
 	}
 
-	err := p.workerPool.Submit(func() {
-		stats, err := w.Run(p.ctx)
-
-		if err != nil {
-			p.handleError(xerrors.Errorf("worker error: %w", err))
-			return
-		}
-
-		if stats != nil {
-			p.resultsCh <- stats
-		}
-	})
+	err := p.workerPool.Submit(p.workerFunc(w))
 
 	if err != nil {
 		return xerrors.Errorf("error enqueuing worker: %w", &errWorkerSubmitFailure{
@@ -389,6 +404,12 @@ func (p *Monitor) handleError(err error) {
 			"match_id", e.LiveMatch.MatchID,
 			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
 		).WithError(e.Err).Error("error submitting worker")
+	} else if e := (&errWorkerPanic{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"match_id", e.LiveMatch.MatchID,
+			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+			"panic", e.Value,
+		).Error("recovered worker panic")
 	} else if e := (&errRequestFailure{}); xerrors.As(err, &e) {
 		l := p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,

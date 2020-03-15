@@ -21,6 +21,15 @@ func (err *errWorkerSubmitFailure) Unwrap() error {
 	return err.Err
 }
 
+type errWorkerPanic struct {
+	LiveMatch *models.LiveMatch
+	Value     interface{}
+}
+
+func (*errWorkerPanic) Error() string {
+	return "recovered worker panic"
+}
+
 type errRequestInProgress struct {
 	LiveMatch *models.LiveMatch
 }
