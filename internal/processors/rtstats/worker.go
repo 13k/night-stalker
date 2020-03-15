@@ -13,6 +13,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
+	nsd2 "github.com/13k/night-stalker/internal/dota2"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -75,8 +76,8 @@ func (w *worker) requestMatchStats(ctx context.Context) (*protocol.CMsgDOTARealt
 	}
 
 	headers := map[string]string{
-		"Accept":     "application/json",
 		"Connection": "keep-alive",
+		"User-Agent": nsd2.UserAgent,
 	}
 
 	params := url.Values{}
