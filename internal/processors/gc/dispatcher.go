@@ -34,22 +34,23 @@ type DispatcherOptions struct {
 var _ nsproc.Processor = (*Dispatcher)(nil)
 
 type Dispatcher struct {
-	options    DispatcherOptions
-	ctx        context.Context
-	log        *nslog.Logger
-	steam      *steam.Client
-	handling   bool
-	bus        *nsbus.Bus
-	busSubSend *nsbus.Subscription
-	rx         chan *gc.GCPacket
-	tx         chan *nsbus.GCDispatcherSendMessage
+	options  DispatcherOptions
+	ctx      context.Context
+	log      *nslog.Logger
+	steam    *steam.Client
+	handling map[*steam.GameCoordinator]bool
+	bus      *nsbus.Bus
+	busSend  *nsbus.Subscription
+	rx       chan *gc.GCPacket
+	tx       chan *nsbus.GCDispatcherSendMessage
 }
 
 func NewDispatcher(options DispatcherOptions) *Dispatcher {
 	p := &Dispatcher{
-		options: options,
-		log:     options.Log.WithPackage(processorName),
-		bus:     options.Bus,
+		options:  options,
+		log:      options.Log.WithPackage(processorName),
+		bus:      options.Bus,
+		handling: map[*steam.GameCoordinator]bool{},
 	}
 
 	p.busSubscribe()
@@ -68,8 +69,8 @@ func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
 
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
-		Restart:  oversight.Transient(),
 		Start:    p.Start,
+		Restart:  oversight.Transient(),
 		Shutdown: shutdown,
 	}
 }
@@ -77,8 +78,18 @@ func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Dispatcher) Start(ctx context.Context) (err error) {
 	defer nsrt.RecoverError(p.log, &err)
 
+	err = p.start(ctx)
+
+	if err != nil {
+		p.handleError(err)
+	}
+
+	return err
+}
+
+func (p *Dispatcher) start(ctx context.Context) error {
 	if err := p.setupContext(ctx); err != nil {
-		return err
+		return xerrors.Errorf("error setting up context: %w", err)
 	}
 
 	p.setupGCPacketHandling()
@@ -91,22 +102,29 @@ func (p *Dispatcher) Start(ctx context.Context) (err error) {
 	return p.loop()
 }
 
+func (p *Dispatcher) stop() {
+	p.busUnsubscribe()
+	p.teardownRxTx()
+	p.ctx = nil
+	p.log.Warn("stop")
+}
+
 func (p *Dispatcher) busSubscribe() {
-	if p.busSubSend == nil {
-		p.busSubSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
+	if p.busSend == nil {
+		p.busSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
 	}
 }
 
 func (p *Dispatcher) busUnsubscribe() {
-	if p.busSubSend != nil {
-		p.bus.Unsub(p.busSubSend)
-		p.busSubSend = nil
+	if p.busSend != nil {
+		p.bus.Unsub(p.busSend)
+		p.busSend = nil
 	}
 }
 
 func (p *Dispatcher) setupContext(ctx context.Context) error {
 	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
-		return nsproc.ErrProcessorContextSteamClient
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextSteamClient)
 	}
 
 	p.ctx = ctx
@@ -115,9 +133,9 @@ func (p *Dispatcher) setupContext(ctx context.Context) error {
 }
 
 func (p *Dispatcher) setupGCPacketHandling() {
-	if !p.handling {
+	if !p.handling[p.steam.GC] {
 		p.steam.GC.RegisterPacketHandler(p)
-		p.handling = true
+		p.handling[p.steam.GC] = true
 	}
 }
 
@@ -160,7 +178,7 @@ func (p *Dispatcher) recvLoop() {
 		msgType := protocol.EDOTAGCMsg(packet.MsgType)
 
 		if err := p.recv(msgType, packet); err != nil {
-			p.handleCommError(&recvError{MsgType: msgType, Packet: packet, Err: err})
+			p.handleError(xerrors.Errorf("error receiving packet: %w", err))
 		}
 	}
 }
@@ -180,7 +198,7 @@ func (p *Dispatcher) sendLoop() {
 		}
 
 		if err := p.send(sendmsg.MsgType, sendmsg.Message); err != nil {
-			p.handleCommError(&sendError{MsgType: sendmsg.MsgType, Message: sendmsg.Message, Err: err})
+			p.handleError(xerrors.Errorf("error sending message: %w", err))
 		}
 	}
 }
@@ -194,28 +212,27 @@ func (p *Dispatcher) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSubSend.C:
+		case busmsg, ok := <-p.busSend.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busSubSend)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busSend,
+				})
 			}
 
 			if sendmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherSendMessage); ok {
 				if err := p.enqueueTx(sendmsg); err != nil {
-					p.handleQueueError(err)
+					p.handleError(xerrors.Errorf("error enqueuing tx: %w", err))
 				}
 			}
 		}
 	}
 }
 
-func (p *Dispatcher) stop() {
-	p.busUnsubscribe()
-	p.teardownRxTx()
-	p.ctx = nil
-	p.log.Warn("stop")
-}
-
-// runs in the steam client goroutine
+// HandleGCPacket implements the steam.GCPacketHandler interface.
+//
+// It runs in the steam client goroutine.
+//
+// It's not possible to de-register this handler once registered, so the owner must be long lived.
 func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
 	if p.ctx == nil {
 		p.log.Warn("received packet while stopped")
@@ -227,7 +244,7 @@ func (p *Dispatcher) HandleGCPacket(packet *gc.GCPacket) {
 	}
 
 	if err := p.enqueueRx(packet); err != nil {
-		p.handleQueueError(err)
+		p.handleError(xerrors.Errorf("error enqueuing rx: %w", err))
 	}
 }
 
@@ -240,10 +257,10 @@ func (p *Dispatcher) enqueueRx(packet *gc.GCPacket) error {
 	case p.rx <- packet:
 		return nil
 	case <-time.After(queueTimeout):
-		return &recvQueueTimeoutError{
+		return xerrors.Errorf("queue timeout: %w", &recvQueueTimeoutError{
 			Packet:  packet,
 			Timeout: queueTimeout,
-		}
+		})
 	}
 }
 
@@ -256,16 +273,20 @@ func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) error {
 	case p.tx <- sendmsg:
 		return nil
 	case <-time.After(queueTimeout):
-		return &sendQueueTimeoutError{
+		return xerrors.Errorf("queue timeout: %w", &sendQueueTimeoutError{
 			BusMessage: sendmsg,
 			Timeout:    queueTimeout,
-		}
+		})
 	}
 }
 
 func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) error {
 	if p.ctx.Err() != nil {
-		return xerrors.Errorf("error receiving message: %w", p.ctx.Err())
+		return xerrors.Errorf("error receiving message: %w", &recvError{
+			MsgType: msgType,
+			Packet:  packet,
+			Err:     p.ctx.Err(),
+		})
 	}
 
 	incoming := NewIncomingMessage(msgType)
@@ -275,12 +296,19 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 	}
 
 	if err := incoming.UnmarshalPacket(packet); err != nil {
-		return xerrors.Errorf("error unmarshaling packet: %w", err)
+		return xerrors.Errorf("error unmarshaling packet: %w", &recvError{
+			MsgType: msgType,
+			Packet:  packet,
+			Err:     err,
+		})
 	}
 
 	if err := p.busPubReceivedMessage(incoming); err != nil {
-		err = xerrors.Errorf("error publishing bus message: %w", err)
-		return err
+		return xerrors.Errorf("error publishing bus message: %w", &recvError{
+			MsgType: msgType,
+			Packet:  packet,
+			Err:     err,
+		})
 	}
 
 	p.log.WithField("msg_type", incoming.Type).Trace("received message")
@@ -290,7 +318,11 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 
 func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) error {
 	if p.ctx.Err() != nil {
-		return xerrors.Errorf("error sending message: %w", p.ctx.Err())
+		return xerrors.Errorf("error sending message: %w", &sendError{
+			MsgType: msgType,
+			Message: message,
+			Err:     p.ctx.Err(),
+		})
 	}
 
 	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), message))
@@ -310,39 +342,29 @@ func (p *Dispatcher) busPubReceivedMessage(incoming *IncomingMessage) error {
 	})
 }
 
-func (p *Dispatcher) handleQueueError(err error) {
-	switch e := err.(type) {
-	case *recvQueueTimeoutError:
+func (p *Dispatcher) handleError(err error) {
+	if e := (&recvQueueTimeoutError{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"msg_type", protocol.EDOTAGCMsg(e.Packet.MsgType),
 			"timeout", e.Timeout,
 		).Warn("ignored incoming packet (queue is full)")
-	case *sendQueueTimeoutError:
+	} else if e := (&sendQueueTimeoutError{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"msg_type", e.BusMessage.MsgType,
 			"timeout", e.Timeout,
 		).Warn("ignored outgoing message (queue is full)")
-	default:
-		p.log.WithError(err).Error("queue error")
-	}
-
-	p.log.Errorx(err)
-}
-
-func (p *Dispatcher) handleCommError(err error) {
-	switch e := err.(type) {
-	case *recvError:
+	} else if e := (&recvError{}); xerrors.As(err, &e) {
 		p.log.
 			WithField("msg_type", e.MsgType).
 			WithError(e.Err).
 			Error("error receiving message")
-	case *sendError:
+	} else if e := (&sendError{}); xerrors.As(err, &e) {
 		p.log.
 			WithField("msg_type", e.MsgType).
 			WithError(e.Err).
 			Error("error sending message")
-	default:
-		p.log.WithError(err).Error("comm error")
+	} else {
+		p.log.WithError(err).Error("dispatcher error")
 	}
 
 	p.log.Errorx(err)

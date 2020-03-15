@@ -38,6 +38,10 @@ func (*recvError) Error() string {
 	return "receive error"
 }
 
+func (err *recvError) Unwrap() error {
+	return err.Err
+}
+
 type sendError struct {
 	MsgType protocol.EDOTAGCMsg
 	Message proto.Message
@@ -46,4 +50,8 @@ type sendError struct {
 
 func (*sendError) Error() string {
 	return "send error"
+}
+
+func (err *sendError) Unwrap() error {
+	return err.Err
 }

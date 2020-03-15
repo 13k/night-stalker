@@ -8,6 +8,7 @@ import (
 	"cirello.io/oversight"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2/protocol"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -71,8 +72,8 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
-		Restart:  oversight.Transient(),
 		Start:    p.Start,
+		Restart:  oversight.Transient(),
 		Shutdown: shutdown,
 	}
 }
@@ -80,13 +81,30 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Monitor) Start(ctx context.Context) (err error) {
 	defer nsrt.RecoverError(p.log, &err)
 
+	err = p.start(ctx)
+
+	if err != nil {
+		p.handleError(err)
+	}
+
+	return err
+}
+
+func (p *Monitor) start(ctx context.Context) error {
 	if err := p.setupContext(ctx); err != nil {
-		return err
+		return xerrors.Errorf("error setting up context: %w", err)
 	}
 
 	p.busSubscribe()
 
 	return p.loop()
+}
+
+func (p *Monitor) stop(t *time.Ticker) {
+	t.Stop()
+	p.busUnsubscribe()
+	p.ctx = nil
+	p.log.Warn("stop")
 }
 
 func (p *Monitor) busSubscribe() {
@@ -113,7 +131,7 @@ func (p *Monitor) busUnsubscribe() {
 
 func (p *Monitor) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
-		return nsproc.ErrProcessorContextDatabase
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
 	}
 
 	p.ctx = ctx
@@ -159,7 +177,9 @@ func (p *Monitor) loop() error {
 			p.tick()
 		case busmsg, ok := <-p.busLiveMatchesReplace.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busLiveMatchesReplace)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busLiveMatchesReplace,
+				})
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
@@ -167,7 +187,9 @@ func (p *Monitor) loop() error {
 			}
 		case busmsg, ok := <-p.busMatchesMinimalResp.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busMatchesMinimalResp)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busMatchesMinimalResp,
+				})
 			}
 
 			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
@@ -177,13 +199,6 @@ func (p *Monitor) loop() error {
 			}
 		}
 	}
-}
-
-func (p *Monitor) stop(t *time.Ticker) {
-	t.Stop()
-	p.busUnsubscribe()
-	p.ctx = nil
-	p.log.Warn("stop")
 }
 
 func (p *Monitor) tick() {
@@ -201,7 +216,7 @@ func (p *Monitor) tick() {
 
 	for _, batch := range batches {
 		if err := p.busPubRequestMatchesMinimal(batch.MatchIDs()); err != nil {
-			p.log.WithError(err).Error("error publishing to bus")
+			p.handleError(xerrors.Errorf("error publishing request match details: %w", err))
 		}
 	}
 }
@@ -229,12 +244,13 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 	matches, err := p.saveMatches(msg.GetMatches())
 
 	if err != nil {
-		p.log.WithError(err).Error("error saving matches")
+		p.handleError(xerrors.Errorf("error saving matches: %w", err))
 		return
 	}
 
 	if err := p.busPubLiveMatchesRemove(matches.MatchIDs()); err != nil {
-		p.log.WithError(err).Error("error publishing to bus")
+		p.handleError(xerrors.Errorf("error publishing live matches change: %w", err))
+		return
 	}
 }
 
@@ -243,10 +259,12 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nsco
 
 	for i, pbMatch := range minMatches {
 		if p.ctx.Err() != nil {
-			return nil, p.ctx.Err()
+			return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+				MatchID: pbMatch.GetMatchId(),
+				Err:     p.ctx.Err(),
+			})
 		}
 
-		l := p.log.WithField("match_id", pbMatch.GetMatchId())
 		match := models.MatchDotaProto(pbMatch)
 
 		tx := p.db.Begin()
@@ -258,14 +276,21 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nsco
 
 		if err := result.Error; err != nil {
 			tx.Rollback()
-			l.WithError(err).Error("error upserting match")
-			return nil, err
+
+			return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+				MatchID: pbMatch.GetMatchId(),
+				Err:     err,
+			})
 		}
 
 		for _, pbPlayer := range pbMatch.GetPlayers() {
 			if p.ctx.Err() != nil {
 				tx.Rollback()
-				return nil, p.ctx.Err()
+
+				return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+					MatchID: pbMatch.GetMatchId(),
+					Err:     p.ctx.Err(),
+				})
 			}
 
 			matchPlayer := models.MatchPlayerDotaProto(pbPlayer)
@@ -283,13 +308,19 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nsco
 
 			if err := result.Error; err != nil {
 				tx.Rollback()
-				l.WithError(err).Error("error upserting match player")
-				return nil, err
+
+				return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+					MatchID: pbMatch.GetMatchId(),
+					Err:     err,
+				})
 			}
 		}
 
 		if err := tx.Commit().Error; err != nil {
-			return nil, err
+			return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+				MatchID: pbMatch.GetMatchId(),
+				Err:     err,
+			})
 		}
 
 		matches[i] = match
@@ -320,4 +351,14 @@ func (p *Monitor) busPubLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
 			MatchIDs: matchIDs,
 		},
 	})
+}
+
+func (p *Monitor) handleError(err error) {
+	if e := (&errMatchSave{}); xerrors.As(err, &e) {
+		p.log.WithField("match_id", e.MatchID).WithError(e.Err).Error("error saving match")
+	} else {
+		p.log.WithError(err).Error("match_details error")
+	}
+
+	p.log.Errorx(err)
 }

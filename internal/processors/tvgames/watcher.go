@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2/protocol"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -68,8 +69,8 @@ func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
 
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
-		Restart:  oversight.Transient(),
 		Start:    p.Start,
+		Restart:  oversight.Transient(),
 		Shutdown: shutdown,
 	}
 }
@@ -77,8 +78,18 @@ func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Watcher) Start(ctx context.Context) (err error) {
 	defer nsrt.RecoverError(p.log, &err)
 
+	err = p.start(ctx)
+
+	if err != nil {
+		p.handleError(err)
+	}
+
+	return err
+}
+
+func (p *Watcher) start(ctx context.Context) error {
 	if err := p.setupContext(ctx); err != nil {
-		return err
+		return xerrors.Errorf("error setting up context: %w", err)
 	}
 
 	p.busSubscribe()
@@ -101,7 +112,7 @@ func (p *Watcher) busUnsubscribe() {
 
 func (p *Watcher) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
-		return nsproc.ErrProcessorContextDatabase
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
 	}
 
 	p.ctx = ctx
@@ -125,7 +136,9 @@ func (p *Watcher) loop() error {
 			p.tick()
 		case busmsg, ok := <-p.busTVGamesResp.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busTVGamesResp)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busTVGamesResp,
+				})
 			}
 
 			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
@@ -146,25 +159,32 @@ func (p *Watcher) stop(t *time.Ticker) {
 
 func (p *Watcher) tick() {
 	if err := p.query(); err != nil {
-		p.log.WithError(err).Error("error querying tv games")
+		p.handleError(xerrors.Errorf("error querying tv games: %w", err))
 	}
 }
 
 func (p *Watcher) query() error {
 	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+		return xerrors.Errorf("error querying: %w", p.ctx.Err())
 	}
 
 	page := &queryPage{
 		start: p.discoveryPage.LastPageStart(),
 	}
 
-	return p.queryPage(page)
+	if err := p.queryPage(page); err != nil {
+		return xerrors.Errorf("error querying page: %w", err)
+	}
+
+	return nil
 }
 
 func (p *Watcher) queryPage(page *queryPage) error {
 	if p.ctx.Err() != nil {
-		return p.ctx.Err()
+		return xerrors.Errorf("error querying page: %w", &errQueryPageFailure{
+			Page: page,
+			Err:  p.ctx.Err(),
+		})
 	}
 
 	p.log.WithOFields(
@@ -172,14 +192,31 @@ func (p *Watcher) queryPage(page *queryPage) error {
 		"start", page.start,
 	).Debug("requesting tv games")
 
-	return p.busPubRequestTVGames(page)
+	if err := p.busPubRequestTVGames(page); err != nil {
+		return xerrors.Errorf("error querying page: %w", &errQueryPageFailure{
+			Page: page,
+			Err:  err,
+		})
+	}
+
+	return nil
 }
 
 func (p *Watcher) handleFindTopSourceTVGamesResponse(msg *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) {
-	go p.handleResponse(newQueryPage(msg))
+	go func() {
+		if err := p.handleResponse(newQueryPage(msg)); err != nil {
+			p.handleError(xerrors.Errorf("error handling response: %w", err))
+		}
+	}()
 }
 
-func (p *Watcher) handleResponse(page *queryPage) {
+func (p *Watcher) handleResponse(page *queryPage) error {
+	if page.psize == 0 || page.total == 0 {
+		return xerrors.Errorf("empty response: %w", &errEmptyResponse{
+			Page: page,
+		})
+	}
+
 	l := p.log.WithOFields(
 		"index", page.index,
 		"start", page.start,
@@ -187,106 +224,107 @@ func (p *Watcher) handleResponse(page *queryPage) {
 		"total", page.total,
 	)
 
-	if page.psize == 0 || page.total == 0 {
-		l.Warn("ignoring empty page")
-		return
-	}
-
 	if p.discoveryPage.Empty() {
 		l.Debug("received discovery response")
 
 		p.discoveryPage.SetPage(page)
 
 		if err := p.query(); err != nil {
-			l.WithError(err).Error("error requesting tv games")
-			return
+			return xerrors.Errorf("error querying tv games: %w", err)
 		}
 
-		return
+		return nil
 	}
 
 	games := nscol.TVGames(page.res.GetGameList())
 	cleaned := games.Clean()
 
-	l = l.WithOFields(
-		"games", len(games),
-		"cleaned", len(games)-len(cleaned),
-	)
-
 	inProgress, err := p.filterFinished(cleaned)
 
 	if err != nil {
-		l.WithError(err).Error("error filtering finished tv games")
-		return
+		return xerrors.Errorf("error filtering finished tv games: %w", &errHandleResponseFailure{
+			Page: page,
+			Err:  err,
+		})
 	}
-
-	l = l.WithOFields(
-		"finished", len(cleaned)-len(inProgress),
-		"in_progress", len(inProgress),
-	)
 
 	liveMatches, err := p.saveGames(inProgress)
 
 	if err != nil {
-		l.WithError(err).Error("error saving tv games")
-		return
+		return xerrors.Errorf("error saving tv games: %w", &errHandleResponseFailure{
+			Page: page,
+			Err:  err,
+		})
 	}
 
 	deactivated := liveMatches.RemoveDeactivated()
 
-	l = l.WithOFields(
-		"deactivated", len(deactivated),
-		"live", len(liveMatches),
-	)
-
 	if len(liveMatches) > 0 {
 		if err := p.busPubLiveMatchesAdd(liveMatches); err != nil {
-			l.WithError(err).Error("error publishing to bus")
+			return xerrors.Errorf("error publishing live matches change: %w", &errHandleResponseFailure{
+				Page: page,
+				Err:  err,
+			})
 		}
 	}
 
 	if len(deactivated) > 0 {
 		if err := p.busPubLiveMatchesRemove(deactivated); err != nil {
-			l.WithError(err).Error("error publishing to bus")
+			return xerrors.Errorf("error publishing live matches change: %w", &errHandleResponseFailure{
+				Page: page,
+				Err:  err,
+			})
 		}
 	}
 
-	l.Debug("handled tv games")
+	l.WithOFields(
+		"games", len(games),
+		"cleaned", len(games)-len(cleaned),
+		"finished", len(cleaned)-len(inProgress),
+		"in_progress", len(inProgress),
+		"deactivated", len(deactivated),
+		"live", len(liveMatches),
+	).Debug("handled tv games")
+
+	return nil
 }
 
 func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 	liveMatches := make(nscol.LiveMatches, 0, len(games))
 
 	for _, game := range games {
-		if p.ctx.Err() != nil {
-			return nil, p.ctx.Err()
+		liveMatch := models.LiveMatchDotaProto(game)
+		errSave := &errSaveGameFailure{
+			MatchID:  liveMatch.MatchID,
+			ServerID: liveMatch.ServerSteamID.ToUint64(),
+			LobbyID:  liveMatch.LobbyID,
 		}
 
-		liveMatch := models.LiveMatchDotaProto(game)
-
-		l := p.log.WithOFields(
-			"match_id", liveMatch.MatchID,
-			"server_id", liveMatch.ServerSteamID,
-			"lobby_id", liveMatch.LobbyID,
-		)
+		if p.ctx.Err() != nil {
+			errSave.Err = p.ctx.Err()
+			return nil, xerrors.Errorf("error saving game: %w", errSave)
+		}
 
 		tx := p.db.Begin()
 
-		result := tx.
+		dbres := tx.
 			Where(models.LiveMatch{MatchID: liveMatch.MatchID}).
 			Assign(liveMatch).
 			FirstOrCreate(liveMatch)
 
-		if err := result.Error; err != nil {
+		if dbres.Error != nil {
 			tx.Rollback()
-			l.WithError(err).Error("error upserting match")
-			return nil, err
+
+			errSave.Err = dbres.Error
+			return nil, xerrors.Errorf("error saving game: %w", errSave)
 		}
 
 		for _, gamePlayer := range game.GetPlayers() {
 			if p.ctx.Err() != nil {
 				tx.Rollback()
-				return nil, p.ctx.Err()
+
+				errSave.Err = p.ctx.Err()
+				return nil, xerrors.Errorf("error saving game: %w", errSave)
 			}
 
 			livePlayer := models.NewLiveMatchPlayer(liveMatch, gamePlayer)
@@ -296,20 +334,22 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 				AccountID:   livePlayer.AccountID,
 			}
 
-			result = tx.
+			dbres = tx.
 				Where(criteria).
 				Assign(livePlayer).
 				FirstOrCreate(livePlayer)
 
-			if err := result.Error; err != nil {
+			if dbres.Error != nil {
 				tx.Rollback()
-				l.WithError(err).Error("error upserting live match player")
-				return nil, err
+
+				errSave.Err = dbres.Error
+				return nil, xerrors.Errorf("error saving game: %w", errSave)
 			}
 		}
 
 		if err := tx.Commit().Error; err != nil {
-			return nil, err
+			errSave.Err = err
+			return nil, xerrors.Errorf("error saving game: %w", errSave)
 		}
 
 		liveMatches = append(liveMatches, liveMatch)
@@ -329,7 +369,7 @@ func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
 		Error
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("error filtering finished games: %w", err)
 	}
 
 	for _, matchID := range finishedMatchIDs {
@@ -372,4 +412,41 @@ func (p *Watcher) busPubLiveMatchesRemove(liveMatches nscol.LiveMatches) error {
 			Matches: liveMatches,
 		},
 	})
+}
+
+func (p *Watcher) handleError(err error) {
+	if e := (&errEmptyResponse{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"index", e.Page.index,
+			"start", e.Page.start,
+			"psize", e.Page.psize,
+			"total", e.Page.total,
+		).Warn("ignoring empty page")
+
+		return
+	}
+
+	if e := (&errQueryPageFailure{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"index", e.Page.index,
+			"start", e.Page.start,
+			"psize", e.Page.psize,
+			"total", e.Page.total,
+		).WithError(e.Err).Error("error querying page")
+	} else if e := (&errHandleResponseFailure{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"index", e.Page.index,
+			"start", e.Page.start,
+			"psize", e.Page.psize,
+			"total", e.Page.total,
+		).WithError(e.Err).Error("error handling response")
+	} else if e := (&errSaveGameFailure{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"match_id", e.MatchID,
+			"server_id", e.ServerID,
+			"lobby_id", e.LobbyID,
+		).WithError(e.Err).Error("error saving tv game")
+	}
+
+	p.log.Errorx(err)
 }

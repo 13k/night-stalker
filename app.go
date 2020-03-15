@@ -7,10 +7,8 @@ import (
 	"cirello.io/oversight"
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/faceit/go-steam"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
@@ -39,16 +37,14 @@ type AppOptions struct {
 type App struct {
 	options    AppOptions
 	log        *nslog.Logger
+	bus        *nsbus.Bus
 	db         *gorm.DB
 	rds        *redis.Client
-	steam      *steam.Client
-	dota       *dota2.Dota2
 	api        *geyser.Client
 	apiDota    *geyserd2.Client
 	supervisor *oversight.Tree
 	ctx        context.Context
 	cancel     context.CancelFunc
-	bus        *nsbus.Bus
 }
 
 func New(options AppOptions) (*App, error) {
@@ -73,8 +69,6 @@ func New(options AppOptions) (*App, error) {
 		return nil, err
 	}
 
-	ns.setupSteam()
-	ns.setupDota()
 	ns.setupSupervisor()
 	ns.setupContext()
 
@@ -102,14 +96,6 @@ func (ns *App) setupAPI() error {
 	return nil
 }
 
-func (ns *App) setupSteam() {
-	ns.steam = steam.NewClient()
-}
-
-func (ns *App) setupDota() {
-	ns.dota = dota2.New(ns.steam, ns.log.WithPackage("dota2").LogrusLogger())
-}
-
 func (ns *App) setupSupervisor() {
 	sessOptions := nssess.ManagerOptions{
 		Log:                   ns.log,
@@ -123,12 +109,12 @@ func (ns *App) setupSupervisor() {
 		MatchInfoInterval:     matchInfoInterval,
 	}
 
-	session := nssess.NewManager(sessOptions).ChildSpec()
+	session := nssess.NewManager(sessOptions)
 
 	ns.supervisor = oversight.New(
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(ns.log.WithPackage("supervisor").OversightLogger()),
-		oversight.Process(session),
+		oversight.Process(session.ChildSpec()),
 	)
 }
 
@@ -136,11 +122,9 @@ func (ns *App) setupContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	ctx = nsctx.WithLogger(ctx, ns.log)
+	ctx = nsctx.WithBus(ctx, ns.bus)
 	ctx = nsctx.WithDB(ctx, ns.db)
 	ctx = nsctx.WithRedis(ctx, ns.rds)
-	ctx = nsctx.WithBus(ctx, ns.bus)
-	ctx = nsctx.WithSteam(ctx, ns.steam)
-	ctx = nsctx.WithDota(ctx, ns.dota)
 	ctx = nsctx.WithAPI(ctx, ns.api)
 	ctx = nsctx.WithDotaAPI(ctx, ns.apiDota)
 

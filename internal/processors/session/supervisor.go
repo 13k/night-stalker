@@ -28,52 +28,52 @@ type supervisorOptions struct {
 }
 
 type supervisor struct {
-	log    *nslog.Logger
-	root   *oversight.Tree
-	waitCh chan struct{}
+	log  *nslog.Logger
+	root *oversight.Tree
+	wait chan struct{}
 }
 
 func newSupervisor(options supervisorOptions) *supervisor {
-	dispatcherSpec := nsgc.NewDispatcher(nsgc.DispatcherOptions{
+	dispatcher := nsgc.NewDispatcher(nsgc.DispatcherOptions{
 		Log:             options.Log,
 		Bus:             options.Bus,
 		ShutdownTimeout: options.ShutdownTimeout,
-	}).ChildSpec()
+	})
 
-	tvGamesSpec := nstv.NewWatcher(nstv.WatcherOptions{
+	tvGames := nstv.NewWatcher(nstv.WatcherOptions{
 		Log:             options.Log,
 		Bus:             options.Bus,
 		Interval:        options.TVGamesInterval,
 		ShutdownTimeout: options.ShutdownTimeout,
-	}).ChildSpec()
+	})
 
-	rtStatsSpec := nsrts.NewMonitor(nsrts.MonitorOptions{
+	rtStats := nsrts.NewMonitor(nsrts.MonitorOptions{
 		Log:             options.Log,
 		Bus:             options.Bus,
 		PoolSize:        options.RealtimeStatsPoolSize,
 		Interval:        options.RealtimeStatsInterval,
 		ShutdownTimeout: options.ShutdownTimeout,
-	}).ChildSpec()
+	})
 
-	matchInfoSpec := nsmdtl.NewMonitor(nsmdtl.MonitorOptions{
+	matchDetails := nsmdtl.NewMonitor(nsmdtl.MonitorOptions{
 		Log:             options.Log,
 		Bus:             options.Bus,
 		PoolSize:        options.MatchInfoPoolSize,
 		Interval:        options.MatchInfoInterval,
 		ShutdownTimeout: options.ShutdownTimeout,
-	}).ChildSpec()
+	})
 
-	chatSpec := nscomm.NewChat(nscomm.ChatOptions{
+	chat := nscomm.NewChat(nscomm.ChatOptions{
 		Log:             options.Log,
 		Bus:             options.Bus,
 		ShutdownTimeout: options.ShutdownTimeout,
-	}).ChildSpec()
+	})
 
-	liveMatchesSpec := nslm.NewCollector(nslm.CollectorOptions{
+	liveMatches := nslm.NewCollector(nslm.CollectorOptions{
 		Log:             options.Log,
 		Bus:             options.Bus,
 		ShutdownTimeout: options.ShutdownTimeout,
-	}).ChildSpec()
+	})
 
 	log := options.Log.WithPackage(processorName).WithPackage("supervisor")
 
@@ -82,38 +82,41 @@ func newSupervisor(options supervisorOptions) *supervisor {
 		oversight.WithRestartStrategy(oversight.OneForOne()),
 		oversight.WithLogger(log.OversightLogger()),
 		oversight.Process(
-			dispatcherSpec,
-			tvGamesSpec,
-			rtStatsSpec,
-			matchInfoSpec,
-			chatSpec,
-			liveMatchesSpec,
+			chat.ChildSpec(),
+			liveMatches.ChildSpec(),
+			dispatcher.ChildSpec(),
+			tvGames.ChildSpec(),
+			rtStats.ChildSpec(),
+			matchDetails.ChildSpec(),
 		),
 	)
 
 	return &supervisor{
-		root:   tree,
-		log:    log,
-		waitCh: make(chan struct{}),
+		root: tree,
+		log:  log,
 	}
 }
 
-func (s *supervisor) start(ctx context.Context) {
-	defer s.finished()
+func (s *supervisor) Start(ctx context.Context) {
+	s.wait = make(chan struct{})
+
+	defer func() {
+		close(s.wait)
+		s.wait = nil
+		s.log.Trace("finished")
+	}()
+
+	s.log.Trace("starting")
 
 	if err := s.root.Start(ctx); err != nil {
 		s.log.WithError(err).Error("supervisor error")
 	}
 }
 
-func (s *supervisor) wait() {
-	if s.waitCh != nil {
-		<-s.waitCh
-	}
-}
-
-func (s *supervisor) finished() {
-	if s.waitCh != nil {
-		close(s.waitCh)
+func (s *supervisor) Wait() {
+	if s.wait != nil {
+		s.log.Trace("waiting finish")
+		<-s.wait
+		s.log.Trace("wait ended")
 	}
 }

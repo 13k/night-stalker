@@ -1,55 +1,22 @@
 package bus
 
 import (
-	"fmt"
 	"time"
-
-	"golang.org/x/xerrors"
 )
 
-type PublishTimeoutError struct {
+type ErrPublishTimeout struct {
 	Message Message
 	Timeout time.Duration
-
-	message string
 }
 
-func NewPublishTimeoutErrorX(msg Message, timeout time.Duration) error {
-	err := &PublishTimeoutError{
-		Message: msg,
-		Timeout: timeout,
-	}
-
-	return xerrors.Errorf("bus error: %w", err)
+func (*ErrPublishTimeout) Error() string {
+	return "bus publish timeout"
 }
 
-func (err *PublishTimeoutError) Error() string {
-	if err.message == "" {
-		err.message = fmt.Sprintf(
-			"timeout when publishing message to topic '%s' (payload type: %T)",
-			err.Message.Topic,
-			err.Message.Payload,
-		)
-	}
-
-	return err.message
-}
-
-type SubscriptionExpiredError struct {
+type ErrSubscriptionExpired struct {
 	Subscription *Subscription
-
-	message string
 }
 
-func NewSubscriptionExpiredErrorX(sub *Subscription) error {
-	err := &SubscriptionExpiredError{Subscription: sub}
-	return xerrors.Errorf("bus error: %w", err)
-}
-
-func (err *SubscriptionExpiredError) Error() string {
-	if err.message == "" {
-		err.message = fmt.Sprintf("bus subscription expired (topic '%s')", err.Subscription.Topic)
-	}
-
-	return err.message
+func (*ErrSubscriptionExpired) Error() string {
+	return "bus subscription expired"
 }

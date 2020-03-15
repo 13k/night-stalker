@@ -7,6 +7,7 @@ import (
 	"cirello.io/oversight"
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -31,15 +32,15 @@ type CollectorOptions struct {
 var _ nsproc.Processor = (*Collector)(nil)
 
 type Collector struct {
-	ctx                     context.Context
-	options                 CollectorOptions
-	matches                 *nscol.LiveMatchesContainer
-	log                     *nslog.Logger
-	db                      *gorm.DB
-	rds                     *redis.Client
-	bus                     *nsbus.Bus
-	busSubLiveMatchesAll    *nsbus.Subscription
-	busSubLiveMatchStatsAll *nsbus.Subscription
+	ctx                  context.Context
+	options              CollectorOptions
+	matches              *nscol.LiveMatchesContainer
+	log                  *nslog.Logger
+	db                   *gorm.DB
+	rds                  *redis.Client
+	bus                  *nsbus.Bus
+	busLiveMatchesAll    *nsbus.Subscription
+	busLiveMatchStatsAll *nsbus.Subscription
 }
 
 func NewCollector(options CollectorOptions) *Collector {
@@ -65,8 +66,8 @@ func (p *Collector) ChildSpec() oversight.ChildProcessSpecification {
 
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
-		Restart:  oversight.Transient(),
 		Start:    p.Start,
+		Restart:  oversight.Transient(),
 		Shutdown: shutdown,
 	}
 }
@@ -74,12 +75,22 @@ func (p *Collector) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Collector) Start(ctx context.Context) (err error) {
 	defer nsrt.RecoverError(p.log, &err)
 
+	err = p.start(ctx)
+
+	if err != nil {
+		p.handleError(err)
+	}
+
+	return err
+}
+
+func (p *Collector) start(ctx context.Context) error {
 	if err := p.setupContext(ctx); err != nil {
-		return err
+		return xerrors.Errorf("error setting up context: %w", err)
 	}
 
 	if err := p.seedLiveMatches(); err != nil {
-		return err
+		return xerrors.Errorf("error seeding live matches: %w", err)
 	}
 
 	p.busSubscribe()
@@ -87,35 +98,41 @@ func (p *Collector) Start(ctx context.Context) (err error) {
 	return p.loop()
 }
 
+func (p *Collector) stop() {
+	p.busUnsubscribe()
+	p.ctx = nil
+	p.log.Warn("stop")
+}
+
 func (p *Collector) busSubscribe() {
-	if p.busSubLiveMatchesAll == nil {
-		p.busSubLiveMatchesAll = p.bus.Sub(nsbus.TopicPatternLiveMatchesAll)
+	if p.busLiveMatchesAll == nil {
+		p.busLiveMatchesAll = p.bus.Sub(nsbus.TopicPatternLiveMatchesAll)
 	}
 
-	if p.busSubLiveMatchStatsAll == nil {
-		p.busSubLiveMatchStatsAll = p.bus.Sub(nsbus.TopicPatternLiveMatchStatsAll)
+	if p.busLiveMatchStatsAll == nil {
+		p.busLiveMatchStatsAll = p.bus.Sub(nsbus.TopicPatternLiveMatchStatsAll)
 	}
 }
 
 func (p *Collector) busUnsubscribe() {
-	if p.busSubLiveMatchesAll != nil {
-		p.bus.Unsub(p.busSubLiveMatchesAll)
-		p.busSubLiveMatchesAll = nil
+	if p.busLiveMatchesAll != nil {
+		p.bus.Unsub(p.busLiveMatchesAll)
+		p.busLiveMatchesAll = nil
 	}
 
-	if p.busSubLiveMatchStatsAll != nil {
-		p.bus.Unsub(p.busSubLiveMatchStatsAll)
-		p.busSubLiveMatchStatsAll = nil
+	if p.busLiveMatchStatsAll != nil {
+		p.bus.Unsub(p.busLiveMatchStatsAll)
+		p.busLiveMatchStatsAll = nil
 	}
 }
 
 func (p *Collector) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
-		return nsproc.ErrProcessorContextDatabase
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
 	}
 
 	if p.rds = nsctx.GetRedis(ctx); p.rds == nil {
-		return nsproc.ErrProcessorContextRedis
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextRedis)
 	}
 
 	p.ctx = ctx
@@ -131,8 +148,7 @@ func (p *Collector) seedLiveMatches() error {
 	matchIDs, err := p.rdsLiveMatchIDs()
 
 	if err != nil {
-		p.log.WithError(err).Error("error loading live matches ids")
-		return err
+		return xerrors.Errorf("error loading live matches ids: %w", err)
 	}
 
 	if len(matchIDs) == 0 {
@@ -143,8 +159,7 @@ func (p *Collector) seedLiveMatches() error {
 	liveMatches, err := p.loadLiveMatches(matchIDs)
 
 	if err != nil {
-		p.log.WithError(err).Error("error loading live matches")
-		return err
+		return xerrors.Errorf("error loading live matches: %w", err)
 	}
 
 	p.matches = nscol.NewLiveMatchesContainer(liveMatches...)
@@ -158,19 +173,19 @@ func (p *Collector) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 	result := p.rds.ZRevRange(nsrds.KeyLiveMatches, 0, -1)
 
 	if err := result.Err(); err != nil {
-		p.log.
-			WithField("key", nsrds.KeyLiveMatches).
-			WithError(err).
-			Error("error fetching cached live matches index")
-
-		return nil, err
+		return nil, xerrors.Errorf("error fetching cached live matches IDs: %w", &errRedisOp{
+			Key: nsrds.KeyLiveMatches,
+			Err: err,
+		})
 	}
 
 	matchIDs := make(nscol.MatchIDs, len(result.Val()))
 
 	if err := result.ScanSlice(&matchIDs); err != nil {
-		p.log.WithError(err).Error("error parsing live match IDs")
-		return nil, err
+		return nil, xerrors.Errorf("error parsing live match IDs: %w", &errRedisOp{
+			Key: nsrds.KeyLiveMatches,
+			Err: err,
+		})
 	}
 
 	return matchIDs, nil
@@ -186,8 +201,7 @@ func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatches,
 		Error
 
 	if err != nil {
-		p.log.WithError(err).Error("database live matches")
-		return nil, err
+		return nil, xerrors.Errorf("error loading live matches: %w", err)
 	}
 
 	return matches, nil
@@ -202,17 +216,21 @@ func (p *Collector) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSubLiveMatchesAll.C:
+		case busmsg, ok := <-p.busLiveMatchesAll.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busSubLiveMatchesAll)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busLiveMatchesAll,
+				})
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
 				p.handleLiveMatchesChange(msg)
 			}
-		case busmsg, ok := <-p.busSubLiveMatchStatsAll.C:
+		case busmsg, ok := <-p.busLiveMatchStatsAll.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busSubLiveMatchStatsAll)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busLiveMatchStatsAll,
+				})
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchStatsChangeMessage); ok {
@@ -222,31 +240,30 @@ func (p *Collector) loop() error {
 	}
 }
 
-func (p *Collector) stop() {
-	p.busUnsubscribe()
-	p.ctx = nil
-	p.log.Warn("stop")
-}
-
 func (p *Collector) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
+	var err error
+
 	switch msg.Op {
 	case nspb.CollectionOp_COLLECTION_OP_ADD, nspb.CollectionOp_COLLECTION_OP_UPDATE:
-		p.add(msg.Matches)
+		err = p.add(msg.Matches)
 	case nspb.CollectionOp_COLLECTION_OP_REMOVE:
-		p.remove(msg.MatchIDs)
+		err = p.remove(msg.MatchIDs)
 	default:
 		return
 	}
+
+	if err != nil {
+		p.handleError(xerrors.Errorf("error handling live matches change: %w", err))
+	}
 }
 
-func (p *Collector) add(matches nscol.LiveMatches) {
+func (p *Collector) add(matches nscol.LiveMatches) error {
 	if len(matches) == 0 {
-		return
+		return nil
 	}
 
 	if err := p.rdsAddLiveMatches(matches); err != nil {
-		p.log.WithError(err).Error("failed to append matches to redis")
-		return
+		return xerrors.Errorf("error adding live matches to redis: %w", err)
 	}
 
 	beforeLen := p.matches.Len()
@@ -260,18 +277,21 @@ func (p *Collector) add(matches nscol.LiveMatches) {
 			"change", afterLen-beforeLen,
 		).Debug("matches added")
 
-		p.notifyLiveMatchesAdd(change)
+		if err := p.notifyLiveMatchesAdd(change); err != nil {
+			return xerrors.Errorf("error notifying live matches change: %w", err)
+		}
 	}
+
+	return nil
 }
 
-func (p *Collector) remove(matchIDs nscol.MatchIDs) {
+func (p *Collector) remove(matchIDs nscol.MatchIDs) error {
 	if len(matchIDs) == 0 {
-		return
+		return nil
 	}
 
 	if err := p.rdsRemoveLiveMatches(matchIDs); err != nil {
-		p.log.WithError(err).Error("failed to remove matches from redis")
-		return
+		return xerrors.Errorf("error removing live matches from redis: %w", err)
 	}
 
 	beforeLen := p.matches.Len()
@@ -285,52 +305,61 @@ func (p *Collector) remove(matchIDs nscol.MatchIDs) {
 			"change", afterLen-beforeLen,
 		).Debug("matches removed")
 
-		p.notifyLiveMatchesRemove(change)
+		if err := p.notifyLiveMatchesRemove(change); err != nil {
+			return xerrors.Errorf("error notifying live matches change: %w", err)
+		}
 	}
+
+	return nil
 }
 
 func (p *Collector) handleLiveMatchStatsChange(msg *nsbus.LiveMatchStatsChangeMessage) {
+	var err error
+
 	switch msg.Op {
 	case nspb.CollectionOp_COLLECTION_OP_ADD:
-		p.addStats(msg.Stats)
+		err = p.addStats(msg.Stats)
 	default:
 		return
 	}
+
+	if err != nil {
+		p.handleError(xerrors.Errorf("error handling live match stats change: %w", err))
+	}
 }
 
-func (p *Collector) addStats(stats nscol.LiveMatchStats) {
-	l := p.log.WithField("count", len(stats))
-
+func (p *Collector) addStats(stats nscol.LiveMatchStats) error {
 	if err := p.rdsPubLiveMatchStatsAdd(stats); err != nil {
-		l.WithError(err).Error("error publishing match stats update")
-		return
+		return xerrors.Errorf("error publishing match stats update: %w", err)
 	}
 
-	l.Debug("received match stats")
+	p.log.WithField("count", len(stats)).Debug("received match stats")
+
+	return nil
 }
 
-func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) {
+func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) error {
 	if err := p.busPubAllMatches(); err != nil {
-		p.log.WithError(err).Error("error publishing to bus")
-		return
+		return xerrors.Errorf("error publishing to bus: %w", err)
 	}
 
 	if err := p.rdsPubLiveMatchesAdd(liveMatches); err != nil {
-		p.log.WithError(err).Error("error publishing live matches change")
-		return
+		return xerrors.Errorf("error publishing live matches change: %w", err)
 	}
+
+	return nil
 }
 
-func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) {
+func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
 	if err := p.busPubAllMatches(); err != nil {
-		p.log.WithError(err).Error("error publishing to bus")
-		return
+		return xerrors.Errorf("error publishing to bus: %w", err)
 	}
 
 	if err := p.rdsPubLiveMatchesRemove(matchIDs); err != nil {
-		p.log.WithError(err).Error("error publishing live matches change")
-		return
+		return xerrors.Errorf("error publishing live matches change: %w", err)
 	}
+
+	return nil
 }
 
 func (p *Collector) busPubAllMatches() error {
@@ -348,14 +377,20 @@ func (p *Collector) rdsAddLiveMatches(liveMatches nscol.LiveMatches) error {
 	result := p.rds.ZAdd(nsrds.KeyLiveMatches, zValues...)
 
 	if result.Err() != nil {
-		return result.Err()
+		return xerrors.Errorf("error adding live matches IDs: %w", &errRedisOp{
+			Key: nsrds.KeyLiveMatches,
+			Err: result.Err(),
+		})
 	}
 
 	zValues = nsrds.LiveMatchesToZValuesByTime(liveMatches)
 	result = p.rds.ZAdd(nsrds.KeyLiveMatchesByTime, zValues...)
 
 	if result.Err() != nil {
-		return result.Err()
+		return xerrors.Errorf("error adding live matches IDs: %w", &errRedisOp{
+			Key: nsrds.KeyLiveMatchesByTime,
+			Err: result.Err(),
+		})
 	}
 
 	return nil
@@ -367,13 +402,19 @@ func (p *Collector) rdsRemoveLiveMatches(matchIDs nscol.MatchIDs) error {
 	result := p.rds.ZRem(nsrds.KeyLiveMatches, ifaceMatchIDs...)
 
 	if result.Err() != nil {
-		return result.Err()
+		return xerrors.Errorf("error removing live matches IDs: %w", &errRedisOp{
+			Key: nsrds.KeyLiveMatches,
+			Err: result.Err(),
+		})
 	}
 
 	result = p.rds.ZRem(nsrds.KeyLiveMatchesByTime, ifaceMatchIDs...)
 
 	if result.Err() != nil {
-		return result.Err()
+		return xerrors.Errorf("error removing live matches IDs: %w", &errRedisOp{
+			Key: nsrds.KeyLiveMatchesByTime,
+			Err: result.Err(),
+		})
 	}
 
 	return nil
@@ -381,15 +422,51 @@ func (p *Collector) rdsRemoveLiveMatches(matchIDs nscol.MatchIDs) error {
 
 func (p *Collector) rdsPubLiveMatchesAdd(liveMatches nscol.LiveMatches) error {
 	result := p.rds.Publish(nsrds.TopicLiveMatchesAdd, liveMatches.MatchIDs().Join(","))
-	return result.Err()
+
+	if result.Err() != nil {
+		return xerrors.Errorf("error publishing live matches change: %w", &errRedisPubsub{
+			Topic: nsrds.TopicLiveMatchesAdd,
+			Err:   result.Err(),
+		})
+	}
+
+	return nil
 }
 
 func (p *Collector) rdsPubLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
 	result := p.rds.Publish(nsrds.TopicLiveMatchesRemove, matchIDs.Join(","))
-	return result.Err()
+
+	if result.Err() != nil {
+		return xerrors.Errorf("error publishing live matches change: %w", &errRedisPubsub{
+			Topic: nsrds.TopicLiveMatchesRemove,
+			Err:   result.Err(),
+		})
+	}
+
+	return nil
 }
 
 func (p *Collector) rdsPubLiveMatchStatsAdd(stats nscol.LiveMatchStats) error {
 	result := p.rds.Publish(nsrds.TopicLiveMatchStatsAdd, stats.MatchIDs().Join(","))
-	return result.Err()
+
+	if result.Err() != nil {
+		return xerrors.Errorf("error publishing live match stats change: %w", &errRedisPubsub{
+			Topic: nsrds.TopicLiveMatchStatsAdd,
+			Err:   result.Err(),
+		})
+	}
+
+	return nil
+}
+
+func (p *Collector) handleError(err error) {
+	if e := (&errRedisOp{}); xerrors.As(err, &e) {
+		p.log.WithField("key", e.Key).WithError(e.Err).Error("redis error")
+	} else if e := (&errRedisPubsub{}); xerrors.As(err, &e) {
+		p.log.WithField("topic", e.Topic).WithError(e.Err).Error("redis error")
+	} else {
+		p.log.WithError(err).Error("live_matches error")
+	}
+
+	p.log.Errorx(err)
 }

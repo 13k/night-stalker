@@ -5,17 +5,10 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/faceit/go-steam"
-	"github.com/faceit/go-steam/netutil"
-	"github.com/faceit/go-steam/protocol/steamlang"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2"
-	"github.com/paralin/go-dota2/events"
-	"github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
-	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
@@ -41,17 +34,15 @@ type ManagerOptions struct {
 var _ nsproc.Processor = (*Manager)(nil)
 
 type Manager struct {
-	options     ManagerOptions
-	ctx         context.Context
-	login       *models.SteamLogin
-	log         *nslog.Logger
-	bus         *nsbus.Bus
-	db          *gorm.DB
-	steam       *steam.Client
-	dota        *dota2.Dota2
-	dotaGreeter *dotaGreeter
-	session     *session
-	supervisor  *supervisor
+	options    ManagerOptions
+	login      *models.SteamLogin
+	ctx        context.Context
+	log        *nslog.Logger
+	bus        *nsbus.Bus
+	db         *gorm.DB
+	conn       *conn
+	session    *session
+	supervisor *supervisor
 }
 
 func NewManager(options ManagerOptions) *Manager {
@@ -74,8 +65,8 @@ func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
 
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
-		Restart:  oversight.Permanent(),
 		Start:    p.Start,
+		Restart:  oversight.Permanent(),
 		Shutdown: shutdown,
 	}
 }
@@ -83,471 +74,126 @@ func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Manager) Start(ctx context.Context) (err error) {
 	defer nsrt.RecoverError(p.log, &err)
 
+	err = p.start(ctx)
+
+	if err != nil {
+		p.handleError(err)
+	}
+
+	return err
+}
+
+func (p *Manager) start(ctx context.Context) error {
 	if err := p.setupContext(ctx); err != nil {
-		return err
+		return xerrors.Errorf("error setting up context: %w", err)
 	}
 
 	if err := p.loadLogin(); err != nil {
-		p.log.WithError(err).Error("error loading login info")
-		return err
+		return xerrors.Errorf("error loading login info: %w", err)
 	}
 
 	if p.isSuspended() {
-		p.log.WithField("until", p.login.SuspendedUntil).Error("client suspended")
-		return NewErrDotaClientSuspendedX(p.login.SuspendedUntil)
-	}
-
-	if err := p.connectSteam(); err != nil {
-		p.log.WithError(err).Error("failed to connect to steam")
-		return err
+		return xerrors.Errorf("fatal error: %w", &ErrDotaClientSuspended{
+			Until: p.login.SuspendedUntil,
+		})
 	}
 
 	return p.loop()
 }
 
-func (p *Manager) setupContext(ctx context.Context) error {
-	if p.db = nsctx.GetDB(ctx); p.db == nil {
-		return nsproc.ErrProcessorContextDatabase
-	}
-
-	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
-		return nsproc.ErrProcessorContextSteamClient
-	}
-
-	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
-		return nsproc.ErrProcessorContextDotaClient
-	}
-
-	p.dotaGreeter = newDotaGreeter(p.log, p.dota)
-	p.ctx = ctx
-
-	return nil
-}
-
-func (p *Manager) setupSupervisor() {
-	if p.supervisor != nil {
-		p.log.Warn("called setupSupervisor() with live supervisor")
-		return
-	}
-
-	p.supervisor = newSupervisor(supervisorOptions{
-		Log:                   p.options.Log,
-		Bus:                   p.bus,
-		ShutdownTimeout:       p.options.ShutdownTimeout,
-		TVGamesInterval:       p.options.TVGamesInterval,
-		RealtimeStatsPoolSize: p.options.RealtimeStatsPoolSize,
-		RealtimeStatsInterval: p.options.RealtimeStatsInterval,
-		MatchInfoPoolSize:     p.options.MatchInfoPoolSize,
-		MatchInfoInterval:     p.options.MatchInfoInterval,
-	})
-}
-
-func (p *Manager) startSession() {
-	if p.session != nil {
-		p.log.Warn("called startSession() with live session")
-		return
-	}
-
-	p.session = newSession(p.ctx)
-	p.setupSupervisor()
-
-	go p.supervisor.start(p.session.ctx)
-}
-
-func (p *Manager) cancelSession() {
-	if p.session == nil {
-		p.log.Warn("called cancelSession() with no session")
-		return
-	}
-
-	p.session.cancel()
-
-	if p.supervisor != nil {
-		p.log.Debug("waiting for supervisor to stop")
-		p.supervisor.wait()
-		p.log.Debug("supervisor stopped")
-	}
-
-	p.supervisor = nil
-	p.session = nil
+func (p *Manager) stop() {
+	p.log.Warn("stopping...")
+	p.disconnect()
+	p.ctx = nil
+	p.log.Warn("stop")
 }
 
 func (p *Manager) loop() error {
 	defer p.stop()
 
+	var subConn *nsbus.Subscription
+	var subSession *nsbus.Subscription
+
+	defer func() {
+		if p.conn != nil && subConn != nil {
+			p.conn.Bus().Unsub(subConn)
+		}
+
+		if p.session != nil && subSession != nil {
+			p.session.Bus().Unsub(subSession)
+		}
+	}()
+
 	p.log.Info("start")
 
+	// FIXME: connect/startSession must run concurrently with loop
+
 	for {
+		if p.conn == nil {
+			if err := p.connect(); err != nil {
+				return xerrors.Errorf("error creating connection: %w", err)
+			}
+
+			subConn = nil
+
+			if p.session != nil {
+				p.closeSession()
+			}
+		}
+
+		if p.session == nil {
+			if err := p.startSession(); err != nil {
+				return xerrors.Errorf("error creating session: %w", err)
+			}
+
+			subSession = nil
+		}
+
+		if subConn == nil {
+			subConn = p.conn.Bus().Sub("events")
+		}
+
+		if subSession == nil {
+			subSession = p.session.Bus().Sub("events")
+		}
+
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case ev, ok := <-p.steam.Events():
+		case busMsg, ok := <-subConn.C:
 			if !ok {
-				return xerrors.New("Steam events closed")
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: subConn,
+				})
 			}
 
-			if err := p.handleEvent(ev); err != nil {
+			if _, ok := busMsg.Payload.(*connectionClosedEvent); ok {
+				p.log.Warn("connection closed")
+				p.disconnect()
+				continue
+			}
+
+			if err := p.handleEvent(busMsg.Payload); err != nil {
 				return err
 			}
+		case busMsg, ok := <-subSession.C:
+			if !ok {
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: subSession,
+				})
+			}
+
+			if _, ok := busMsg.Payload.(*sessionClosedEvent); ok {
+				p.log.Warn("session closed")
+				p.closeSession()
+				continue
+			}
+
+			if stateMsg, ok := busMsg.Payload.(*sessionStateChangeEvent); ok && stateMsg.UnreadyToReady {
+				p.startSupervisor()
+			}
 		}
 	}
-}
-
-func (p *Manager) stop() {
-	p.log.Warn("stopping...")
-	p.dota.Close()
-	p.steam.Disconnect()
-	p.cancelSession()
-	p.ctx = nil
-	p.log.Warn("stop")
-}
-
-func (p *Manager) handleEvent(ev interface{}) error {
-	var err error
-
-	switch e := ev.(type) {
-	case *steam.ClientCMListEvent:
-		err = p.onSteamServerList(e)
-	case *steam.ConnectedEvent:
-		err = p.onSteamConnect()
-	case *steam.DisconnectedEvent:
-		err = p.onSteamDisconnect(e)
-	case *steam.LoggedOnEvent:
-		err = p.onSteamLogOn(e)
-	case *steam.LoginKeyEvent:
-		err = p.onSteamLoginKey(e)
-	case *steam.MachineAuthUpdateEvent:
-		err = p.onSteamMachineAuth(e)
-	case *steam.WebSessionIdEvent:
-		err = p.onSteamWebSession(e)
-	case *steam.WebLoggedOnEvent:
-		err = p.onSteamWebLogOn(e)
-	case *steam.LoggedOffEvent:
-		err = p.onSteamLogOff(e)
-	case *steam.LogOnFailedEvent:
-		err = p.onSteamLogOnFail(e)
-	case *events.ClientSuspended:
-		err = p.onDotaClientSuspended(e)
-	case events.ClientStateChanged:
-		err = p.onDotaGCStateChange(e)
-	case *events.ClientWelcomed:
-		err = p.onDotaWelcome(e)
-	case steam.FatalErrorEvent:
-		err = xerrors.Errorf("steam fatal error: %w", e)
-	default:
-		err = p.busPubEvent(ev)
-	}
-
-	return err
-}
-
-func (p *Manager) isSuspended() bool {
-	return p.login.SuspendedUntil != nil && time.Now().Before(*p.login.SuspendedUntil)
-}
-
-func (p *Manager) randomServer() (*models.SteamServer, error) {
-	server := &models.SteamServer{}
-	result := p.db.Order("random()").Take(&server)
-
-	if err := result.Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return server, nil
-}
-
-func (p *Manager) saveServers(addresses []*netutil.PortAddr) error {
-	var err error
-
-	tx := p.db.Begin()
-
-	for _, addr := range addresses {
-		server := &models.SteamServer{}
-		err = p.db.
-			Where(&models.SteamServer{Address: addr.String()}).
-			FirstOrCreate(server).
-			Error
-
-		if err != nil {
-			break
-		}
-	}
-
-	if err != nil {
-		p.log.WithError(err).Error("error saving servers")
-		return tx.Rollback().Error
-	}
-
-	return tx.Commit().Error
-}
-
-func (p *Manager) loadLogin() error {
-	err := p.db.
-		Where(&models.SteamLogin{Username: p.options.Credentials.Username}).
-		FirstOrInit(p.login).
-		Error
-
-	if err != nil {
-		p.log.WithError(err).Error("error loading login")
-	}
-
-	return err
-}
-
-func (p *Manager) updateLogin(update *models.SteamLogin) error {
-	p.log.Debug("update login")
-
-	err := p.db.
-		Where(&models.SteamLogin{Username: p.login.Username}).
-		Assign(update).
-		FirstOrCreate(p.login).
-		Error
-
-	if err != nil {
-		p.log.WithError(err).Error("error updating login")
-	}
-
-	return err
-}
-
-func (p *Manager) saveDotaWelcome(welcome *protocol.CMsgClientWelcome) error {
-	update := &models.SteamLogin{
-		GameVersion:       welcome.GetVersion(),
-		LocationCountry:   welcome.GetLocation().GetCountry(),
-		LocationLatitude:  welcome.GetLocation().GetLatitude(),
-		LocationLongitude: welcome.GetLocation().GetLongitude(),
-	}
-
-	return p.updateLogin(update)
-}
-
-func (p *Manager) connectSteam() error {
-	server, err := p.randomServer()
-
-	if err != nil {
-		return xerrors.Errorf("error loading steam server: %w", err)
-	}
-
-	if server != nil {
-		addr := netutil.ParsePortAddr(server.Address)
-
-		if addr == nil {
-			return NewErrInvalidServerAddressX(server.Address)
-		}
-
-		p.steam.ConnectTo(addr)
-	} else {
-		if err := steam.InitializeSteamDirectory(); err != nil {
-			return xerrors.Errorf("error initializing steam directory: %w", err)
-		}
-
-		p.steam.Connect()
-	}
-
-	return nil
-}
-
-func (p *Manager) onSteamConnect() error { //nolint: unparam
-	p.log.
-		WithField("username", p.options.Credentials.Username).
-		Info("connected, logging in")
-
-	logOnDetails := &steam.LogOnDetails{
-		Username:               p.options.Credentials.Username,
-		Password:               p.options.Credentials.Password,
-		AuthCode:               p.options.Credentials.AuthCode,
-		TwoFactorCode:          p.options.Credentials.TwoFactorCode,
-		SentryFileHash:         steam.SentryHash(p.login.MachineHash),
-		ShouldRememberPassword: p.options.Credentials.RememberPassword,
-	}
-
-	if logOnDetails.Password == "" {
-		logOnDetails.LoginKey = p.login.LoginKey
-	}
-
-	p.steam.Auth.LogOn(logOnDetails)
-
-	return nil
-}
-
-func (p *Manager) onSteamDisconnect(_ *steam.DisconnectedEvent) error {
-	p.log.Warn("disconnected")
-	return NewErrSteamDisconnectedX()
-}
-
-func (p *Manager) onSteamServerList(e *steam.ClientCMListEvent) error {
-	p.log.WithField("count", len(e.Addresses)).Debug("received server list")
-
-	if err := p.saveServers(e.Addresses); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Manager) onSteamLoginKey(e *steam.LoginKeyEvent) error {
-	p.log.Debug("received login key")
-
-	update := &models.SteamLogin{
-		UniqueID: e.UniqueId,
-		LoginKey: e.LoginKey,
-	}
-
-	if err := p.updateLogin(update); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Manager) onSteamMachineAuth(e *steam.MachineAuthUpdateEvent) error {
-	p.log.Debug("received machine hash")
-
-	update := &models.SteamLogin{MachineHash: e.Hash}
-
-	if err := p.updateLogin(update); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Manager) onSteamWebSession(_ *steam.WebSessionIdEvent) error {
-	p.log.Debug("received web session id")
-
-	update := &models.SteamLogin{
-		WebSessionID: p.steam.Web.SessionId,
-	}
-
-	if err := p.updateLogin(update); err != nil {
-		return err
-	}
-
-	// p.steam.Web.LogOn()
-
-	return nil
-}
-
-func (p *Manager) onSteamWebLogOn(_ *steam.WebLoggedOnEvent) error {
-	p.log.Debug("web logged on")
-
-	update := &models.SteamLogin{
-		WebAuthToken:       p.steam.Web.SteamLogin,
-		WebAuthTokenSecure: p.steam.Web.SteamLoginSecure,
-	}
-
-	if err := p.updateLogin(update); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Manager) onSteamLogOnFail(ev *steam.LogOnFailedEvent) error {
-	return NewErrSteamLogOnFailedX(ev.Result.String())
-}
-
-func (p *Manager) onSteamLogOff(ev *steam.LoggedOffEvent) error {
-	return NewErrSteamLoggedOffX(ev.Result.String())
-}
-
-func (p *Manager) onSteamLogOn(e *steam.LoggedOnEvent) error {
-	p.log.Info("logged in")
-	p.steam.Social.SetPersonaName(p.login.Username)
-	p.steam.Social.SetPersonaState(steamlang.EPersonaState_Online)
-
-	loginUpdate := &models.SteamLogin{
-		SteamID:                   e.ClientSteamId,
-		AccountFlags:              uint32(e.AccountFlags),
-		WebAuthNonce:              e.Body.GetWebapiAuthenticateUserNonce(),
-		CellID:                    e.Body.GetCellId(),
-		CellIDPingThreshold:       e.Body.GetCellIdPingThreshold(),
-		EmailDomain:               e.Body.GetEmailDomain(),
-		VanityURL:                 e.Body.GetVanityUrl(),
-		OutOfGameHeartbeatSeconds: e.Body.GetOutOfGameHeartbeatSeconds(),
-		InGameHeartbeatSeconds:    e.Body.GetInGameHeartbeatSeconds(),
-		PublicIP:                  e.Body.GetPublicIp(),
-		ServerTime:                e.Body.GetRtime32ServerTime(),
-		SteamTicket:               e.Body.GetSteam2Ticket(),
-		UsePics:                   e.Body.GetUsePics(),
-		CountryCode:               e.Body.GetIpCountryCode(),
-		ParentalSettings:          e.Body.GetParentalSettings(),
-		ParentalSettingSignature:  e.Body.GetParentalSettingSignature(),
-		LoginFailuresToMigrate:    e.Body.GetCountLoginfailuresToMigrate(),
-		DisconnectsToMigrate:      e.Body.GetCountDisconnectsToMigrate(),
-		OgsDataReportTimeWindow:   e.Body.GetOgsDataReportTimeWindow(),
-		ClientInstanceID:          e.Body.GetClientInstanceId(),
-		ForceClientUpdateCheck:    e.Body.GetForceClientUpdateCheck(),
-	}
-
-	if err := p.updateLogin(loginUpdate); err != nil {
-		return err
-	}
-
-	p.connectDota()
-
-	return nil
-}
-
-func (p *Manager) connectDota() {
-	if p.session != nil {
-		p.log.Warn("called connectDota() with live session")
-		return
-	}
-
-	p.dota.SetPlaying(true)
-	p.log.Info("playing Dota 2")
-
-	p.dotaGreet()
-}
-
-func (p *Manager) dotaGreet() {
-	go func() {
-		if err := p.dotaGreeter.hello(); err != nil {
-			p.log.WithError(err).Error("error greeting dota GC")
-			p.stop()
-		}
-	}()
-}
-
-func (p *Manager) onDotaWelcome(e *events.ClientWelcomed) error {
-	p.dotaGreeter.welcome()
-
-	if err := p.saveDotaWelcome(e.Welcome); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Manager) onDotaClientSuspended(ev *events.ClientSuspended) error {
-	p.cancelSession()
-
-	until := models.NullUnixTimestamp(int64(ev.GetTimeEnd()))
-	update := &models.SteamLogin{SuspendedUntil: until}
-
-	if err := p.updateLogin(update); err != nil {
-		return err
-	}
-
-	return NewErrDotaClientSuspendedX(until)
-}
-
-func (p *Manager) onDotaGCStateChange(e events.ClientStateChanged) error { //nolint: unparam
-	if !e.OldState.IsReady() && e.NewState.IsReady() {
-		p.log.Info("dota connected")
-		p.startSession()
-	} else if e.OldState.IsReady() && !e.NewState.IsReady() {
-		p.log.Warn("dota disconnected")
-		p.cancelSession()
-		p.dotaGreet()
-	}
-
-	return nil
 }
 
 func (p *Manager) busPubEvent(ev interface{}) error {
@@ -555,4 +201,27 @@ func (p *Manager) busPubEvent(ev interface{}) error {
 		Topic:   nsbus.TopicSteamEvents,
 		Payload: &nsbus.SteamEventMessage{Event: ev},
 	})
+}
+
+func (p *Manager) handleError(err error) {
+	l := p.log
+
+	if e := (&ErrInvalidServerAddress{}); xerrors.As(err, &e) {
+		l = l.WithField("address", e.Address)
+	} else if e := (&ErrSteamDisconnected{}); xerrors.As(err, &e) {
+	} else if e := (&ErrSteamLogOnFailed{}); xerrors.As(err, &e) {
+		l = l.WithField("reason", e.Reason)
+	} else if e := (&ErrSteamLoggedOff{}); xerrors.As(err, &e) {
+		l = l.WithField("reason", e.Reason)
+	} else if e := (&ErrDotaClientSuspended{}); xerrors.As(err, &e) {
+		l = l.WithField("until", e.Until)
+	} else if e := (&ErrDotaGCWelcomeTimeout{}); xerrors.As(err, &e) {
+		l = l.WithOFields(
+			"retry_count", e.RetryCount,
+			"retry_interval", e.RetryInterval,
+		)
+	}
+
+	l.WithError(err).Error("session error")
+	p.log.Errorx(err)
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/olebedev/emitter"
+	"golang.org/x/xerrors"
 
 	nslog "github.com/13k/night-stalker/internal/logger"
 )
@@ -52,7 +53,10 @@ func (b *Bus) Pub(message Message) error {
 	case <-b.Emitter.Emit(message.Topic, message.Payload):
 		return nil
 	case <-time.After(b.options.PubTimeout):
-		return NewPublishTimeoutErrorX(message, b.options.PubTimeout)
+		return xerrors.Errorf("bus error: %w", &ErrPublishTimeout{
+			Message: message,
+			Timeout: b.options.PubTimeout,
+		})
 	}
 }
 
@@ -75,8 +79,8 @@ func (b *Bus) Sub(topic string) *Subscription {
 			}
 
 			messages <- Message{
-				Topic:   ev.Topic,
-				Pattern: ev.OriginalTopic,
+				Topic:   ev.OriginalTopic,
+				Pattern: ev.Topic,
 				Payload: payload,
 			}
 		}

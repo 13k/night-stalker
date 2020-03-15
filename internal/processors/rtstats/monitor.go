@@ -1,19 +1,22 @@
 package rtstats
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"net/url"
-	"strconv"
+	"io/ioutil"
+	"net/http"
+	"net/http/httputil"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
-	"github.com/paralin/go-dota2/protocol"
+	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -52,10 +55,9 @@ type Monitor struct {
 	apiMatchStats         *geyserd2.DOTA2MatchStats
 	bus                   *nsbus.Bus
 	busLiveMatchesReplace *nsbus.Subscription
-	activeReqsMtx         sync.Mutex
-	activeReqs            map[nspb.MatchID]bool
 	liveMatchesMtx        sync.RWMutex
 	liveMatches           nscol.LiveMatches
+	activeReqs            *sync.Map
 	results               nscol.LiveMatchStats
 	resultsCh             chan *models.LiveMatchStats
 }
@@ -65,7 +67,7 @@ func NewMonitor(options MonitorOptions) *Monitor {
 		options:    options,
 		log:        options.Log.WithPackage(processorName),
 		bus:        options.Bus,
-		activeReqs: make(map[nspb.MatchID]bool),
+		activeReqs: &sync.Map{},
 	}
 
 	p.busSubscribe()
@@ -84,8 +86,8 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
-		Restart:  oversight.Transient(),
 		Start:    p.Start,
+		Restart:  oversight.Transient(),
 		Shutdown: shutdown,
 	}
 }
@@ -93,16 +95,26 @@ func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
 func (p *Monitor) Start(ctx context.Context) (err error) {
 	defer nsrt.RecoverError(p.log, &err)
 
+	err = p.start(ctx)
+
+	if err != nil {
+		p.handleError(err)
+	}
+
+	return err
+}
+
+func (p *Monitor) start(ctx context.Context) error {
 	if err := p.setupContext(ctx); err != nil {
-		return err
+		return xerrors.Errorf("error setting up context: %w", err)
 	}
 
 	if err := p.setupAPI(); err != nil {
-		return err
+		return xerrors.Errorf("error setting up API: %w", err)
 	}
 
 	if err := p.setupWorkerPool(); err != nil {
-		return err
+		return xerrors.Errorf("error setting up worker pool: %w", err)
 	}
 
 	p.setupResults()
@@ -111,6 +123,15 @@ func (p *Monitor) Start(ctx context.Context) (err error) {
 	go p.resultsLoop()
 
 	return p.loop()
+}
+
+func (p *Monitor) stop(t *time.Ticker) {
+	t.Stop()
+	p.busUnsubscribe()
+	p.teardownWorkerPool()
+	p.teardownResults()
+	p.ctx = nil
+	p.log.Warn("stop")
 }
 
 func (p *Monitor) busSubscribe() {
@@ -128,11 +149,11 @@ func (p *Monitor) busUnsubscribe() {
 
 func (p *Monitor) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
-		return nsproc.ErrProcessorContextDatabase
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
 	}
 
 	if p.api = nsctx.GetDotaAPI(ctx); p.api == nil {
-		return nsproc.ErrProcessorContextDotaAPI
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDotaAPI)
 	}
 
 	p.ctx = ctx
@@ -148,8 +169,7 @@ func (p *Monitor) setupAPI() error {
 	var err error
 
 	if p.apiMatchStats, err = p.api.DOTA2MatchStats(); err != nil {
-		p.log.WithError(err).Error("error creating API interface")
-		return err
+		return xerrors.Errorf("error creating API interface: %w", err)
 	}
 
 	return nil
@@ -163,8 +183,7 @@ func (p *Monitor) setupWorkerPool() error {
 	var err error
 
 	if p.workerPool, err = ants.NewPool(p.options.PoolSize); err != nil {
-		p.log.WithError(err).Error("error starting worker pool")
-		return err
+		return xerrors.Errorf("error starting worker pool: %w", err)
 	}
 
 	return nil
@@ -205,7 +224,9 @@ func (p *Monitor) loop() error {
 			p.tick()
 		case busmsg, ok := <-p.busLiveMatchesReplace.C:
 			if !ok {
-				return nsbus.NewSubscriptionExpiredErrorX(p.busLiveMatchesReplace)
+				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busLiveMatchesReplace,
+				})
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
@@ -213,15 +234,6 @@ func (p *Monitor) loop() error {
 			}
 		}
 	}
-}
-
-func (p *Monitor) stop(t *time.Ticker) {
-	t.Stop()
-	p.busUnsubscribe()
-	p.teardownWorkerPool()
-	p.teardownResults()
-	p.ctx = nil
-	p.log.Warn("stop")
 }
 
 func (p *Monitor) resultsLoop() {
@@ -252,6 +264,19 @@ func (p *Monitor) resultsLoop() {
 	}
 }
 
+func (p *Monitor) flushResults() {
+	if len(p.results) == 0 {
+		return
+	}
+
+	if err := p.busPublishLiveMatchStatsAdd(p.results...); err != nil {
+		p.handleError(xerrors.Errorf("error publishing live match stats change: %w", err))
+		return
+	}
+
+	p.results = nil
+}
+
 func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
 	if msg.Op != nspb.CollectionOp_COLLECTION_OP_REPLACE {
 		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
@@ -280,155 +305,48 @@ func (p *Monitor) tick() {
 		Debug("requesting stats")
 
 	for _, liveMatch := range p.liveMatches {
-		p.submitLiveMatch(liveMatch)
+		if err := p.enqueueWorker(liveMatch); err != nil {
+			p.handleError(xerrors.Errorf("error enqueuing worker: %w", err))
+		}
 	}
 }
 
-func (p *Monitor) submitLiveMatch(liveMatch *models.LiveMatch) {
-	l := p.log.WithField("match_id", liveMatch.MatchID)
+func (p *Monitor) enqueueWorker(liveMatch *models.LiveMatch) error {
+	if p.ctx.Err() != nil {
+		return xerrors.Errorf("error enqueuing worker: %w", &errWorkerSubmitFailure{
+			LiveMatch: liveMatch,
+			Err:       p.ctx.Err(),
+		})
+	}
 
-	if err := p.ctx.Err(); err != nil {
-		l.WithError(err).Error("context canceled")
-		return
+	w := &worker{
+		db:         p.db,
+		api:        p.apiMatchStats,
+		activeReqs: p.activeReqs,
+		liveMatch:  liveMatch,
 	}
 
 	err := p.workerPool.Submit(func() {
-		p.work(liveMatch)
+		stats, err := w.Run(p.ctx)
+
+		if err != nil {
+			p.handleError(xerrors.Errorf("worker error: %w", err))
+			return
+		}
+
+		if stats != nil {
+			p.resultsCh <- stats
+		}
 	})
 
 	if err != nil {
-		l.WithError(err).Error("error creating worker")
-	}
-}
-
-func (p *Monitor) work(liveMatch *models.LiveMatch) {
-	l := p.log.WithOFields(
-		"match_id", liveMatch.MatchID,
-		"server_id", liveMatch.ServerSteamID,
-	)
-
-	var skip bool
-	p.activeReqsMtx.Lock()
-	skip = p.activeReqs[liveMatch.MatchID]
-	p.activeReqsMtx.Unlock()
-
-	if skip {
-		l.Warn("request in progress")
-		return
+		return xerrors.Errorf("error enqueuing worker: %w", &errWorkerSubmitFailure{
+			LiveMatch: liveMatch,
+			Err:       err,
+		})
 	}
 
-	p.activeReqsMtx.Lock()
-	p.activeReqs[liveMatch.MatchID] = true
-	p.activeReqsMtx.Unlock()
-
-	defer func() {
-		p.activeReqsMtx.Lock()
-		delete(p.activeReqs, liveMatch.MatchID)
-		p.activeReqsMtx.Unlock()
-	}()
-
-	result, err := p.requestMatchStats(liveMatch)
-
-	if err != nil {
-		l.WithError(err).Error("error requesting API")
-		return
-	}
-
-	if result.GetMatch().GetMatchid() != liveMatch.MatchID {
-		return
-	}
-
-	stats, err := p.createLiveMatchStats(liveMatch, result)
-
-	if err != nil {
-		l.WithError(err).Error("error saving stats to database")
-		return
-	}
-
-	p.resultsCh <- stats
-}
-
-func (p *Monitor) flushResults() {
-	if len(p.results) == 0 {
-		return
-	}
-
-	if err := p.busPublishLiveMatchStatsAdd(p.results...); err != nil {
-		p.log.WithError(err).Error("error publishing to bus")
-	}
-
-	p.results = nil
-}
-
-func (p *Monitor) requestMatchStats(liveMatch *models.LiveMatch) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
-	req, err := p.apiMatchStats.GetRealtimeStats()
-
-	if err != nil {
-		p.log.WithError(err).Error("error creating API request")
-		return nil, err
-	}
-
-	headers := map[string]string{
-		"Accept":     "application/json",
-		"Connection": "keep-alive",
-	}
-
-	params := url.Values{}
-	params.Set("server_steam_id", strconv.FormatUint(liveMatch.ServerSteamID.ToUint64(), 10))
-
-	reqOptions := geyser.RequestOptions{
-		Context: p.ctx,
-		Params:  params,
-		Headers: headers,
-	}
-
-	result := &apiResult{}
-	req.SetOptions(reqOptions).SetResult(result)
-
-	resp, err := req.Execute()
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.IsSuccess() {
-		return nil, fmt.Errorf("invalid response status: %s", resp.Status())
-	}
-
-	return result.ToProto(), nil
-}
-
-func (p *Monitor) createLiveMatchStats(
-	liveMatch *models.LiveMatch,
-	result *protocol.CMsgDOTARealtimeGameStatsTerse,
-) (*models.LiveMatchStats, error) {
-	stats := models.NewLiveMatchStats(liveMatch, result)
-
-	for _, team := range result.GetTeams() {
-		stats.Teams = append(stats.Teams, models.LiveMatchStatsTeamDotaProto(team))
-
-		for _, player := range team.GetPlayers() {
-			stats.Players = append(stats.Players, models.NewLiveMatchStatsPlayer(stats, player))
-		}
-	}
-
-	for _, pickban := range result.GetMatch().GetPicks() {
-		stats.Draft = append(stats.Draft, models.LiveMatchStatsPickBanDotaProto(false, pickban))
-	}
-
-	for _, pickban := range result.GetMatch().GetBans() {
-		stats.Draft = append(stats.Draft, models.LiveMatchStatsPickBanDotaProto(true, pickban))
-	}
-
-	for _, building := range result.GetBuildings() {
-		stats.Buildings = append(stats.Buildings, models.LiveMatchStatsBuildingDotaProto(building))
-	}
-
-	if err := p.db.Save(stats).Error; err != nil {
-		return nil, err
-	}
-
-	return stats, nil
+	return nil
 }
 
 func (p *Monitor) busPublishLiveMatchStatsAdd(stats ...*models.LiveMatchStats) error {
@@ -439,4 +357,142 @@ func (p *Monitor) busPublishLiveMatchStatsAdd(stats ...*models.LiveMatchStats) e
 			Stats: stats,
 		},
 	})
+}
+
+func (p *Monitor) handleError(err error) {
+	if e := (&errRequestInProgress{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"match_id", e.LiveMatch.MatchID,
+			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+		).Warn("request in progress")
+
+		return
+	}
+
+	if e := (&errInvalidResponse{}); xerrors.As(err, &e) {
+		// safe to ignore
+
+		/*
+			p.log.WithOFields(
+				"match_id", e.LiveMatch.MatchID,
+				"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+				"res_match_id", e.Result.GetMatch().GetMatchid(),
+				"res_server_id", e.Result.GetMatch().GetServerSteamId(),
+			).Warn("invalid response")
+		*/
+
+		return
+	}
+
+	if e := (&errWorkerSubmitFailure{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"match_id", e.LiveMatch.MatchID,
+			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+		).WithError(e.Err).Error("error submitting worker")
+	} else if e := (&errRequestFailure{}); xerrors.As(err, &e) {
+		l := p.log.WithOFields(
+			"match_id", e.LiveMatch.MatchID,
+			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+		).WithError(e.Err)
+
+		fpath, eErr := handleRequestFailureError(e)
+
+		if eErr != nil {
+			l.WithError(eErr).Error("error handling request failure error")
+			p.log.Errorx(eErr)
+		} else if fpath != "" {
+			l = l.WithField("error_file", fpath)
+		}
+
+		l.Error("request failed")
+	} else if e := (&errStatsSaveFailure{}); xerrors.As(err, &e) {
+		p.log.WithOFields(
+			"match_id", e.LiveMatch.MatchID,
+			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+		).WithError(e.Err).Error("error saving stats")
+	} else {
+		p.log.WithError(err).Error("rtstats error")
+	}
+
+	p.log.Errorx(err)
+}
+
+func handleRequestFailureError(reqErr *errRequestFailure) (string, error) {
+	if reqErr.Response == nil {
+		return "", nil
+	}
+
+	if reqErr.Response.Request == nil {
+		return "", nil
+	}
+
+	if reqErr.Response.Request.RawRequest == nil {
+		return "", nil
+	}
+
+	if reqErr.Response.RawResponse == nil {
+		return "", nil
+	}
+
+	errorsDir := filepath.Join(os.TempDir(), "rtstats_errors")
+	err := os.MkdirAll(errorsDir, 0777)
+
+	if err != nil {
+		return "", xerrors.Errorf("error creating errors directory: %w", err)
+	}
+
+	dump, err := dumpHTTPTransaction(
+		reqErr.Response.Request.RawRequest,
+		reqErr.Response.RawResponse,
+		reqErr.Response.Body(),
+	)
+
+	if err != nil {
+		return "", xerrors.Errorf("error dumping response: %w", err)
+	}
+
+	filename := fmt.Sprintf("%d.err", reqErr.LiveMatch.MatchID)
+	fpath := filepath.Join(errorsDir, filename)
+
+	if err := ioutil.WriteFile(fpath, dump, 0666); err != nil {
+		return "", xerrors.Errorf("error creating error file: %w", err)
+	}
+
+	return fpath, nil
+}
+
+func dumpHTTPTransaction(req *http.Request, res *http.Response, resBody []byte) ([]byte, error) {
+	dump := &bytes.Buffer{}
+
+	reqDump, err := httputil.DumpRequestOut(req, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = dump.Write(reqDump); err != nil {
+		return nil, err
+	}
+
+	if _, err = dump.WriteString("\n-----\n"); err != nil {
+		return nil, err
+	}
+
+	resDump, err := httputil.DumpResponse(res, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := dump.Write(resDump); err != nil {
+		return nil, err
+	}
+
+	if resBody != nil {
+		if _, err := dump.Write(resBody); err != nil {
+			return nil, err
+		}
+	}
+
+	return dump.Bytes(), nil
 }
