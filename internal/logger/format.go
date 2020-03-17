@@ -13,7 +13,10 @@ import (
 )
 
 const (
-	termTimeFormat = "01-02|15:04:05"
+	termTimeFormat          = "01-02|15:04:05"
+	fmtTermTimeMessage      = "[%s] %-40s "
+	fmtTermTimeMessageEmpty = "[%s] "
+	fmtTermPkg              = "[%s] "
 
 	recordKeyTime    = "t"
 	recordKeyLevel   = "level"
@@ -22,24 +25,44 @@ const (
 )
 
 var (
-	levelColorAttrs = map[Level][]color.Attribute{
-		LevelPanic: {color.FgHiMagenta},
-		LevelFatal: {color.FgMagenta},
-		LevelError: {color.FgRed},
-		LevelWarn:  {color.FgYellow},
-		LevelInfo:  {color.FgGreen},
-		LevelDebug: {color.FgCyan},
-		LevelTrace: {color.FgHiBlack},
+	levelColors = map[Level]*color.Color{
+		LevelPanic: color.New(color.FgHiMagenta),
+		LevelFatal: color.New(color.FgMagenta),
+		LevelError: color.New(color.FgRed),
+		LevelWarn:  color.New(color.FgYellow),
+		LevelInfo:  color.New(color.FgGreen),
+		LevelDebug: color.New(color.FgCyan),
+		LevelTrace: color.New(color.FgHiBlack),
 	}
 
-	pkgColorAttrs = map[Level][]color.Attribute{
-		LevelPanic: {color.FgHiMagenta},
-		LevelFatal: {color.FgMagenta},
-		LevelError: {color.FgRed},
-		LevelWarn:  {color.FgYellow},
-		LevelInfo:  {color.FgBlue},
-		LevelDebug: {color.FgHiBlack},
-		LevelTrace: {color.FgHiBlack},
+	pkgColors = map[Level]*color.Color{
+		LevelPanic: color.New(color.FgHiMagenta),
+		LevelFatal: color.New(color.FgMagenta),
+		LevelError: color.New(color.FgRed),
+		LevelWarn:  color.New(color.FgYellow),
+		LevelInfo:  color.New(color.FgBlue),
+		LevelDebug: color.New(color.FgHiBlack),
+		LevelTrace: color.New(color.FgHiBlack),
+	}
+
+	levelPrinters = map[Level]termPrinter{
+		LevelPanic: {color: levelColors[LevelPanic]},
+		LevelFatal: {color: levelColors[LevelFatal]},
+		LevelError: {color: levelColors[LevelError]},
+		LevelWarn:  {color: levelColors[LevelWarn]},
+		LevelInfo:  {color: levelColors[LevelInfo]},
+		LevelDebug: {color: levelColors[LevelDebug]},
+		LevelTrace: {color: levelColors[LevelTrace]},
+	}
+
+	pkgPrinters = map[Level]termPrinter{
+		LevelPanic: {color: pkgColors[LevelPanic]},
+		LevelFatal: {color: pkgColors[LevelFatal]},
+		LevelError: {color: pkgColors[LevelError]},
+		LevelWarn:  {color: pkgColors[LevelWarn]},
+		LevelInfo:  {color: pkgColors[LevelInfo]},
+		LevelDebug: {color: pkgColors[LevelDebug]},
+		LevelTrace: {color: pkgColors[LevelTrace]},
 	}
 )
 
@@ -117,19 +140,45 @@ func LogfmtFormat() log15.Format {
 	})
 }
 
+type termPrinter struct {
+	color *color.Color
+}
+
+func (p termPrinter) Fprintf(w io.Writer, format string, values ...interface{}) (int, error) {
+	if p.color != nil {
+		return p.color.Fprintf(w, format, values...)
+	}
+
+	return fmt.Fprintf(w, format, values...)
+}
+
 func TerminalFormat() log15.Format {
 	return log15.FormatFunc(func(r *log15.Record) []byte {
+		timeStr := r.Time.Format(termTimeFormat)
+		msg := strings.TrimRight(r.Msg, "\n")
 		lvl := levelFromLog15(r.Lvl)
-		lvlColor := color.New(levelColorAttrs[lvl]...)
+		lvlStr := strings.ToUpper(lvl.String())
+		lvlPrinter := levelPrinters[lvl]
+		pkgPrinter := pkgPrinters[lvl]
 		ctx, pkgkv := extractPkgKeyvals(r)
 		b := &bytes.Buffer{}
 
-		lvlColor.Fprintf(b, "%5s", strings.ToUpper(lvl.String()))
-		fmt.Fprintf(b, "[%s] %-40s ", r.Time.Format(termTimeFormat), strings.TrimRight(r.Msg, "\n"))
+		lvlPrinter.Fprintf(b, "%5s", lvlStr)
+
+		var timeMsgFmt string
+		timeMsgArgs := []interface{}{timeStr}
+
+		if len(msg) > 0 {
+			timeMsgFmt = fmtTermTimeMessage
+			timeMsgArgs = append(timeMsgArgs, msg)
+		} else {
+			timeMsgFmt = fmtTermTimeMessageEmpty
+		}
+
+		fmt.Fprintf(b, timeMsgFmt, timeMsgArgs...)
 
 		if len(pkgkv) > 1 {
-			pkgColor := color.New(pkgColorAttrs[lvl]...)
-			pkgColor.Fprintf(b, "[%s] ", pkgkv[1])
+			pkgPrinter.Fprintf(b, fmtTermPkg, pkgkv[1])
 		}
 
 		enc := logfmt.NewEncoder(b)

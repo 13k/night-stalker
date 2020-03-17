@@ -169,6 +169,10 @@ func (l *Logger) Panic(msg string) {
 	panic(msg)
 }
 
+func (l *Logger) Panicz() {
+	l.Panic("")
+}
+
 func (l *Logger) Panicf(format string, args ...interface{}) {
 	l.Panic(fmt.Sprintf(format, args...))
 }
@@ -182,6 +186,10 @@ func (l *Logger) Fatal(msg string) {
 	os.Exit(1)
 }
 
+func (l *Logger) Fatalz() {
+	l.Fatal("")
+}
+
 func (l *Logger) Fatalf(format string, args ...interface{}) {
 	l.Fatal(fmt.Sprintf(format, args...))
 }
@@ -192,6 +200,10 @@ func (l *Logger) Fatalln(args ...interface{}) {
 
 func (l *Logger) Error(msg string) {
 	l.logger.Error(msg)
+}
+
+func (l *Logger) Errorz() {
+	l.Error("")
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
@@ -212,6 +224,10 @@ func (l *Logger) Warn(msg string) {
 	l.logger.Warn(msg)
 }
 
+func (l *Logger) Warnz() {
+	l.Warn("")
+}
+
 func (l *Logger) Warnf(format string, args ...interface{}) {
 	l.Warn(fmt.Sprintf(format, args...))
 }
@@ -222,6 +238,10 @@ func (l *Logger) Warnln(args ...interface{}) {
 
 func (l *Logger) Info(msg string) {
 	l.logger.Info(msg)
+}
+
+func (l *Logger) Infoz() {
+	l.Info("")
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
@@ -236,6 +256,10 @@ func (l *Logger) Debug(msg string) {
 	l.logger.Debug(msg)
 }
 
+func (l *Logger) Debugz() {
+	l.Debug("")
+}
+
 func (l *Logger) Debugf(format string, args ...interface{}) {
 	l.Debug(fmt.Sprintf(format, args...))
 }
@@ -246,6 +270,10 @@ func (l *Logger) Debugln(args ...interface{}) {
 
 func (l *Logger) Trace(msg string) {
 	l.logger.Trace(msg)
+}
+
+func (l *Logger) Tracez() {
+	l.Trace("")
 }
 
 func (l *Logger) Tracef(format string, args ...interface{}) {
