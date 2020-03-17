@@ -3,9 +3,11 @@ package middleware
 import (
 	"time"
 
+	"github.com/docker/go-units"
 	"github.com/labstack/echo/v4"
 
 	nslog "github.com/13k/night-stalker/internal/logger"
+	nsstrconv "github.com/13k/night-stalker/internal/strconv"
 )
 
 func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
@@ -29,9 +31,9 @@ func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
 				id = res.Header().Get(echo.HeaderXRequestID)
 			}
 
-			var bytesIn string
-			if bytesIn = req.Header.Get(echo.HeaderContentLength); bytesIn == "" {
-				bytesIn = "0"
+			var bytesIn uint64
+			if h := req.Header.Get(echo.HeaderContentLength); h != "" {
+				bytesIn = nsstrconv.SafeParseUint(h)
 			}
 
 			if id != "" {
@@ -39,25 +41,27 @@ func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
 			}
 
 			l = l.WithOFields(
+				"status", res.Status,
 				"remote_ip", c.RealIP(),
 				"host", req.Host,
 				"method", req.Method,
 				"uri", req.RequestURI,
 				"user_agent", req.UserAgent(),
-				"status", res.Status,
 				"latency", int64(latency),
-				"latency_human", latency.String(),
-				"bytes_in", bytesIn,
-				"bytes_out", res.Size,
+				"latency_h", latency.String(),
+				"rx", bytesIn,
+				"rx_h", units.BytesSize(float64(bytesIn)),
+				"tx", res.Size,
+				"tx_h", units.BytesSize(float64(res.Size)),
 			)
 
 			switch {
 			case res.Status >= 500:
-				l.Error("request")
+				l.Errorz()
 			case res.Status >= 400:
-				l.Warn("request")
+				l.Warnz()
 			default:
-				l.Info("request")
+				l.Infoz()
 			}
 
 			return nil

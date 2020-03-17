@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/docker/go-units"
 	"github.com/google/uuid"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -105,5 +106,10 @@ func (app *App) pushWSLiveMatches(conn *WSConn, msg *nspb.LiveMatchesChange) {
 		return
 	}
 
-	l.WithField("bytes_out", len(wsmsg)).Debug("sent message")
+	bytesOut := len(wsmsg)
+
+	l.WithOFields(
+		"tx", bytesOut,
+		"tx_h", units.BytesSize(float64(bytesOut)),
+	).Debug("sent message")
 }
