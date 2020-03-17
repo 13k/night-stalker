@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/docker/go-units"
 	"github.com/markbates/pkger"
 	"github.com/spf13/cobra"
 
@@ -76,6 +77,7 @@ func debugPkger(cmd *cobra.Command, args []string) {
 		log.WithOFields(
 			"is_dir", i.IsDir(),
 			"size", i.Size(),
+			"size_h", units.BytesSize(float64(i.Size())),
 		).Info(p)
 
 		return nil
