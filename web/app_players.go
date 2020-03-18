@@ -9,16 +9,19 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func (app *App) servePlayerMatches(c echo.Context) error {
+	cc := c.(*nswebctx.Context)
+
 	type PathParams struct {
 		AccountID nspb.AccountID `param:"account_id"`
 	}
 
 	pathParams := &PathParams{}
 
-	if err := c.Bind(pathParams); err != nil {
+	if err := cc.Bind(pathParams); err != nil {
 		return &echo.HTTPError{
 			Code:     http.StatusBadRequest,
 			Message:  "invalid account id",
@@ -40,10 +43,10 @@ func (app *App) servePlayerMatches(c echo.Context) error {
 	}
 
 	if view == nil {
-		return c.NoContent(http.StatusNotFound)
+		return cc.NoContent(http.StatusNotFound)
 	}
 
-	return c.JSON(http.StatusOK, view)
+	return cc.RespondWith(http.StatusOK, view)
 }
 
 func (app *App) loadPlayerMatchesView(accountID nspb.AccountID) (*nspb.PlayerMatches, error) {

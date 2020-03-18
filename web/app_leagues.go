@@ -9,14 +9,17 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func (app *App) serveLeagues(c echo.Context) error {
+	cc := c.(*nswebctx.Context)
+
 	params := &struct {
 		LeagueIDs []models.LeagueID `query:"id"`
 	}{}
 
-	if err := c.Bind(params); err != nil {
+	if err := cc.Bind(params); err != nil {
 		return &echo.HTTPError{
 			Code:     http.StatusBadRequest,
 			Message:  "invalid league id(s)",
@@ -38,10 +41,10 @@ func (app *App) serveLeagues(c echo.Context) error {
 	}
 
 	if view == nil {
-		return c.NoContent(http.StatusNotFound)
+		return cc.NoContent(http.StatusNotFound)
 	}
 
-	return c.JSON(http.StatusOK, view)
+	return cc.RespondWith(http.StatusOK, view)
 }
 
 func (app *App) loadLeaguesView(leagueIDs ...models.LeagueID) ([]*nspb.League, error) {

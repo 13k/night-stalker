@@ -10,9 +10,12 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func (app *App) serveLiveMatches(c echo.Context) error {
+	cc := c.(*nswebctx.Context)
+
 	matchIDs, err := app.rdsLiveMatchIDs()
 
 	if err != nil {
@@ -39,7 +42,7 @@ func (app *App) serveLiveMatches(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, view)
+	return cc.RespondWith(http.StatusOK, view)
 }
 
 func (app *App) createLiveMatchesView(liveMatches ...*models.LiveMatch) (*nspb.LiveMatches, error) {

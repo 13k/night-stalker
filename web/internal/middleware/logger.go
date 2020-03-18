@@ -8,27 +8,29 @@ import (
 
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsstrconv "github.com/13k/night-stalker/internal/strconv"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			l := logger
+			cc := c.(*nswebctx.Context)
 			req := c.Request()
 			res := c.Response()
 			start := time.Now()
 
-			if err := next(c); err != nil {
-				c.Error(err)
-				l = l.WithError(err)
+			err := next(cc)
+
+			if cc.SkipLogging() {
+				return err
 			}
 
 			stop := time.Now()
 			latency := stop.Sub(start)
 
-			var id string
-			if id = req.Header.Get(echo.HeaderXRequestID); id == "" {
-				id = res.Header().Get(echo.HeaderXRequestID)
+			var requestID string
+			if requestID = req.Header.Get(echo.HeaderXRequestID); requestID == "" {
+				requestID = res.Header().Get(echo.HeaderXRequestID)
 			}
 
 			var bytesIn uint64
@@ -36,11 +38,8 @@ func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
 				bytesIn = nsstrconv.SafeParseUint(h)
 			}
 
-			if id != "" {
-				l = l.WithField("id", id)
-			}
-
-			l = l.WithOFields(
+			l := logger.WithOFields(
+				"id", cc.ID(),
 				"status", res.Status,
 				"remote_ip", c.RealIP(),
 				"host", req.Host,
@@ -55,6 +54,14 @@ func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
 				"tx_h", units.BytesSize(float64(res.Size)),
 			)
 
+			if requestID != "" {
+				l = l.WithField("request_id", requestID)
+			}
+
+			if err != nil {
+				l = l.WithError(err)
+			}
+
 			switch {
 			case res.Status >= 500:
 				l.Errorz()
@@ -64,7 +71,7 @@ func Logger(logger *nslog.Logger) echo.MiddlewareFunc {
 				l.Infoz()
 			}
 
-			return nil
+			return err
 		}
 	}
 }

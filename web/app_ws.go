@@ -5,46 +5,37 @@ import (
 	"net/http"
 
 	"github.com/docker/go-units"
-	"github.com/google/uuid"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 var wsUpgrader = ws.Upgrader{}
 
-type WSConn struct {
-	*ws.Conn
-
-	id uuid.UUID
-}
-
 func (app *App) serveWS(c echo.Context) error {
-	if !c.IsWebSocket() {
-		return c.NoContent(http.StatusNotFound)
+	cc := c.(*nswebctx.Context)
+
+	if !cc.IsWebSocket() {
+		return cc.NoContent(http.StatusNotFound)
 	}
 
-	conn, err := wsUpgrader.Upgrade(c.Response(), c.Request(), nil)
+	conn, err := wsUpgrader.Upgrade(cc.Response(), cc.Request(), nil)
 
 	if err != nil {
 		app.wslog.WithError(err).Error("error accepting connection")
 		return err
 	}
 
-	wsConn := &WSConn{
-		Conn: conn,
-		id:   uuid.New(),
-	}
-
-	go app.serveWSConn(wsConn)
+	go app.serveWSConn(cc, conn)
 
 	return nil
 }
 
-func (app *App) serveWSConn(conn *WSConn) {
-	l := app.wslog.WithField("id", conn.id.String())
+func (app *App) serveWSConn(c *nswebctx.Context, conn *ws.Conn) {
+	l := app.wslog.WithField("id", c.ID())
 
 	busSubLiveMatches := app.bus.Sub(nsbus.TopicWebPatternLiveMatchesAll)
 	connClosed := make(chan bool)
@@ -81,15 +72,15 @@ func (app *App) serveWSConn(conn *WSConn) {
 			}
 
 			if msg, ok := busmsg.Payload.(*nspb.LiveMatchesChange); ok {
-				app.pushWSLiveMatches(conn, msg)
+				app.pushWSLiveMatches(c, conn, msg)
 			}
 		}
 	}
 }
 
-func (app *App) pushWSLiveMatches(conn *WSConn, msg *nspb.LiveMatchesChange) {
+func (app *App) pushWSLiveMatches(c *nswebctx.Context, conn *ws.Conn, msg *nspb.LiveMatchesChange) {
 	l := app.wslog.WithOFields(
-		"id", conn.id.String(),
+		"id", c.ID(),
 		"op", msg.Op.String(),
 		"count", len(msg.Change.Matches),
 	)

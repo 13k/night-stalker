@@ -10,9 +10,12 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func (app *App) serveHeroes(c echo.Context) error {
+	cc := c.(*nswebctx.Context)
+
 	view, err := app.loadHeroesView()
 
 	if err != nil {
@@ -27,20 +30,22 @@ func (app *App) serveHeroes(c echo.Context) error {
 	}
 
 	if view == nil {
-		return c.NoContent(http.StatusNotFound)
+		return cc.NoContent(http.StatusNotFound)
 	}
 
-	return c.JSON(http.StatusOK, view)
+	return cc.RespondWith(http.StatusOK, view)
 }
 
 func (app *App) serveHeroMatches(c echo.Context) error {
+	cc := c.(*nswebctx.Context)
+
 	type PathParams struct {
 		ID models.HeroID `param:"id"`
 	}
 
 	pathParams := &PathParams{}
 
-	if err := c.Bind(pathParams); err != nil {
+	if err := cc.Bind(pathParams); err != nil {
 		return &echo.HTTPError{
 			Code:     http.StatusBadRequest,
 			Message:  "invalid hero id",
@@ -62,10 +67,10 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 	}
 
 	if view == nil {
-		return c.NoContent(http.StatusNotFound)
+		return cc.NoContent(http.StatusNotFound)
 	}
 
-	return c.JSON(http.StatusOK, view)
+	return cc.RespondWith(http.StatusOK, view)
 }
 
 func (app *App) loadHeroesView() ([]*nspb.Hero, error) {

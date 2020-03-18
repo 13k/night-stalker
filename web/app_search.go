@@ -9,9 +9,12 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
+	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func (app *App) serveSearch(c echo.Context) error {
+	cc := c.(*nswebctx.Context)
+
 	view, err := app.loadSearchView(c.QueryParam("q"))
 
 	if err != nil {
@@ -25,7 +28,7 @@ func (app *App) serveSearch(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, view)
+	return cc.RespondWith(http.StatusOK, view)
 }
 
 func (app *App) loadSearchView(query string) (*nspb.Search, error) {

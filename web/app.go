@@ -9,13 +9,13 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	mw "github.com/labstack/echo/v4/middleware"
 	"golang.org/x/crypto/acme/autocert"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nslog "github.com/13k/night-stalker/internal/logger"
-	nsmw "github.com/13k/night-stalker/web/middleware"
+	nswebhdl "github.com/13k/night-stalker/web/internal/handlers"
+	nswebmw "github.com/13k/night-stalker/web/internal/middleware"
 )
 
 const (
@@ -79,12 +79,13 @@ func (app *App) configureEngine() {
 	app.engine.Logger = app.log.EchoLogger()
 	app.engine.StdLogger = app.log.StdLogger()
 	app.engine.Debug = app.log.IsLevelEnabled(nslog.LevelDebug)
+	app.engine.HTTPErrorHandler = app.handleError
 
-	app.engine.Use(nsmw.Logger(app.log))
-
-	app.engine.Use(mw.RecoverWithConfig(mw.RecoverConfig{
-		DisableStackAll: true,
-	}))
+	app.engine.Use(nswebmw.Context())
+	app.engine.Use(nswebmw.Logger(app.log))
+	app.engine.Use(nswebmw.MediaType())
+	app.engine.Use(nswebmw.ErrorHandler())
+	app.engine.Use(nswebmw.Recover())
 
 	root := app.engine
 
@@ -100,10 +101,10 @@ func (app *App) configureEngine() {
 
 	root.GET("/ws", app.serveWS)
 
-	assetHandler := http.FileServer(app.options.StaticFS)
+	assetHandler := nswebhdl.AssetHandler(app.options.StaticFS)
 
-	root.GET("/", echo.WrapHandler(assetHandler))
-	root.GET("/*", echo.WrapHandler(assetHandler))
+	root.GET("/", assetHandler)
+	root.GET("/*", assetHandler)
 }
 
 func (app *App) configureServer() error {
