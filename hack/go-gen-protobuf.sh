@@ -15,5 +15,4 @@ fi
 exec "$protoc" \
   -I "$include_dir" \
   "--go_out=paths=source_relative:$go_out" \
-  "--go-json_out=enums_as_ints,emit_defaults,orig_name:$go_out" \
   "$input"
