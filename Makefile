@@ -10,7 +10,7 @@ PROTO_SRC = protobuf
 PROTO_GOOUT = internal/protobuf
 PROTOS = $(shell $(FIND) "$(PROTO_SRC)" -type f -name '*.proto' -printf '%P\n')
 PROTOS_GO = $(patsubst %.proto,$(PROTO_GOOUT)/%.pb.go,$(PROTOS))
-TOOLS_PATH = bin
+TOOLS_PATH = $(NS_GO_TOOLS_PATH)
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
