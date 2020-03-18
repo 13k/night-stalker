@@ -15,7 +15,7 @@ require (
 	github.com/go-resty/resty/v2 v2.2.0
 	github.com/go-stack/stack v1.8.0
 	github.com/golang-migrate/migrate/v4 v4.9.1
-	github.com/golang/protobuf v1.3.4
+	github.com/golang/protobuf v1.4.0-rc.4
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.1
 	github.com/jinzhu/gorm v1.9.12
@@ -34,6 +34,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
+	google.golang.org/protobuf v1.20.1
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20200109203555-b30bc20e4fd1
 )
 
