@@ -38,4 +38,4 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20200109203555-b30bc20e4fd1
 )
 
-replace github.com/paralin/go-dota2 v0.0.0-20191126225751-cae5acd7b08d => github.com/13k/go-dota2 v0.0.0-20200307085842-ca26575af454
+replace github.com/paralin/go-dota2 v0.0.0-20191126225751-cae5acd7b08d => github.com/13k/go-dota2 v0.1.0
