@@ -1,8 +1,8 @@
 package rtstats
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2/protocol"
+	"google.golang.org/protobuf/proto"
 
 	nsjson "github.com/13k/night-stalker/internal/json"
 )

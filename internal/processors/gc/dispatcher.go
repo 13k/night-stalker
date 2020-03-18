@@ -7,10 +7,11 @@ import (
 	"cirello.io/oversight"
 	"github.com/faceit/go-steam"
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
-	"github.com/golang/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
+	"google.golang.org/protobuf/proto"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
@@ -325,7 +326,8 @@ func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) er
 		})
 	}
 
-	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), message))
+	messageV1 := protov1.MessageV1(message)
+	p.steam.GC.Write(gc.NewGCMsgProtobuf(dota2.AppID, uint32(msgType), messageV1))
 
 	p.log.WithField("msg_type", msgType).Trace("sent message")
 

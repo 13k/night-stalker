@@ -3,8 +3,8 @@ package collections_test
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2/protocol"
+	"google.golang.org/protobuf/proto"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"

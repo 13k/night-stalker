@@ -4,8 +4,8 @@ import (
 	"time"
 
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
-	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2/protocol"
+	"google.golang.org/protobuf/proto"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 )

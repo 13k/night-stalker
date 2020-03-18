@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/golang/protobuf/proto"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
+	"google.golang.org/protobuf/proto"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"

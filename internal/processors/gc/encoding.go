@@ -2,9 +2,9 @@ package gc
 
 import (
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
-	"github.com/golang/protobuf/proto"
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
