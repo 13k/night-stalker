@@ -12,11 +12,11 @@ export function handleLiveMatchesChange(state, ev) {
 
   preprocessMatches(ev.body.change.matches);
 
-  const liveMatchesChange = pb.protocol.LiveMatchesChange.fromObject(ev.body);
+  const liveMatchesChange = pb.ns.protocol.LiveMatchesChange.fromObject(ev.body);
 
   $t.transformLiveMatchesChange(liveMatchesChange, state);
 
-  if (liveMatchesChange.op === pb.protocol.CollectionOp.COLLECTION_OP_REMOVE) {
+  if (liveMatchesChange.op === pb.ns.protocol.CollectionOp.COLLECTION_OP_REMOVE) {
     return Promise.resolve(liveMatchesChange);
   }
 

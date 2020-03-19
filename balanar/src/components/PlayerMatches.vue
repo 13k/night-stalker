@@ -160,18 +160,18 @@ export default {
 
   props: {
     player: {
-      type: pb.protocol.Player,
+      type: pb.ns.protocol.Player,
       required: true,
     },
     matches: {
       type: Array,
       default: () => [],
-      validator: v => _.every(v, i => i instanceof pb.protocol.Match),
+      validator: v => _.every(v, i => i instanceof pb.ns.protocol.Match),
     },
     knownPlayers: {
       type: Array,
       default: () => [],
-      validator: v => _.every(v, i => i instanceof pb.protocol.Player),
+      validator: v => _.every(v, i => i instanceof pb.ns.protocol.Player),
     },
     itemsPerPage: {
       type: Number,

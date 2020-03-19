@@ -7,7 +7,9 @@ import { prefetchMatchesLeagues } from "@/protocol/prefetch";
 import { preprocessMatches, preprocessLeagues } from "@/protocol/preprocess";
 
 const {
-  protocol: { Hero, League, LiveMatches, PlayerMatches, HeroMatches, Search },
+  ns: {
+    protocol: { Hero, League, LiveMatches, PlayerMatches, HeroMatches, Search },
+  },
 } = pb;
 
 export function fetchHeroes() {

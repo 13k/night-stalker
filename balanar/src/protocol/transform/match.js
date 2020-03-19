@@ -10,8 +10,8 @@ export function transformMatch(match, state) {
   transformMatchTimestamps(match);
 
   transformProperty(match, "outcome", outcome => {
-    const radiantVictory = outcome === pb.protocol.MatchOutcome.MATCH_OUTCOME_RAD_VICTORY;
-    const direVictory = outcome === pb.protocol.MatchOutcome.MATCH_OUTCOME_DIRE_VICTORY;
+    const radiantVictory = outcome === pb.ns.protocol.MatchOutcome.MATCH_OUTCOME_RAD_VICTORY;
+    const direVictory = outcome === pb.ns.protocol.MatchOutcome.MATCH_OUTCOME_DIRE_VICTORY;
     return { radiantVictory, direVictory };
   });
 

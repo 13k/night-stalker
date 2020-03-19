@@ -54,7 +54,7 @@ export default {
 
   props: {
     match: {
-      type: pb.protocol.LiveMatch,
+      type: pb.ns.protocol.LiveMatch,
       required: true,
     },
     team: {
@@ -62,7 +62,7 @@ export default {
       required: true,
     },
     player: {
-      type: pb.protocol.LiveMatch.Player,
+      type: pb.ns.protocol.LiveMatch.Player,
       required: true,
     },
   },

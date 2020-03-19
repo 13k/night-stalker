@@ -125,18 +125,18 @@ export default {
 
   props: {
     hero: {
-      type: pb.protocol.Hero,
+      type: pb.ns.protocol.Hero,
       required: true,
     },
     matches: {
       type: Array,
       default: () => [],
-      validator: v => _.every(v, i => i instanceof pb.protocol.Match),
+      validator: v => _.every(v, i => i instanceof pb.ns.protocol.Match),
     },
     knownPlayers: {
       type: Array,
       default: () => [],
-      validator: v => _.every(v, i => i instanceof pb.protocol.Player),
+      validator: v => _.every(v, i => i instanceof pb.ns.protocol.Player),
     },
     itemsPerPage: {
       type: Number,

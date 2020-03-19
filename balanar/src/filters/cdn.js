@@ -3,7 +3,9 @@ import _ from "lodash";
 import pb from "@/protocol/proto";
 
 const {
-  protocol: { CDNLeagueImageVersion },
+  ns: {
+    protocol: { CDNLeagueImageVersion },
+  },
 } = pb;
 
 const CDN_URL = "http://cdn.dota2.com";

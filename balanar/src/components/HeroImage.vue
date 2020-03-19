@@ -25,7 +25,7 @@ export default {
 
   props: {
     hero: {
-      type: pb.protocol.Hero,
+      type: pb.ns.protocol.Hero,
       default: null,
     },
     orientation: {

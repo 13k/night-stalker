@@ -184,7 +184,7 @@ export default {
 
   props: {
     match: {
-      type: pb.protocol.LiveMatch,
+      type: pb.ns.protocol.LiveMatch,
       required: true,
     },
   },

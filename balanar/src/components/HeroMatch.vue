@@ -167,17 +167,17 @@ export default {
 
   props: {
     hero: {
-      type: pb.protocol.Hero,
+      type: pb.ns.protocol.Hero,
       required: true,
     },
     match: {
-      type: pb.protocol.Match,
+      type: pb.ns.protocol.Match,
       required: true,
     },
     knownPlayers: {
       type: Array,
       default: () => [],
-      validator: v => _.every(v, i => i instanceof pb.protocol.Player),
+      validator: v => _.every(v, i => i instanceof pb.ns.protocol.Player),
     },
   },
 

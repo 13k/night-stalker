@@ -24,16 +24,16 @@ const actions = {
         let mutation;
 
         switch (liveMatchesChange.op) {
-          case pb.protocol.CollectionOp.COLLECTION_OP_REPLACE:
+          case pb.ns.protocol.CollectionOp.COLLECTION_OP_REPLACE:
             mutation = "setLiveMatches";
             break;
-          case pb.protocol.CollectionOp.COLLECTION_OP_ADD:
+          case pb.ns.protocol.CollectionOp.COLLECTION_OP_ADD:
             mutation = "addLiveMatches";
             break;
-          case pb.protocol.CollectionOp.COLLECTION_OP_UPDATE:
+          case pb.ns.protocol.CollectionOp.COLLECTION_OP_UPDATE:
             mutation = "updateLiveMatches";
             break;
-          case pb.protocol.CollectionOp.COLLECTION_OP_REMOVE:
+          case pb.ns.protocol.CollectionOp.COLLECTION_OP_REMOVE:
             mutation = "removeLiveMatches";
             break;
           default:

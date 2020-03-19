@@ -9,8 +9,8 @@ import { transformMatchTimestamps } from "./match_common";
 const TEAM_ATTRIBUTE_NAME_TPL = _.template("<%= side %>_team_<%= attr %>");
 const TEAM_ATTRIBUTES = ["id", "name", "tag", "logo", "logo_url"];
 const TEAM_SIDES = {
-  [pb.protocol.GameTeam.GAME_TEAM_GOODGUYS]: "radiant",
-  [pb.protocol.GameTeam.GAME_TEAM_BADGUYS]: "dire",
+  [pb.ns.protocol.GameTeam.GAME_TEAM_GOODGUYS]: "radiant",
+  [pb.ns.protocol.GameTeam.GAME_TEAM_BADGUYS]: "dire",
 };
 
 function createLiveMatchTeamAttributes(liveMatch, side) {
