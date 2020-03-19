@@ -10,6 +10,7 @@
 /cmd/ns/pkged.go
 /config.yml
 /log
+/tools/bin
 /tmp
 
 .direnv
