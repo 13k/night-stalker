@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protocol;
+package ns.protocol;
 
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 

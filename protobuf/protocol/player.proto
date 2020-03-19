@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protocol;
+package ns.protocol;
 
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
@@ -17,11 +17,11 @@ message Player {
   bool is_pro = 7;
   string slug = 8;
 
-  protocol.Team team = 100;
+  ns.protocol.Team team = 100;
 }
 
 message PlayerMatches {
-  protocol.Player player = 100;
-  repeated protocol.Match matches = 101;
-  repeated protocol.Player known_players = 102;
+  ns.protocol.Player player = 100;
+  repeated ns.protocol.Match matches = 101;
+  repeated ns.protocol.Player known_players = 102;
 }

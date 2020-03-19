@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protocol;
+package ns.protocol;
 
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
@@ -22,10 +22,10 @@ message Match {
 
   uint64 match_id = 1;
   uint64 lobby_id = 2;
-  protocol.LobbyType lobby_type = 3;
+  ns.protocol.LobbyType lobby_type = 3;
   uint64 league_id = 4;
   uint64 series_id = 5;
-  protocol.GameMode game_mode = 6;
+  ns.protocol.GameMode game_mode = 6;
   uint32 average_mmr = 7;
   uint64 radiant_team_id = 8;
   string radiant_team_name = 9;
@@ -46,7 +46,7 @@ message Match {
   uint32 duration = 24;
   uint32 radiant_score = 25;
   uint32 dire_score = 26;
-  protocol.MatchOutcome outcome = 27;
+  ns.protocol.MatchOutcome outcome = 27;
 
-  repeated Player players = 100;
+  repeated ns.protocol.Match.Player players = 100;
 }

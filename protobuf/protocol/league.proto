@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protocol;
+package ns.protocol;
 
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
@@ -10,9 +10,9 @@ import "protocol/enums.proto";
 message League {
   uint64 id = 1;
   string name = 2;
-  protocol.LeagueTier tier = 3;
-  protocol.LeagueRegion region = 4;
-  protocol.LeagueStatus status = 5;
+  ns.protocol.LeagueTier tier = 3;
+  ns.protocol.LeagueRegion region = 4;
+  ns.protocol.LeagueStatus status = 5;
   uint32 total_prize_pool = 6;
   google.protobuf.Timestamp last_activity_at = 7;
   google.protobuf.Timestamp start_at = 8;

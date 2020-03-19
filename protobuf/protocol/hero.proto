@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protocol;
+package ns.protocol;
 
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
@@ -14,16 +14,16 @@ message Hero {
   string localized_name = 3;
   string slug = 4;
   repeated string aliases = 5;
-  repeated protocol.HeroRole roles = 6;
+  repeated ns.protocol.HeroRole roles = 6;
   repeated int64 role_levels = 7;
   int64 complexity = 8;
   int64 legs = 9;
-  protocol.DotaAttribute attribute_primary = 10;
-  protocol.DotaUnitCap attack_capabilities = 11;
+  ns.protocol.DotaAttribute attribute_primary = 10;
+  ns.protocol.DotaUnitCap attack_capabilities = 11;
 }
 
 message HeroMatches {
-  protocol.Hero hero = 100;
-  repeated protocol.Match matches = 101;
-  repeated protocol.Player known_players = 102;
+  ns.protocol.Hero hero = 100;
+  repeated ns.protocol.Match matches = 101;
+  repeated ns.protocol.Player known_players = 102;
 }
