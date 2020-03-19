@@ -20,9 +20,8 @@
     "format": "prettier --write '**/*.{css,html,js,json}'",
     "build:scripts": "tsc -b scripts",
     "lint:scripts": "tslint -p scripts",
-    "gen:proto": "make proto",
-    "gen:hero:aliases": "make hero-aliases",
-    "gen:hero:images": "make hero-images"
+    "gen:proto": "bundle exec rake build:proto:js",
+    "gen:heroes:images": "bundle exec rake webapp:hero_images"
   },
   "dependencies": {
     "@dreipol/vue-log": "^0.0.8",
