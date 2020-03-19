@@ -65,9 +65,7 @@ CMD_PKG_PATH = ROOT_PATH / 'cmd'
 CMD_OUT_PATH = ROOT_PATH / 'bin'
 
 PROTO_SRC_PATH = ROOT_PATH / 'protobuf'
-PROTO_SRC_RELPATH = PROTO_SRC_PATH.relative_path_from(ROOT_PATH)
 PROTO_GO_OUT_PATH = ROOT_PATH / 'internal' / 'protobuf'
-PROTO_GO_OUT_RELPATH = PROTO_GO_OUT_PATH.relative_path_from(ROOT_PATH)
 PROTO_JS_OUT_PATH = WEBAPP_PATH / 'src' / 'protocol'
 
 TOOLS_SRC_PATH = ROOT_PATH / 'tools'
@@ -124,8 +122,6 @@ def compile_go_package(pkg_path:, output:)
 
   file output => reqs do
     input = pkg_path.absolute? ? pkg_path.relative_path_from(ROOT_PATH) : pkg_path
-    output = output.relative_path_from(ROOT_PATH) if output.absolute?
-
     Shell.run(GO, 'build', '-o', output, "./#{input}")
   end
 end
@@ -134,17 +130,15 @@ def compile_go_proto_file(input:, output:)
   file output => input do
     Shell.run(
       PROTOC,
-      '-I', PROTO_SRC_RELPATH,
-      "--go_out=paths=source_relative:#{PROTO_GO_OUT_RELPATH}",
-      input.relative_path_from(ROOT_PATH),
+      '-I', PROTO_SRC_PATH,
+      "--go_out=paths=source_relative:#{PROTO_GO_OUT_PATH}",
+      input,
     )
   end
 end
 
 def compile_js_proto_file(inputs:, output:)
   file output => inputs do
-    inputs = inputs.map { |i| i.absolute? ? i.relative_path_from(ROOT_PATH) : i }
-    output = output.relative_path_from(ROOT_PATH) if output.absolute?
     cmd = [
       YARN, 'run', 'pbjs',
       '-t', 'static-module',
