@@ -1,0 +1,2 @@
+includes [Gemfile,Rakefile,*.rb,*.rake]
+quote_style :single

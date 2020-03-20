@@ -1,0 +1,43 @@
+---
+AllCops:
+  Include:
+    - "**/*.rb"
+    - "**/*.gemfile"
+    - "**/*.gemspec"
+    - "**/*.rake"
+    - "**/*.ru"
+    - "**/Gemfile"
+    - "**/Rakefile"
+  Exclude:
+    - ".git/**/*"
+    - "**/node_modules/**/*"
+    - "**/tmp/**/*"
+    - "**/vendor/**/*"
+Metrics/BlockLength:
+  Exclude:
+    - "**/*.rake"
+
+Layout/LineLength:
+  Max: 100
+Layout/MultilineMethodCallIndentation:
+  Enabled: true
+  EnforcedStyle: indented
+Metrics/MethodLength:
+  CountComments: false
+  Max: 20
+Style/CollectionMethods:
+  Enabled: true
+Style/Documentation:
+  Enabled: false
+Style/HashEachMethods:
+  Enabled: true
+Style/HashTransformKeys:
+  Enabled: true
+Style/HashTransformValues:
+  Enabled: true
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
