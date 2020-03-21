@@ -14,6 +14,7 @@ type (
 	HeroID       uint64
 	TeamID       uint64
 	ItemID       uint64
+	AbilityID    uint32
 )
 
 type SteamID = steamid.SteamId
