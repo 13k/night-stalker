@@ -3510,6 +3510,22 @@ export const ns = $root.ns = (() => {
             return values;
         })();
 
+        /**
+         * SeriesType enum.
+         * @name ns.protocol.SeriesType
+         * @enum {string}
+         * @property {number} SERIES_TYPE_UNSPECIFIED=0 SERIES_TYPE_UNSPECIFIED value
+         * @property {number} SERIES_TYPE_BEST_OF_THREE=1 SERIES_TYPE_BEST_OF_THREE value
+         * @property {number} SERIES_TYPE_BEST_OF_FIVE=2 SERIES_TYPE_BEST_OF_FIVE value
+         */
+        protocol.SeriesType = (function() {
+            const valuesById = {}, values = Object.create(valuesById);
+            values[valuesById[0] = "SERIES_TYPE_UNSPECIFIED"] = 0;
+            values[valuesById[1] = "SERIES_TYPE_BEST_OF_THREE"] = 1;
+            values[valuesById[2] = "SERIES_TYPE_BEST_OF_FIVE"] = 2;
+            return values;
+        })();
+
         protocol.Search = (function() {
 
             /**
