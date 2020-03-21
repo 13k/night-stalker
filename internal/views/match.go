@@ -205,7 +205,7 @@ func NewMatchPlayer(data *MatchPlayerData) (*nspb.Match_Player, error) {
 		pb.Kills = data.MatchPlayer.Kills
 		pb.Deaths = data.MatchPlayer.Deaths
 		pb.Assists = data.MatchPlayer.Assists
-		pb.Items = data.MatchPlayer.Items
+		pb.Items = data.MatchPlayer.Items.ToUint64s()
 	}
 
 	if data.LiveMatchPlayer != nil {
