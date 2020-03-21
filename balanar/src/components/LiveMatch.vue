@@ -204,7 +204,7 @@ export default {
       return $t.get(this.match, "league");
     },
     watchCommand() {
-      return `watch_server ${this.match.server_steam_id}`;
+      return `watch_server ${this.match.server_id}`;
     },
   },
 
