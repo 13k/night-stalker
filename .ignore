@@ -1,2 +1,2 @@
 balanar/src/protocol/proto.js
-internal/protobuf
+internal/protobuf/**/*.pb.go
