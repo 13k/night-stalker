@@ -378,7 +378,7 @@ func (p *Monitor) handleError(err error) {
 	if e := (&errRequestInProgress{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
-			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+			"server_id", e.LiveMatch.ServerID.ToUint64(),
 		).Warn("request in progress")
 
 		return
@@ -386,34 +386,24 @@ func (p *Monitor) handleError(err error) {
 
 	if e := (&errInvalidResponse{}); xerrors.As(err, &e) {
 		// safe to ignore
-
-		/*
-			p.log.WithOFields(
-				"match_id", e.LiveMatch.MatchID,
-				"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
-				"res_match_id", e.Result.GetMatch().GetMatchid(),
-				"res_server_id", e.Result.GetMatch().GetServerSteamId(),
-			).Warn("invalid response")
-		*/
-
 		return
 	}
 
 	if e := (&errWorkerSubmitFailure{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
-			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+			"server_id", e.LiveMatch.ServerID.ToUint64(),
 		).WithError(e.Err).Error("error submitting worker")
 	} else if e := (&errWorkerPanic{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
-			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+			"server_id", e.LiveMatch.ServerID.ToUint64(),
 			"panic", e.Value,
 		).Error("recovered worker panic")
 	} else if e := (&errRequestFailure{}); xerrors.As(err, &e) {
 		l := p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
-			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+			"server_id", e.LiveMatch.ServerID.ToUint64(),
 		).WithError(e.Err)
 
 		fpath, eErr := handleRequestFailureError(e)
@@ -429,7 +419,7 @@ func (p *Monitor) handleError(err error) {
 	} else if e := (&errStatsSaveFailure{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
-			"server_id", e.LiveMatch.ServerSteamID.ToUint64(),
+			"server_id", e.LiveMatch.ServerID.ToUint64(),
 		).WithError(e.Err).Error("error saving stats")
 	} else {
 		p.log.WithError(err).Error("rtstats error")

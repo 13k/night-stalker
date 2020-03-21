@@ -82,7 +82,7 @@ func (w *worker) requestMatchStats(ctx context.Context) (*protocol.CMsgDOTARealt
 	}
 
 	params := url.Values{}
-	params.Set("server_steam_id", strconv.FormatUint(w.liveMatch.ServerSteamID.ToUint64(), 10))
+	params.Set("server_steam_id", strconv.FormatUint(w.liveMatch.ServerID.ToUint64(), 10))
 
 	reqOptions := geyser.RequestOptions{
 		Context: ctx,

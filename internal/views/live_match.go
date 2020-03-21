@@ -121,7 +121,7 @@ func NewLiveMatch(
 func LiveMatchFromModel(m *models.LiveMatch) (*nspb.LiveMatch, error) {
 	pb := &nspb.LiveMatch{
 		MatchId:                    uint64(m.MatchID),
-		ServerSteamId:              uint64(m.ServerSteamID),
+		ServerId:                   uint64(m.ServerID),
 		LobbyId:                    uint64(m.LobbyID),
 		LobbyType:                  m.LobbyType,
 		LeagueId:                   uint64(m.LeagueID),

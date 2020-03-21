@@ -296,7 +296,7 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 		liveMatch := models.LiveMatchDotaProto(game)
 		errSave := &errSaveGameFailure{
 			MatchID:  liveMatch.MatchID,
-			ServerID: liveMatch.ServerSteamID,
+			ServerID: liveMatch.ServerID,
 			LobbyID:  liveMatch.LobbyID,
 		}
 
