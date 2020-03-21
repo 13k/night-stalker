@@ -539,7 +539,7 @@ export const ns = $root.ns = (() => {
              * @memberof ns.protocol
              * @interface ILiveMatch
              * @property {Long|null} [match_id] LiveMatch match_id
-             * @property {Long|null} [server_steam_id] LiveMatch server_steam_id
+             * @property {Long|null} [server_id] LiveMatch server_id
              * @property {Long|null} [lobby_id] LiveMatch lobby_id
              * @property {ns.protocol.LobbyType|null} [lobby_type] LiveMatch lobby_type
              * @property {Long|null} [league_id] LiveMatch league_id
@@ -603,12 +603,12 @@ export const ns = $root.ns = (() => {
             LiveMatch.prototype.match_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
             /**
-             * LiveMatch server_steam_id.
-             * @member {Long} server_steam_id
+             * LiveMatch server_id.
+             * @member {Long} server_id
              * @memberof ns.protocol.LiveMatch
              * @instance
              */
-            LiveMatch.prototype.server_steam_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+            LiveMatch.prototype.server_id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
             /**
              * LiveMatch lobby_id.
@@ -924,8 +924,8 @@ export const ns = $root.ns = (() => {
                     writer = $Writer.create();
                 if (message.match_id != null && message.hasOwnProperty("match_id"))
                     writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.match_id);
-                if (message.server_steam_id != null && message.hasOwnProperty("server_steam_id"))
-                    writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.server_steam_id);
+                if (message.server_id != null && message.hasOwnProperty("server_id"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.server_id);
                 if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.lobby_id);
                 if (message.lobby_type != null && message.hasOwnProperty("lobby_type"))
@@ -1037,7 +1037,7 @@ export const ns = $root.ns = (() => {
                         message.match_id = reader.uint64();
                         break;
                     case 2:
-                        message.server_steam_id = reader.uint64();
+                        message.server_id = reader.uint64();
                         break;
                     case 3:
                         message.lobby_id = reader.uint64();
@@ -1187,9 +1187,9 @@ export const ns = $root.ns = (() => {
                 if (message.match_id != null && message.hasOwnProperty("match_id"))
                     if (!$util.isInteger(message.match_id) && !(message.match_id && $util.isInteger(message.match_id.low) && $util.isInteger(message.match_id.high)))
                         return "match_id: integer|Long expected";
-                if (message.server_steam_id != null && message.hasOwnProperty("server_steam_id"))
-                    if (!$util.isInteger(message.server_steam_id) && !(message.server_steam_id && $util.isInteger(message.server_steam_id.low) && $util.isInteger(message.server_steam_id.high)))
-                        return "server_steam_id: integer|Long expected";
+                if (message.server_id != null && message.hasOwnProperty("server_id"))
+                    if (!$util.isInteger(message.server_id) && !(message.server_id && $util.isInteger(message.server_id.low) && $util.isInteger(message.server_id.high)))
+                        return "server_id: integer|Long expected";
                 if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
                     if (!$util.isInteger(message.lobby_id) && !(message.lobby_id && $util.isInteger(message.lobby_id.low) && $util.isInteger(message.lobby_id.high)))
                         return "lobby_id: integer|Long expected";
@@ -1392,15 +1392,15 @@ export const ns = $root.ns = (() => {
                         message.match_id = object.match_id;
                     else if (typeof object.match_id === "object")
                         message.match_id = new $util.LongBits(object.match_id.low >>> 0, object.match_id.high >>> 0).toNumber(true);
-                if (object.server_steam_id != null)
+                if (object.server_id != null)
                     if ($util.Long)
-                        (message.server_steam_id = $util.Long.fromValue(object.server_steam_id)).unsigned = true;
-                    else if (typeof object.server_steam_id === "string")
-                        message.server_steam_id = parseInt(object.server_steam_id, 10);
-                    else if (typeof object.server_steam_id === "number")
-                        message.server_steam_id = object.server_steam_id;
-                    else if (typeof object.server_steam_id === "object")
-                        message.server_steam_id = new $util.LongBits(object.server_steam_id.low >>> 0, object.server_steam_id.high >>> 0).toNumber(true);
+                        (message.server_id = $util.Long.fromValue(object.server_id)).unsigned = true;
+                    else if (typeof object.server_id === "string")
+                        message.server_id = parseInt(object.server_id, 10);
+                    else if (typeof object.server_id === "number")
+                        message.server_id = object.server_id;
+                    else if (typeof object.server_id === "object")
+                        message.server_id = new $util.LongBits(object.server_id.low >>> 0, object.server_id.high >>> 0).toNumber(true);
                 if (object.lobby_id != null)
                     if ($util.Long)
                         (message.lobby_id = $util.Long.fromValue(object.lobby_id)).unsigned = true;
@@ -1761,9 +1761,9 @@ export const ns = $root.ns = (() => {
                         object.match_id = options.longs === String ? "0" : 0;
                     if ($util.Long) {
                         let long = new $util.Long(0, 0, true);
-                        object.server_steam_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                        object.server_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                     } else
-                        object.server_steam_id = options.longs === String ? "0" : 0;
+                        object.server_id = options.longs === String ? "0" : 0;
                     if ($util.Long) {
                         let long = new $util.Long(0, 0, true);
                         object.lobby_id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
@@ -1833,11 +1833,11 @@ export const ns = $root.ns = (() => {
                         object.match_id = options.longs === String ? String(message.match_id) : message.match_id;
                     else
                         object.match_id = options.longs === String ? $util.Long.prototype.toString.call(message.match_id) : options.longs === Number ? new $util.LongBits(message.match_id.low >>> 0, message.match_id.high >>> 0).toNumber(true) : message.match_id;
-                if (message.server_steam_id != null && message.hasOwnProperty("server_steam_id"))
-                    if (typeof message.server_steam_id === "number")
-                        object.server_steam_id = options.longs === String ? String(message.server_steam_id) : message.server_steam_id;
+                if (message.server_id != null && message.hasOwnProperty("server_id"))
+                    if (typeof message.server_id === "number")
+                        object.server_id = options.longs === String ? String(message.server_id) : message.server_id;
                     else
-                        object.server_steam_id = options.longs === String ? $util.Long.prototype.toString.call(message.server_steam_id) : options.longs === Number ? new $util.LongBits(message.server_steam_id.low >>> 0, message.server_steam_id.high >>> 0).toNumber(true) : message.server_steam_id;
+                        object.server_id = options.longs === String ? $util.Long.prototype.toString.call(message.server_id) : options.longs === Number ? new $util.LongBits(message.server_id.low >>> 0, message.server_id.high >>> 0).toNumber(true) : message.server_id;
                 if (message.lobby_id != null && message.hasOwnProperty("lobby_id"))
                     if (typeof message.lobby_id === "number")
                         object.lobby_id = options.longs === String ? String(message.lobby_id) : message.lobby_id;
