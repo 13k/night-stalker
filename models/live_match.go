@@ -17,7 +17,7 @@ type LiveMatchID uint64
 type LiveMatch struct {
 	ID                         LiveMatchID        `gorm:"column:id;primary_key"`
 	MatchID                    nspb.MatchID       `gorm:"column:match_id;unique_index;not null"`
-	ServerSteamID              nspb.SteamID       `gorm:"column:server_steam_id;not null"`
+	ServerID                   nspb.SteamID       `gorm:"column:server_id;not null"`
 	LobbyID                    nspb.LobbyID       `gorm:"column:lobby_id;not null"`
 	LobbyType                  nspb.LobbyType     `gorm:"column:lobby_type"`
 	LeagueID                   nspb.LeagueID      `gorm:"column:league_id"`
@@ -58,7 +58,7 @@ func (*LiveMatch) TableName() string {
 
 func (m *LiveMatch) Equal(other *LiveMatch) bool {
 	return m.MatchID == other.MatchID &&
-		m.ServerSteamID == other.ServerSteamID &&
+		m.ServerID == other.ServerID &&
 		m.LobbyID == other.LobbyID &&
 		m.LobbyType == other.LobbyType &&
 		m.LeagueID == other.LeagueID &&
@@ -91,7 +91,7 @@ func (m *LiveMatch) Equal(other *LiveMatch) bool {
 func LiveMatchDotaProto(pb *protocol.CSourceTVGameSmall) *LiveMatch {
 	return &LiveMatch{
 		MatchID:                    nspb.MatchID(pb.GetMatchId()),
-		ServerSteamID:              nspb.SteamID(pb.GetServerSteamId()),
+		ServerID:                   nspb.SteamID(pb.GetServerSteamId()),
 		LeagueID:                   nspb.LeagueID(pb.GetLeagueId()),
 		SeriesID:                   nspb.SeriesID(pb.GetSeriesId()),
 		LobbyID:                    nspb.LobbyID(pb.GetLobbyId()),
