@@ -8,7 +8,6 @@ import (
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
-	"github.com/13k/night-stalker/models"
 	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
@@ -16,7 +15,7 @@ func (app *App) serveLeagues(c echo.Context) error {
 	cc := c.(*nswebctx.Context)
 
 	params := &struct {
-		LeagueIDs []models.LeagueID `query:"id"`
+		LeagueIDs []nspb.LeagueID `query:"id"`
 	}{}
 
 	if err := cc.Bind(params); err != nil {
@@ -47,7 +46,7 @@ func (app *App) serveLeagues(c echo.Context) error {
 	return cc.RespondWith(http.StatusOK, view)
 }
 
-func (app *App) loadLeaguesView(leagueIDs ...models.LeagueID) ([]*nspb.League, error) {
+func (app *App) loadLeaguesView(leagueIDs ...nspb.LeagueID) ([]*nspb.League, error) {
 	data, err := app.loadLeaguesData(leagueIDs...)
 
 	if err != nil {

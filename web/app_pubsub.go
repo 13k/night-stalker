@@ -18,14 +18,14 @@ func (app *App) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 		return nil, err
 	}
 
-	matchIDs := make(nscol.MatchIDs, len(result.Val()))
+	matchIDs := make([]uint64, len(result.Val()))
 
 	if err := result.ScanSlice(&matchIDs); err != nil {
 		err = xerrors.Errorf("error parsing live matches IDs: %w", err)
 		return nil, err
 	}
 
-	return matchIDs, nil
+	return nscol.NewMatchIDs(matchIDs...), nil
 }
 
 func (app *App) seedLiveMatches() error {

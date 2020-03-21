@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/faceit/go-steam/steamid"
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -15,20 +14,20 @@ var MatchModel Model = (*Match)(nil)
 type Match struct {
 	ID                           nspb.MatchID      `gorm:"column:id;primary_key"`
 	LeagueID                     nspb.LeagueID     `gorm:"column:league_id"`
-	SeriesType                   uint32            `gorm:"column:series_type"`
+	SeriesType                   nspb.SeriesType   `gorm:"column:series_type"`
 	SeriesGame                   uint32            `gorm:"column:series_game"`
 	GameMode                     nspb.GameMode     `gorm:"column:game_mode"`
 	StartTime                    *time.Time        `gorm:"column:start_time"`
 	Duration                     uint32            `gorm:"column:duration"`
 	Outcome                      nspb.MatchOutcome `gorm:"column:outcome"`
-	RadiantTeamID                TeamID            `gorm:"column:radiant_team_id"`
+	RadiantTeamID                nspb.TeamID       `gorm:"column:radiant_team_id"`
 	RadiantTeamName              string            `gorm:"column:radiant_team_name;size:255"`
-	RadiantTeamLogo              steamid.SteamId   `gorm:"column:radiant_team_logo"`
+	RadiantTeamLogo              nspb.SteamID      `gorm:"column:radiant_team_logo"`
 	RadiantTeamLogoURL           string            `gorm:"column:radiant_team_logo_url"`
 	RadiantScore                 uint32            `gorm:"column:radiant_score"`
-	DireTeamID                   TeamID            `gorm:"column:dire_team_id"`
+	DireTeamID                   nspb.TeamID       `gorm:"column:dire_team_id"`
 	DireTeamName                 string            `gorm:"column:dire_team_name;size:255"`
-	DireTeamLogo                 steamid.SteamId   `gorm:"column:dire_team_logo"`
+	DireTeamLogo                 nspb.SteamID      `gorm:"column:dire_team_logo"`
 	DireTeamLogoURL              string            `gorm:"column:dire_team_logo_url"`
 	DireScore                    uint32            `gorm:"column:dire_score"`
 	WeekendTourneyTournamentID   uint32            `gorm:"column:weekend_tourney_tournament_id"`
@@ -47,22 +46,22 @@ func (*Match) TableName() string {
 
 func MatchDotaProto(pb *protocol.CMsgDOTAMatchMinimal) *Match {
 	return &Match{
-		ID:                           pb.GetMatchId(),
+		ID:                           nspb.MatchID(pb.GetMatchId()),
 		LeagueID:                     nspb.LeagueID(pb.GetTourney().GetLeagueId()),
-		SeriesType:                   pb.GetTourney().GetSeriesType(),
+		SeriesType:                   nspb.SeriesType(pb.GetTourney().GetSeriesType()),
 		SeriesGame:                   pb.GetTourney().GetSeriesGame(),
 		GameMode:                     nspb.GameMode(pb.GetGameMode()),
 		StartTime:                    NullUnixTimestamp(int64(pb.GetStartTime())),
 		Duration:                     pb.GetDuration(),
 		Outcome:                      nspb.MatchOutcome(pb.GetMatchOutcome()),
-		RadiantTeamID:                TeamID(pb.GetTourney().GetRadiantTeamId()),
+		RadiantTeamID:                nspb.TeamID(pb.GetTourney().GetRadiantTeamId()),
 		RadiantTeamName:              pb.GetTourney().GetRadiantTeamName(),
-		RadiantTeamLogo:              steamid.SteamId(TruncateUint(pb.GetTourney().GetDireTeamLogo())),
+		RadiantTeamLogo:              nspb.SteamID(TruncateUint(pb.GetTourney().GetDireTeamLogo())),
 		RadiantTeamLogoURL:           pb.GetTourney().GetRadiantTeamLogoUrl(),
 		RadiantScore:                 pb.GetRadiantScore(),
-		DireTeamID:                   TeamID(pb.GetTourney().GetDireTeamId()),
+		DireTeamID:                   nspb.TeamID(pb.GetTourney().GetDireTeamId()),
 		DireTeamName:                 pb.GetTourney().GetDireTeamName(),
-		DireTeamLogo:                 steamid.SteamId(TruncateUint(pb.GetTourney().GetDireTeamLogo())),
+		DireTeamLogo:                 nspb.SteamID(TruncateUint(pb.GetTourney().GetDireTeamLogo())),
 		DireTeamLogoURL:              pb.GetTourney().GetDireTeamLogoUrl(),
 		DireScore:                    pb.GetDireScore(),
 		WeekendTourneyTournamentID:   pb.GetTourney().GetWeekendTourneyTournamentId(),

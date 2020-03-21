@@ -15,7 +15,7 @@ func NewPlayer(data *PlayerData) (*nspb.Player, error) {
 	}
 
 	pb := &nspb.Player{
-		AccountId: data.AccountID,
+		AccountId: uint32(data.AccountID),
 	}
 
 	if data.FollowedPlayer != nil {

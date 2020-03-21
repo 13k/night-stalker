@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/faceit/go-steam/steamid"
 	"github.com/lib/pq"
 	"github.com/paralin/go-dota2/protocol"
 
@@ -17,7 +16,7 @@ type LiveMatchStats struct {
 	ID                         LiveMatchStatsID  `gorm:"column:id;primary_key"`
 	LiveMatchID                LiveMatchID       `gorm:"column:live_match_id;index;not null"`
 	MatchID                    nspb.MatchID      `gorm:"column:match_id;index;not null"`
-	ServerSteamID              steamid.SteamId   `gorm:"column:server_steam_id;index;not null"`
+	ServerSteamID              nspb.SteamID      `gorm:"column:server_steam_id;index;not null"`
 	LeagueID                   nspb.LeagueID     `gorm:"column:league_id"`
 	LeagueNodeID               nspb.LeagueNodeID `gorm:"column:league_node_id"`
 	GameTimestamp              uint32            `gorm:"column:game_timestamp"`
@@ -53,10 +52,10 @@ func NewLiveMatchStats(liveMatch *LiveMatch, pb *protocol.CMsgDOTARealtimeGameSt
 
 func LiveMatchStatsDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
 	return &LiveMatchStats{
-		MatchID:                    pb.GetMatch().GetMatchid(),
-		ServerSteamID:              steamid.SteamId(pb.GetMatch().GetServerSteamId()),
+		MatchID:                    nspb.MatchID(pb.GetMatch().GetMatchid()),
+		ServerSteamID:              nspb.SteamID(pb.GetMatch().GetServerSteamId()),
 		LeagueID:                   nspb.LeagueID(pb.GetMatch().GetLeagueId()),
-		LeagueNodeID:               pb.GetMatch().GetLeagueNodeId(),
+		LeagueNodeID:               nspb.LeagueNodeID(pb.GetMatch().GetLeagueNodeId()),
 		GameTimestamp:              pb.GetMatch().GetTimestamp(),
 		GameTime:                   pb.GetMatch().GetGameTime(),
 		GameMode:                   nspb.GameMode(pb.GetMatch().GetGameMode()),

@@ -9,6 +9,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -92,7 +93,7 @@ func (p *Manager) saveWebAuth(authToken, authSecret string) error {
 func (p *Manager) saveAccountDetails(ev *steam.LoggedOnEvent) error {
 	update := &models.SteamLogin{
 		SteamID:                   ev.ClientSteamId,
-		AccountFlags:              uint32(ev.AccountFlags),
+		AccountFlags:              nspb.SteamAccountFlags(ev.AccountFlags),
 		WebAuthNonce:              ev.Body.GetWebapiAuthenticateUserNonce(),
 		CellID:                    ev.Body.GetCellId(),
 		CellIDPingThreshold:       ev.Body.GetCellIdPingThreshold(),

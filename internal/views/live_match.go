@@ -120,12 +120,12 @@ func NewLiveMatch(
 
 func LiveMatchFromModel(m *models.LiveMatch) (*nspb.LiveMatch, error) {
 	pb := &nspb.LiveMatch{
-		MatchId:                    m.MatchID,
+		MatchId:                    uint64(m.MatchID),
 		ServerSteamId:              uint64(m.ServerSteamID),
-		LobbyId:                    m.LobbyID,
+		LobbyId:                    uint64(m.LobbyID),
 		LobbyType:                  m.LobbyType,
-		LeagueId:                   m.LeagueID,
-		SeriesId:                   m.SeriesID,
+		LeagueId:                   uint64(m.LeagueID),
+		SeriesId:                   uint64(m.SeriesID),
 		GameMode:                   m.GameMode,
 		GameTime:                   m.GameTime,
 		AverageMmr:                 m.AverageMMR,
@@ -176,7 +176,7 @@ func NewLiveMatchPlayer(
 	statsPlayer *models.LiveMatchStatsPlayer,
 ) *nspb.LiveMatch_Player {
 	pb := &nspb.LiveMatch_Player{
-		AccountId: followed.AccountID,
+		AccountId: uint32(followed.AccountID),
 		Name:      followed.Label,
 		Label:     followed.Label,
 		Slug:      followed.Slug,
@@ -185,7 +185,7 @@ func NewLiveMatchPlayer(
 
 	if player != nil {
 		if pb.AccountId == 0 {
-			pb.AccountId = player.AccountID
+			pb.AccountId = uint32(player.AccountID)
 		}
 
 		pb.Name = player.Name
@@ -197,7 +197,7 @@ func NewLiveMatchPlayer(
 
 	if statsPlayer != nil {
 		if pb.AccountId == 0 {
-			pb.AccountId = statsPlayer.AccountID
+			pb.AccountId = uint32(statsPlayer.AccountID)
 		}
 
 		if pb.HeroId == 0 {

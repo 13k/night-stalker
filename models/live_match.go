@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/faceit/go-steam/steamid"
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -18,7 +17,7 @@ type LiveMatchID uint64
 type LiveMatch struct {
 	ID                         LiveMatchID        `gorm:"column:id;primary_key"`
 	MatchID                    nspb.MatchID       `gorm:"column:match_id;unique_index;not null"`
-	ServerSteamID              steamid.SteamId    `gorm:"column:server_steam_id;not null"`
+	ServerSteamID              nspb.SteamID       `gorm:"column:server_steam_id;not null"`
 	LobbyID                    nspb.LobbyID       `gorm:"column:lobby_id;not null"`
 	LobbyType                  nspb.LobbyType     `gorm:"column:lobby_type"`
 	LeagueID                   nspb.LeagueID      `gorm:"column:league_id"`
@@ -26,13 +25,13 @@ type LiveMatch struct {
 	GameMode                   nspb.GameMode      `gorm:"column:game_mode"`
 	AverageMMR                 uint32             `gorm:"column:average_mmr"`
 	RadiantLead                int32              `gorm:"column:radiant_lead"`
-	RadiantTeamID              TeamID             `gorm:"column:radiant_team_id"`
+	RadiantTeamID              nspb.TeamID        `gorm:"column:radiant_team_id"`
 	RadiantTeamName            string             `gorm:"column:radiant_team_name;size:255"`
-	RadiantTeamLogo            steamid.SteamId    `gorm:"column:radiant_team_logo"`
+	RadiantTeamLogo            nspb.SteamID       `gorm:"column:radiant_team_logo"`
 	RadiantScore               uint32             `gorm:"column:radiant_score"`
-	DireTeamID                 TeamID             `gorm:"column:dire_team_id"`
+	DireTeamID                 nspb.TeamID        `gorm:"column:dire_team_id"`
 	DireTeamName               string             `gorm:"column:dire_team_name;size:255"`
-	DireTeamLogo               steamid.SteamId    `gorm:"column:dire_team_logo"`
+	DireTeamLogo               nspb.SteamID       `gorm:"column:dire_team_logo"`
 	DireScore                  uint32             `gorm:"column:dire_score"`
 	Delay                      uint32             `gorm:"column:delay"`
 	ActivateTime               *time.Time         `gorm:"column:activate_time"`
@@ -91,22 +90,22 @@ func (m *LiveMatch) Equal(other *LiveMatch) bool {
 
 func LiveMatchDotaProto(pb *protocol.CSourceTVGameSmall) *LiveMatch {
 	return &LiveMatch{
-		MatchID:                    pb.GetMatchId(),
-		ServerSteamID:              steamid.SteamId(pb.GetServerSteamId()),
+		MatchID:                    nspb.MatchID(pb.GetMatchId()),
+		ServerSteamID:              nspb.SteamID(pb.GetServerSteamId()),
 		LeagueID:                   nspb.LeagueID(pb.GetLeagueId()),
 		SeriesID:                   nspb.SeriesID(pb.GetSeriesId()),
-		LobbyID:                    pb.GetLobbyId(),
+		LobbyID:                    nspb.LobbyID(pb.GetLobbyId()),
 		LobbyType:                  nspb.LobbyType(pb.GetLobbyType()),
 		GameMode:                   nspb.GameMode(pb.GetGameMode()),
 		AverageMMR:                 pb.GetAverageMmr(),
 		RadiantLead:                pb.GetRadiantLead(),
-		RadiantTeamID:              TeamID(pb.GetTeamIdRadiant()),
+		RadiantTeamID:              nspb.TeamID(pb.GetTeamIdRadiant()),
 		RadiantTeamName:            pb.GetTeamNameRadiant(),
-		RadiantTeamLogo:            steamid.SteamId(TruncateUint(pb.GetTeamLogoRadiant())),
+		RadiantTeamLogo:            nspb.SteamID(TruncateUint(pb.GetTeamLogoRadiant())),
 		RadiantScore:               pb.GetRadiantScore(),
-		DireTeamID:                 TeamID(pb.GetTeamIdDire()),
+		DireTeamID:                 nspb.TeamID(pb.GetTeamIdDire()),
 		DireTeamName:               pb.GetTeamNameDire(),
-		DireTeamLogo:               steamid.SteamId(TruncateUint(pb.GetTeamLogoDire())),
+		DireTeamLogo:               nspb.SteamID(TruncateUint(pb.GetTeamLogoDire())),
 		DireScore:                  pb.GetDireScore(),
 		ActivateTime:               NullUnixTimestamp(int64(pb.GetActivateTime())),
 		DeactivateTime:             NullUnixTimestamp(int64(pb.GetDeactivateTime())),

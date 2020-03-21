@@ -1,5 +1,7 @@
 package protocol
 
+type SteamAccountFlags uint32
+
 type GamePlayerSlot uint32
 
 type GamePlayerIndex uint32

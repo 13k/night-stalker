@@ -34,7 +34,7 @@ func (*PlayerProfileCard) TableName() string {
 
 func PlayerProfileCardProto(pb *protocol.CMsgDOTAProfileCard) *PlayerProfileCard {
 	return &PlayerProfileCard{
-		AccountID:        pb.GetAccountId(),
+		AccountID:        nspb.AccountID(pb.GetAccountId()),
 		BadgePoints:      pb.GetBadgePoints(),
 		EventPoints:      pb.GetEventPoints(),
 		EventID:          pb.GetEventId(),

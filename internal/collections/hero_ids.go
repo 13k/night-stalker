@@ -1,7 +1,7 @@
 package collections
 
 import (
-	"github.com/13k/night-stalker/models"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-type HeroIDs []models.HeroID
+type HeroIDs []nspb.HeroID

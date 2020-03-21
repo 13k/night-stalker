@@ -5,11 +5,12 @@ import (
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsdb "github.com/13k/night-stalker/internal/db"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
 	"github.com/13k/night-stalker/models"
 )
 
-func (app *App) loadHeroesData(heroIDs ...models.HeroID) ([]*models.Hero, error) {
+func (app *App) loadHeroesData(heroIDs ...nspb.HeroID) ([]*models.Hero, error) {
 	var heroes []*models.Hero
 
 	scope := app.db.Debug()
@@ -28,7 +29,7 @@ func (app *App) loadHeroesData(heroIDs ...models.HeroID) ([]*models.Hero, error)
 	return heroes, nil
 }
 
-func (app *App) loadHeroMatchesData(id models.HeroID) (nsviews.MatchesData, error) {
+func (app *App) loadHeroMatchesData(id nspb.HeroID) (nsviews.MatchesData, error) {
 	matchIDs, err := nsdb.FindMatchIDs(app.db, nsdb.FindMatchIDsFilters{
 		PlayerFilters: &nsdb.PlayerFilters{
 			HeroIDs: nscol.HeroIDs{id},

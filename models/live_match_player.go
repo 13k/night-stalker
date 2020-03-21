@@ -16,7 +16,7 @@ type LiveMatchPlayer struct {
 	LiveMatchID LiveMatchID       `gorm:"column:live_match_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"` //nolint: lll
 	MatchID     nspb.MatchID      `gorm:"column:match_id;unique_index:uix_live_match_players_match_id_account_id;not null"`           //nolint: lll
 	AccountID   nspb.AccountID    `gorm:"column:account_id;unique_index:uix_live_match_players_live_match_id_account_id;not null"`    //nolint: lll
-	HeroID      HeroID            `gorm:"column:hero_id"`
+	HeroID      nspb.HeroID       `gorm:"column:hero_id"`
 	Timestamps
 
 	LiveMatch *LiveMatch
@@ -37,7 +37,7 @@ func NewLiveMatchPlayer(liveMatch *LiveMatch, pb *protocol.CSourceTVGameSmall_Pl
 
 func LiveMatchPlayerDotaProto(pb *protocol.CSourceTVGameSmall_Player) *LiveMatchPlayer {
 	return &LiveMatchPlayer{
-		AccountID: pb.GetAccountId(),
-		HeroID:    HeroID(pb.GetHeroId()),
+		AccountID: nspb.AccountID(pb.GetAccountId()),
+		HeroID:    nspb.HeroID(pb.GetHeroId()),
 	}
 }

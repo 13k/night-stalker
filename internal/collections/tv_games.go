@@ -18,7 +18,7 @@ func (s TVGames) MatchIDs() MatchIDs {
 	matchIDs := make(MatchIDs, len(s))
 
 	for i, game := range s {
-		matchIDs[i] = game.GetMatchId()
+		matchIDs[i] = nspb.MatchID(game.GetMatchId())
 	}
 
 	return matchIDs
@@ -26,7 +26,7 @@ func (s TVGames) MatchIDs() MatchIDs {
 
 func (s TVGames) FindIndexByMatchID(matchID nspb.MatchID) int {
 	for i, game := range s {
-		if game.GetMatchId() == matchID {
+		if nspb.MatchID(game.GetMatchId()) == matchID {
 			return i
 		}
 	}
@@ -50,7 +50,8 @@ func (s TVGames) GroupByMatchID() map[nspb.MatchID]TVGames {
 			continue
 		}
 
-		m[game.GetMatchId()] = append(m[game.GetMatchId()], game)
+		matchID := nspb.MatchID(game.GetMatchId())
+		m[matchID] = append(m[matchID], game)
 	}
 
 	return m
@@ -126,11 +127,13 @@ func (s TVGames) Clean() TVGames {
 			continue
 		}
 
-		if visited[game.GetMatchId()] {
+		matchID := nspb.MatchID(game.GetMatchId())
+
+		if visited[matchID] {
 			continue
 		}
 
-		group := byMatchID[game.GetMatchId()]
+		group := byMatchID[matchID]
 
 		if len(group) > 1 {
 			for _, g := range group {
@@ -141,7 +144,7 @@ func (s TVGames) Clean() TVGames {
 		}
 
 		result = append(result, game)
-		visited[game.GetMatchId()] = true
+		visited[matchID] = true
 	}
 
 	sort.Slice(result, func(i, j int) bool {

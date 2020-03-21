@@ -143,7 +143,7 @@ func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
 		return nil, err
 	}
 
-	hero.ID = models.HeroID(id)
+	hero.ID = nspb.HeroID(id)
 
 	hero.LocalizedName, err = node.ChildAsString("workshop_guide_name", false, true)
 

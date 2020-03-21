@@ -14,6 +14,7 @@ import (
 	"golang.org/x/xerrors"
 
 	nsd2 "github.com/13k/night-stalker/internal/dota2"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -45,7 +46,7 @@ func (w *worker) Run(ctx context.Context) (*models.LiveMatchStats, error) {
 		return nil, xerrors.Errorf("error requesting API: %w", err)
 	}
 
-	if result.GetMatch().GetMatchid() != w.liveMatch.MatchID {
+	if nspb.MatchID(result.GetMatch().GetMatchid()) != w.liveMatch.MatchID {
 		return nil, xerrors.Errorf("invalid response: %w", &errInvalidResponse{
 			LiveMatch: w.liveMatch,
 			Result:    result,

@@ -2,13 +2,13 @@ package teams
 
 import (
 	nsjson "github.com/13k/night-stalker/internal/json"
-	"github.com/13k/night-stalker/models"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 type apiResult []*apiResultEntry
 
 type apiResultEntry struct {
-	TeamID        models.TeamID    `json:"team_id,omitempty"`
+	TeamID        nspb.TeamID      `json:"team_id,omitempty"`
 	Name          string           `json:"name,omitempty"`
 	Tag           string           `json:"tag,omitempty"`
 	Rating        float32          `json:"rating,omitempty"`

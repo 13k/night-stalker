@@ -9,7 +9,6 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsviews "github.com/13k/night-stalker/internal/views"
-	"github.com/13k/night-stalker/models"
 	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
@@ -40,7 +39,7 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 	cc := c.(*nswebctx.Context)
 
 	type PathParams struct {
-		ID models.HeroID `param:"id"`
+		ID nspb.HeroID `param:"id"`
 	}
 
 	pathParams := &PathParams{}
@@ -90,7 +89,7 @@ func (app *App) loadHeroesView() ([]*nspb.Hero, error) {
 	return view, nil
 }
 
-func (app *App) loadHeroMatchesView(id models.HeroID) (*nspb.HeroMatches, error) {
+func (app *App) loadHeroMatchesView(id nspb.HeroID) (*nspb.HeroMatches, error) {
 	heroesData, err := app.loadHeroesData(id)
 
 	if err != nil {

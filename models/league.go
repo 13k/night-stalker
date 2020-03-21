@@ -8,10 +8,8 @@ import (
 
 var LeagueModel Model = (*League)(nil)
 
-type LeagueID uint64
-
 type League struct {
-	ID             LeagueID          `gorm:"column:id;primary_key"`
+	ID             nspb.LeagueID     `gorm:"column:id;primary_key"`
 	Name           string            `gorm:"column:name;size:255;not null"`
 	Tier           nspb.LeagueTier   `gorm:"column:tier;not null"`
 	Region         nspb.LeagueRegion `gorm:"column:region;not null"`

@@ -1,7 +1,6 @@
 package players
 
 import (
-	"github.com/faceit/go-steam/steamid"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/cobra"
 
@@ -9,6 +8,7 @@ import (
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -91,7 +91,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		player := &models.Player{
 			AccountID:       entry.AccountID,
-			SteamID:         steamid.SteamId(entry.SteamID.Uint64()),
+			SteamID:         nspb.SteamID(entry.SteamID.Uint64()),
 			Name:            entry.Name,
 			PersonaName:     entry.PersonaName,
 			AvatarURL:       entry.Avatar,

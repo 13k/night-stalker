@@ -18,13 +18,13 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 	var err error
 
 	pb := &nspb.Match{
-		MatchId: data.MatchID,
+		MatchId: uint64(data.MatchID),
 	}
 
 	if data.Match != nil {
 		pb.GameMode = data.Match.GameMode
-		pb.LeagueId = data.Match.LeagueID
-		pb.SeriesType = data.Match.SeriesType
+		pb.LeagueId = uint64(data.Match.LeagueID)
+		pb.SeriesType = uint32(data.Match.SeriesType)
 		pb.SeriesGame = data.Match.SeriesGame
 		pb.Duration = data.Match.Duration
 		pb.Outcome = data.Match.Outcome
@@ -42,9 +42,9 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 			pb.GameMode = data.LiveMatch.GameMode
 		}
 
-		pb.LobbyId = data.LiveMatch.LobbyID
+		pb.LobbyId = uint64(data.LiveMatch.LobbyID)
 		pb.LobbyType = data.LiveMatch.LobbyType
-		pb.SeriesId = data.LiveMatch.SeriesID
+		pb.SeriesId = uint64(data.LiveMatch.SeriesID)
 		pb.AverageMmr = data.LiveMatch.AverageMMR
 		pb.RadiantTeamId = uint64(data.LiveMatch.RadiantTeamID)
 		pb.RadiantTeamName = data.LiveMatch.RadiantTeamName
@@ -71,7 +71,7 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 
 	for _, stats := range data.LiveMatchStats {
 		if pb.LeagueId == 0 {
-			pb.LeagueId = stats.LeagueID
+			pb.LeagueId = uint64(stats.LeagueID)
 		}
 
 		if pb.GameMode == 0 {
@@ -192,7 +192,7 @@ func NewMatchPlayer(data *MatchPlayerData) (*nspb.Match_Player, error) {
 	}
 
 	pb := &nspb.Match_Player{
-		AccountId: data.AccountID,
+		AccountId: uint32(data.AccountID),
 	}
 
 	if data.MatchPlayer != nil {

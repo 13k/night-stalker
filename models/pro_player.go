@@ -14,7 +14,7 @@ type ProPlayerID uint64
 type ProPlayer struct {
 	ID          ProPlayerID      `gorm:"column:id;primary_key"`
 	AccountID   nspb.AccountID   `gorm:"column:account_id;unique_index;not null"`
-	TeamID      TeamID           `gorm:"column:team_id"`
+	TeamID      nspb.TeamID      `gorm:"column:team_id"`
 	IsLocked    bool             `gorm:"column:is_locked"`
 	LockedUntil *time.Time       `gorm:"column:locked_until"`
 	FantasyRole nspb.FantasyRole `gorm:"column:fantasy_role"`

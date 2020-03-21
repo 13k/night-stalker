@@ -179,7 +179,7 @@ func (p *Collector) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 		})
 	}
 
-	matchIDs := make(nscol.MatchIDs, len(result.Val()))
+	matchIDs := make([]uint64, len(result.Val()))
 
 	if err := result.ScanSlice(&matchIDs); err != nil {
 		return nil, xerrors.Errorf("error parsing live match IDs: %w", &errRedisOp{
@@ -188,7 +188,7 @@ func (p *Collector) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
 		})
 	}
 
-	return matchIDs, nil
+	return nscol.NewMatchIDs(matchIDs...), nil
 }
 
 func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatches, error) {
@@ -397,7 +397,7 @@ func (p *Collector) rdsAddLiveMatches(liveMatches nscol.LiveMatches) error {
 }
 
 func (p *Collector) rdsRemoveLiveMatches(matchIDs nscol.MatchIDs) error {
-	ifaceMatchIDs := matchIDs.ToInterfaces()
+	ifaceMatchIDs := matchIDs.ToUint64Interfaces()
 
 	result := p.rds.ZRem(nsrds.KeyLiveMatches, ifaceMatchIDs...)
 

@@ -11,7 +11,6 @@ var LiveMatchStatsPlayerModel Model = (*LiveMatchStatsPlayer)(nil)
 
 type LiveMatchStatsPlayerID uint64
 
-// LiveMatchStatsPlayer ...
 type LiveMatchStatsPlayer struct {
 	ID               LiveMatchStatsPlayerID `gorm:"column:id;primary_key"`
 	LiveMatchStatsID LiveMatchStatsID       `gorm:"column:live_match_stats_id;unique_index:uix_live_match_stats_players_live_match_stats_id_account_id;not null"` //nolint: lll
@@ -20,7 +19,7 @@ type LiveMatchStatsPlayer struct {
 	PlayerSlot       nspb.GamePlayerSlot    `gorm:"column:player_slot"`
 	Name             string                 `gorm:"column:name;size:255"`
 	GameTeam         nspb.GameTeam          `gorm:"column:game_team"`
-	HeroID           HeroID                 `gorm:"column:hero_id"`
+	HeroID           nspb.HeroID            `gorm:"column:hero_id"`
 	Level            uint32                 `gorm:"column:level"`
 	Kills            uint32                 `gorm:"column:kills"`
 	Deaths           uint32                 `gorm:"column:deaths"`
@@ -56,11 +55,11 @@ func NewLiveMatchStatsPlayer(
 
 func LiveMatchStatsPlayerDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
 	return &LiveMatchStatsPlayer{
-		AccountID:  pb.GetAccountid(),
+		AccountID:  nspb.AccountID(pb.GetAccountid()),
 		PlayerSlot: nspb.GamePlayerIndex(pb.GetPlayerid()).GamePlayerSlot(),
 		Name:       pb.GetName(),
 		GameTeam:   nspb.GameTeam(pb.GetTeam()),
-		HeroID:     HeroID(pb.GetHeroid()),
+		HeroID:     nspb.HeroID(pb.GetHeroid()),
 		Level:      pb.GetLevel(),
 		Kills:      pb.GetKillCount(),
 		Deaths:     pb.GetDeathCount(),

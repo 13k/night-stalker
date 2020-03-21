@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
-	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
 func TestNewMatchIDsFromString(t *testing.T) {
@@ -108,7 +107,67 @@ func TestNewMatchIDsFromString(t *testing.T) {
 	}
 }
 
-func TestMatchIDs_ToInterfaces(t *testing.T) {
+func TestMatchIDs_ToUint64s(t *testing.T) {
+	testCases := []struct {
+		Subject  nscol.MatchIDs
+		Expected []uint64
+	}{
+		{
+			Subject:  nil,
+			Expected: nil,
+		},
+		{
+			Subject:  nscol.MatchIDs{},
+			Expected: []uint64{},
+		},
+		{
+			Subject: nscol.MatchIDs{1, 2, 3},
+			Expected: []uint64{
+				1,
+				2,
+				3,
+			},
+		},
+	}
+
+	for testCaseIdx, testCase := range testCases {
+		subject := testCase.Subject
+		actual := subject.ToUint64s()
+
+		if testCase.Expected == nil {
+			if actual != nil {
+				t.Fatalf("case %d: expected nil", testCaseIdx)
+			}
+		} else {
+			if actual == nil {
+				t.Fatalf("case %d: expected non-nil", testCaseIdx)
+			}
+		}
+
+		expectedLen := len(testCase.Expected)
+		actualLen := len(actual)
+
+		if actualLen != expectedLen {
+			t.Fatalf("case %d: expected len %d, got %d", testCaseIdx, expectedLen, actualLen)
+		}
+
+		for i, expectedID := range testCase.Expected {
+			actualID := actual[i]
+
+			if actualID != expectedID {
+				t.Fatalf(
+					"case %d: index %d: expected %#+[2]v [%[2]T], got %#+[3]v [%[3]T]",
+					testCaseIdx,
+					i,
+					expectedID,
+					actualID,
+				)
+			}
+		}
+	}
+}
+
+func TestMatchIDs_ToUint64Interfaces(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.MatchIDs
 		Expected []interface{}
@@ -119,21 +178,21 @@ func TestMatchIDs_ToInterfaces(t *testing.T) {
 		},
 		{
 			Subject:  nscol.MatchIDs{},
-			Expected: nil,
+			Expected: []interface{}{},
 		},
 		{
 			Subject: nscol.MatchIDs{1, 2, 3},
 			Expected: []interface{}{
-				nspb.MatchID(1),
-				nspb.MatchID(2),
-				nspb.MatchID(3),
+				uint64(1),
+				uint64(2),
+				uint64(3),
 			},
 		},
 	}
 
 	for testCaseIdx, testCase := range testCases {
 		subject := testCase.Subject
-		actual := subject.ToInterfaces()
+		actual := subject.ToUint64Interfaces()
 
 		if testCase.Expected == nil {
 			if actual != nil {

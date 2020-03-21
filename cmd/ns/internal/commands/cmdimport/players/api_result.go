@@ -3,7 +3,6 @@ package players
 import (
 	nsjson "github.com/13k/night-stalker/internal/json"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
 type apiResult []*apiResultEntry
@@ -11,7 +10,7 @@ type apiResult []*apiResultEntry
 type apiResultEntry struct {
 	AccountID    nspb.AccountID    `json:"account_id,omitempty"`
 	SteamID      nsjson.StringUint `json:"steamid,omitempty"`
-	TeamID       models.TeamID     `json:"team_id,omitempty"`
+	TeamID       nspb.TeamID       `json:"team_id,omitempty"`
 	Name         string            `json:"name,omitempty"`
 	PersonaName  string            `json:"personaname,omitempty"`
 	Avatar       string            `json:"avatar,omitempty"`

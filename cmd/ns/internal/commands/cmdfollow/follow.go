@@ -8,6 +8,7 @@ import (
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -42,7 +43,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.WithError(err).WithField("account_id", args[0]).Fatal("invalid account_id value")
 	}
 
-	accountID := uint32(accountID64)
+	accountID := nspb.AccountID(accountID64)
 
 	db, err := nscmddb.Connect()
 

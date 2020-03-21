@@ -1,5 +1,9 @@
 package tvgames
 
+import (
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+)
+
 type errQueryPageFailure struct {
 	Page *queryPage
 	Err  error
@@ -35,9 +39,9 @@ func (err *errHandleResponseFailure) Unwrap() error {
 }
 
 type errSaveGameFailure struct {
-	MatchID  uint64
-	ServerID uint64
-	LobbyID  uint64
+	MatchID  nspb.MatchID
+	ServerID nspb.SteamID
+	LobbyID  nspb.LobbyID
 	Err      error
 }
 

@@ -16,7 +16,7 @@ type MatchPlayer struct {
 	ID         MatchPlayerID       `gorm:"column:id;primary_key"`
 	MatchID    nspb.MatchID        `gorm:"column:match_id;unique_index:uix_match_players_match_id_account_id;not null"`   //nolint: lll
 	AccountID  nspb.AccountID      `gorm:"column:account_id;unique_index:uix_match_players_match_id_account_id;not null"` //nolint: lll
-	HeroID     HeroID              `gorm:"column:hero_id"`
+	HeroID     nspb.HeroID         `gorm:"column:hero_id"`
 	PlayerSlot nspb.GamePlayerSlot `gorm:"column:player_slot"`
 	ProName    string              `gorm:"column:pro_name"`
 	Kills      uint32              `gorm:"column:kills"`
@@ -35,8 +35,8 @@ func (*MatchPlayer) TableName() string {
 
 func MatchPlayerDotaProto(pb *protocol.CMsgDOTAMatchMinimal_Player) *MatchPlayer {
 	return &MatchPlayer{
-		AccountID:  pb.GetAccountId(),
-		HeroID:     HeroID(pb.GetHeroId()),
+		AccountID:  nspb.AccountID(pb.GetAccountId()),
+		HeroID:     nspb.HeroID(pb.GetHeroId()),
 		PlayerSlot: nspb.GamePlayerSlot(pb.GetPlayerSlot()),
 		ProName:    pb.GetProName(),
 		Kills:      pb.GetKills(),

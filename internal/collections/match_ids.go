@@ -9,22 +9,36 @@ import (
 
 type MatchIDs []nspb.MatchID
 
+func NewMatchIDs(s ...uint64) MatchIDs {
+	if s == nil {
+		return nil
+	}
+
+	matchIDs := make(MatchIDs, len(s))
+
+	for i, id := range s {
+		matchIDs[i] = nspb.MatchID(id)
+	}
+
+	return matchIDs
+}
+
 func NewMatchIDsFromString(s, sep string) (MatchIDs, error) {
 	if len(s) == 0 {
 		return nil, nil
 	}
 
-	var err error
-
 	ss := strings.Split(s, sep)
 	matchIDs := make(MatchIDs, len(ss))
 
 	for i, idStr := range ss {
-		matchIDs[i], err = strconv.ParseUint(idStr, 10, 64)
+		matchID, err := strconv.ParseUint(idStr, 10, 64)
 
 		if err != nil {
 			return nil, err
 		}
+
+		matchIDs[i] = nspb.MatchID(matchID)
 	}
 
 	return matchIDs, nil
@@ -63,21 +77,35 @@ func (s MatchIDs) Join(sep string) string {
 			b.WriteString(sep)
 		}
 
-		b.WriteString(strconv.FormatUint(id, 10))
+		b.WriteString(strconv.FormatUint(uint64(id), 10))
 	}
 
 	return b.String()
 }
 
-func (s MatchIDs) ToInterfaces() []interface{} {
-	if len(s) == 0 {
+func (s MatchIDs) ToUint64s() []uint64 {
+	if s == nil {
+		return nil
+	}
+
+	result := make([]uint64, len(s))
+
+	for i, matchID := range s {
+		result[i] = uint64(matchID)
+	}
+
+	return result
+}
+
+func (s MatchIDs) ToUint64Interfaces() []interface{} {
+	if s == nil {
 		return nil
 	}
 
 	result := make([]interface{}, len(s))
 
 	for i, matchID := range s {
-		result[i] = matchID
+		result[i] = uint64(matchID)
 	}
 
 	return result

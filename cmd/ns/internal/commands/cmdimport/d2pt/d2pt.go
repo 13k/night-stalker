@@ -16,6 +16,7 @@ import (
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -64,7 +65,7 @@ func (err *fetchError) Error() string {
 
 type player struct {
 	label     string
-	accountID uint32
+	accountID nspb.AccountID
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -204,7 +205,7 @@ func fetchAccountID(client *resty.Client, label string) (*player, *fetchError) {
 
 	p := &player{
 		label:     label,
-		accountID: uint32(accountID64),
+		accountID: nspb.AccountID(accountID64),
 	}
 
 	return p, nil

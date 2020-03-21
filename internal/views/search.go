@@ -49,7 +49,7 @@ func NewSearchPlayer(
 	proPlayer *models.ProPlayer,
 ) *nspb.Search_Player {
 	pb := &nspb.Search_Player{
-		AccountId: followed.AccountID,
+		AccountId: uint32(followed.AccountID),
 		Name:      followed.Label,
 		Slug:      followed.Slug,
 		IsPro:     proPlayer != nil,
@@ -57,7 +57,7 @@ func NewSearchPlayer(
 
 	if player != nil {
 		if pb.AccountId == 0 {
-			pb.AccountId = player.AccountID
+			pb.AccountId = uint32(player.AccountID)
 		}
 
 		// pb.Name = player.Name

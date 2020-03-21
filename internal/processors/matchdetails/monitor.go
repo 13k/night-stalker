@@ -331,7 +331,7 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nsco
 
 func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) error {
 	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
-		MatchIds: matchIDs,
+		MatchIds: matchIDs.ToUint64s(),
 	}
 
 	return p.bus.Pub(nsbus.Message{

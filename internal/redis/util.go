@@ -12,7 +12,7 @@ func LiveMatchesToZValues(liveMatches nscol.LiveMatches) []*redis.Z {
 	for i, liveMatch := range liveMatches {
 		zValues[i] = &redis.Z{
 			Score:  liveMatch.SortScore,
-			Member: liveMatch.MatchID,
+			Member: uint64(liveMatch.MatchID),
 		}
 	}
 
@@ -30,8 +30,8 @@ func LiveMatchesToZValuesByTime(liveMatches nscol.LiveMatches) []*redis.Z {
 		}
 
 		zValues[i] = &redis.Z{
-			Member: liveMatch.MatchID,
 			Score:  float64(activateTimeUnix),
+			Member: uint64(liveMatch.MatchID),
 		}
 	}
 

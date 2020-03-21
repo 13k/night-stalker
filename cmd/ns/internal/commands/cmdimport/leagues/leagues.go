@@ -75,7 +75,7 @@ func run(cmd *cobra.Command, args []string) {
 		l := log.WithField("league_id", info.GetLeagueId())
 
 		league := &models.League{
-			ID:             models.LeagueID(info.GetLeagueId()),
+			ID:             nspb.LeagueID(info.GetLeagueId()),
 			Name:           info.GetName(),
 			Tier:           nspb.LeagueTier(info.GetTier()),
 			Region:         nspb.LeagueRegion(info.GetRegion()),
