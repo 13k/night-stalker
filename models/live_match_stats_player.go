@@ -1,10 +1,10 @@
 package models
 
 import (
-	"github.com/lib/pq"
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var LiveMatchStatsPlayerModel Model = (*LiveMatchStatsPlayer)(nil)
@@ -30,8 +30,8 @@ type LiveMatchStatsPlayer struct {
 	NetWorth         uint32                 `gorm:"column:net_worth"`
 	PosX             float32                `gorm:"column:pos_x"`
 	PosY             float32                `gorm:"column:pos_y"`
-	Abilities        pq.Int64Array          `gorm:"column:abilities"`
-	Items            pq.Int64Array          `gorm:"column:items"`
+	Abilities        nssql.AbilityIDs       `gorm:"column:abilities"`
+	Items            nssql.ItemIDs          `gorm:"column:items"`
 	Timestamps
 
 	LiveMatchStats *LiveMatchStats
@@ -70,7 +70,7 @@ func LiveMatchStatsPlayerDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_P
 		PosX:       pb.GetX(),
 		PosY:       pb.GetY(),
 		NetWorth:   pb.GetNetWorth(),
-		Abilities:  Uint32Array(pb.GetAbilities()),
-		Items:      Uint32Array(pb.GetItems()),
+		Abilities:  nssql.NewAbilityIDs(pb.GetAbilities()),
+		Items:      nssql.NewItemIDsFromUint32s(pb.GetItems()),
 	}
 }

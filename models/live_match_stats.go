@@ -5,6 +5,7 @@ import (
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var LiveMatchStatsModel Model = (*LiveMatchStats)(nil)
@@ -29,7 +30,7 @@ type LiveMatchStats struct {
 	GraphKill                  pq.Int64Array     `gorm:"column:graph_kill"`
 	GraphTower                 pq.Int64Array     `gorm:"column:graph_tower"`
 	GraphRax                   pq.Int64Array     `gorm:"column:graph_rax"`
-	SteamBroadcasterAccountIDs pq.Int64Array     `gorm:"column:steam_broadcaster_account_ids"`
+	SteamBroadcasterAccountIDs nssql.AccountIDs  `gorm:"column:steam_broadcaster_account_ids"`
 	Timestamps
 
 	LiveMatch *LiveMatch
@@ -62,7 +63,7 @@ func LiveMatchStatsDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse) *LiveM
 		GameState:                  nspb.GameState(pb.GetMatch().GetGameState()),
 		DeltaFrame:                 pb.GetDeltaFrame(),
 		GraphGold:                  Int32Array(pb.GetGraphData().GetGraphGold()),
-		SteamBroadcasterAccountIDs: Uint32Array(pb.GetMatch().GetSteamBroadcasterAccountIds()),
+		SteamBroadcasterAccountIDs: nssql.NewAccountIDs(pb.GetMatch().GetSteamBroadcasterAccountIds()),
 		// GraphXP:                    Int32Array(pb.GetGraphData().GetGraphXp()),
 		// GraphKill:                  Int32Array(pb.GetGraphData().GetGraphKill()),
 		// GraphTower:                 Int32Array(pb.GetGraphData().GetGraphTower()),

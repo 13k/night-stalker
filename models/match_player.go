@@ -1,10 +1,10 @@
 package models
 
 import (
-	"github.com/lib/pq"
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var MatchPlayerModel Model = (*MatchPlayer)(nil)
@@ -22,7 +22,7 @@ type MatchPlayer struct {
 	Kills      uint32              `gorm:"column:kills"`
 	Deaths     uint32              `gorm:"column:deaths"`
 	Assists    uint32              `gorm:"column:assists"`
-	Items      pq.Int64Array       `gorm:"column:items"`
+	Items      nssql.ItemIDs       `gorm:"column:items"`
 	Timestamps
 
 	Match *Match
@@ -42,6 +42,6 @@ func MatchPlayerDotaProto(pb *protocol.CMsgDOTAMatchMinimal_Player) *MatchPlayer
 		Kills:      pb.GetKills(),
 		Deaths:     pb.GetDeaths(),
 		Assists:    pb.GetAssists(),
-		Items:      Uint32Array(pb.GetItems()),
+		Items:      nssql.NewItemIDsFromUint32s(pb.GetItems()),
 	}
 }
