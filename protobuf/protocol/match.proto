@@ -17,7 +17,7 @@ message Match {
     uint32 kills = 5;
     uint32 deaths = 6;
     uint32 assists = 7;
-    repeated int64 items = 8;
+    repeated uint64 items = 8;
   }
 
   uint64 match_id = 1;
