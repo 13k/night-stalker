@@ -2,6 +2,7 @@
 
 require_relative 'commands'
 require_relative 'go'
+require_relative 'logger'
 require_relative 'paths'
 require_relative 'proto'
 require_relative 'shell'
@@ -23,6 +24,26 @@ module AppTasks
 
   gen_task :build_commands do
     anon_task(*Commands.specs.map { |spec| compile_go_command(**spec) })
+  end
+
+  gen_task :clean_commands do
+    anon_task do
+      built = Commands.built
+
+      if ENV['CMD_TAG'] == 'keep'
+        built.each do |name, artifacts|
+          built[name] = artifacts.reject { |p| p.fnmatch?("*-#{Commands.current_tag}") }
+        end
+      end
+
+      built.each do |name, artifacts|
+        next if artifacts.empty?
+
+        Logger.warn("removing command '#{name}' artifacts")
+
+        rm_f(artifacts)
+      end
+    end
   end
 
   gen_task :lint_proto do

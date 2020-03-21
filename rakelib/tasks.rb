@@ -60,6 +60,12 @@ module Tasks
     end
   end
 
+  def file_rm(*paths)
+    anon_task do
+      rm_f(paths)
+    end
+  end
+
   def require_go_tool(cmd)
     anon_task do
       Go.require_go_tool!(cmd)

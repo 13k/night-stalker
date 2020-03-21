@@ -40,4 +40,9 @@ namespace :app do
     desc 'Compile app protobufs'
     task proto: AppTasks[:build_proto]
   end
+
+  namespace :clean do
+    desc 'Remove built app command binaries'
+    task commands: AppTasks[:clean_commands]
+  end
 end
