@@ -34,7 +34,7 @@ message LiveMatch {
   }
 
   uint64 match_id = 1;
-  uint64 server_steam_id = 2;
+  uint64 server_id = 2;
   uint64 lobby_id = 3;
   ns.protocol.LobbyType lobby_type = 4;
   uint64 league_id = 5;
