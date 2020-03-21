@@ -7276,7 +7276,7 @@ export const ns = $root.ns = (() => {
                     if (message.items != null && message.items.length) {
                         writer.uint32(/* id 8, wireType 2 =*/66).fork();
                         for (let i = 0; i < message.items.length; ++i)
-                            writer.int64(message.items[i]);
+                            writer.uint64(message.items[i]);
                         writer.ldelim();
                     }
                     return writer;
@@ -7340,9 +7340,9 @@ export const ns = $root.ns = (() => {
                             if ((tag & 7) === 2) {
                                 let end2 = reader.uint32() + reader.pos;
                                 while (reader.pos < end2)
-                                    message.items.push(reader.int64());
+                                    message.items.push(reader.uint64());
                             } else
-                                message.items.push(reader.int64());
+                                message.items.push(reader.uint64());
                             break;
                         default:
                             reader.skipType(tag & 7);
@@ -7449,13 +7449,13 @@ export const ns = $root.ns = (() => {
                         message.items = [];
                         for (let i = 0; i < object.items.length; ++i)
                             if ($util.Long)
-                                (message.items[i] = $util.Long.fromValue(object.items[i])).unsigned = false;
+                                (message.items[i] = $util.Long.fromValue(object.items[i])).unsigned = true;
                             else if (typeof object.items[i] === "string")
                                 message.items[i] = parseInt(object.items[i], 10);
                             else if (typeof object.items[i] === "number")
                                 message.items[i] = object.items[i];
                             else if (typeof object.items[i] === "object")
-                                message.items[i] = new $util.LongBits(object.items[i].low >>> 0, object.items[i].high >>> 0).toNumber();
+                                message.items[i] = new $util.LongBits(object.items[i].low >>> 0, object.items[i].high >>> 0).toNumber(true);
                     }
                     return message;
                 };
@@ -7511,7 +7511,7 @@ export const ns = $root.ns = (() => {
                             if (typeof message.items[j] === "number")
                                 object.items[j] = options.longs === String ? String(message.items[j]) : message.items[j];
                             else
-                                object.items[j] = options.longs === String ? $util.Long.prototype.toString.call(message.items[j]) : options.longs === Number ? new $util.LongBits(message.items[j].low >>> 0, message.items[j].high >>> 0).toNumber() : message.items[j];
+                                object.items[j] = options.longs === String ? $util.Long.prototype.toString.call(message.items[j]) : options.longs === Number ? new $util.LongBits(message.items[j].low >>> 0, message.items[j].high >>> 0).toNumber(true) : message.items[j];
                     }
                     return object;
                 };

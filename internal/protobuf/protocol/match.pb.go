@@ -294,14 +294,14 @@ type Match_Player struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AccountId  uint32  `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
-	HeroId     uint64  `protobuf:"varint,2,opt,name=hero_id,json=heroId,proto3" json:"hero_id,omitempty"`
-	PlayerSlot uint32  `protobuf:"varint,3,opt,name=player_slot,json=playerSlot,proto3" json:"player_slot,omitempty"`
-	ProName    string  `protobuf:"bytes,4,opt,name=pro_name,json=proName,proto3" json:"pro_name,omitempty"`
-	Kills      uint32  `protobuf:"varint,5,opt,name=kills,proto3" json:"kills,omitempty"`
-	Deaths     uint32  `protobuf:"varint,6,opt,name=deaths,proto3" json:"deaths,omitempty"`
-	Assists    uint32  `protobuf:"varint,7,opt,name=assists,proto3" json:"assists,omitempty"`
-	Items      []int64 `protobuf:"varint,8,rep,packed,name=items,proto3" json:"items,omitempty"`
+	AccountId  uint32   `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	HeroId     uint64   `protobuf:"varint,2,opt,name=hero_id,json=heroId,proto3" json:"hero_id,omitempty"`
+	PlayerSlot uint32   `protobuf:"varint,3,opt,name=player_slot,json=playerSlot,proto3" json:"player_slot,omitempty"`
+	ProName    string   `protobuf:"bytes,4,opt,name=pro_name,json=proName,proto3" json:"pro_name,omitempty"`
+	Kills      uint32   `protobuf:"varint,5,opt,name=kills,proto3" json:"kills,omitempty"`
+	Deaths     uint32   `protobuf:"varint,6,opt,name=deaths,proto3" json:"deaths,omitempty"`
+	Assists    uint32   `protobuf:"varint,7,opt,name=assists,proto3" json:"assists,omitempty"`
+	Items      []uint64 `protobuf:"varint,8,rep,packed,name=items,proto3" json:"items,omitempty"`
 }
 
 func (x *Match_Player) Reset() {
@@ -385,7 +385,7 @@ func (x *Match_Player) GetAssists() uint32 {
 	return 0
 }
 
-func (x *Match_Player) GetItems() []int64 {
+func (x *Match_Player) GetItems() []uint64 {
 	if x != nil {
 		return x.Items
 	}
@@ -489,7 +489,7 @@ var file_protocol_match_proto_rawDesc = []byte{
 	0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x64, 0x65, 0x61, 0x74, 0x68, 0x73, 0x12, 0x18, 0x0a, 0x07,
 	0x61, 0x73, 0x73, 0x69, 0x73, 0x74, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x61,
 	0x73, 0x73, 0x69, 0x73, 0x74, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x18,
-	0x08, 0x20, 0x03, 0x28, 0x03, 0x52, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x42, 0x39, 0x5a, 0x37,
+	0x08, 0x20, 0x03, 0x28, 0x04, 0x52, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x42, 0x39, 0x5a, 0x37,
 	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x31, 0x33, 0x6b, 0x2f, 0x6e,
 	0x69, 0x67, 0x68, 0x74, 0x2d, 0x73, 0x74, 0x61, 0x6c, 0x6b, 0x65, 0x72, 0x2f, 0x69, 0x6e, 0x74,
 	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x70,
