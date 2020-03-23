@@ -15,6 +15,10 @@ module Go
     FMT
   end
 
+  def self.module(path)
+    Shell.capture(GO_CMD, 'list', '-m', chdir: path)
+  end
+
   def self.instrospect_pkg(pkg, *args)
     json = Shell.capture(GO_CMD, 'list', '-json', *args, pkg)
     JSON.parse(json)

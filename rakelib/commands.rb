@@ -11,7 +11,7 @@ module Commands
 
     @version = Shell.capture(
       GIT_CMD, 'describe', '--tags', '--exact-match', 'HEAD',
-      raise_error: false,
+      raise_error: false, printer: :null,
     )
 
     @version ||= 'dev'

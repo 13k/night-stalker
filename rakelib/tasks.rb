@@ -79,7 +79,7 @@ module Tasks
   end
 
   def compile_go_command(input, output, *args, **options)
-    file output => input.glob('*.go') do
+    task output do
       input_arg = input.absolute? ? input.relative_path_from(ROOT_PATH) : input
       args = [*args, '-o', output]
       Go.build_pkg("./#{input_arg}", *args, **options)
