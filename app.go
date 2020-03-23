@@ -53,7 +53,7 @@ func New(options AppOptions) (*App, error) {
 		Log: options.Log,
 	})
 
-	ns := &App{
+	app := &App{
 		options: options,
 		log:     options.Log,
 		db:      options.DB,
@@ -61,47 +61,47 @@ func New(options AppOptions) (*App, error) {
 		bus:     bus,
 	}
 
-	if ns.options.ShutdownTimeout == 0 {
-		ns.options.ShutdownTimeout = defaultShutdownTimeout
+	if app.options.ShutdownTimeout == 0 {
+		app.options.ShutdownTimeout = defaultShutdownTimeout
 	}
 
-	if err := ns.setupAPI(); err != nil {
+	if err := app.setupAPI(); err != nil {
 		return nil, err
 	}
 
-	ns.setupSupervisor()
-	ns.setupContext()
+	app.setupSupervisor()
+	app.setupContext()
 
-	return ns, nil
+	return app, nil
 }
 
-func (ns *App) setupAPI() error {
+func (app *App) setupAPI() error {
 	var options []geyser.ClientOption
 	var err error
 
-	if ns.options.Credentials.APIKey != "" {
-		options = append(options, geyser.WithKey(ns.options.Credentials.APIKey))
+	if app.options.Credentials.APIKey != "" {
+		options = append(options, geyser.WithKey(app.options.Credentials.APIKey))
 	}
 
-	if ns.api, err = geyser.New(options...); err != nil {
-		ns.log.WithError(err).Error("error creating API client")
+	if app.api, err = geyser.New(options...); err != nil {
+		app.log.WithError(err).Error("error creating API client")
 		return err
 	}
 
-	if ns.apiDota, err = geyserd2.New(options...); err != nil {
-		ns.log.WithError(err).Error("error creating Dota2 API client")
+	if app.apiDota, err = geyserd2.New(options...); err != nil {
+		app.log.WithError(err).Error("error creating Dota2 API client")
 		return err
 	}
 
 	return nil
 }
 
-func (ns *App) setupSupervisor() {
+func (app *App) setupSupervisor() {
 	sessOptions := nssess.ManagerOptions{
-		Log:                   ns.log,
-		Bus:                   ns.bus,
-		Credentials:           ns.options.Credentials.sessionCredentials(),
-		ShutdownTimeout:       ns.options.ShutdownTimeout,
+		Log:                   app.log,
+		Bus:                   app.bus,
+		Credentials:           app.options.Credentials.sessionCredentials(),
+		ShutdownTimeout:       app.options.ShutdownTimeout,
 		TVGamesInterval:       tvGamesInterval,
 		RealtimeStatsPoolSize: rtStatsPoolSize,
 		RealtimeStatsInterval: rtStatsInterval,
@@ -111,36 +111,36 @@ func (ns *App) setupSupervisor() {
 
 	session := nssess.NewManager(sessOptions)
 
-	ns.supervisor = oversight.New(
+	app.supervisor = oversight.New(
 		oversight.WithRestartStrategy(oversight.OneForOne()),
-		oversight.WithLogger(ns.log.WithPackage("supervisor").OversightLogger()),
+		oversight.WithLogger(app.log.WithPackage("supervisor").OversightLogger()),
 		oversight.Process(session.ChildSpec()),
 	)
 }
 
-func (ns *App) setupContext() {
+func (app *App) setupContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ctx = nsctx.WithLogger(ctx, ns.log)
-	ctx = nsctx.WithBus(ctx, ns.bus)
-	ctx = nsctx.WithDB(ctx, ns.db)
-	ctx = nsctx.WithRedis(ctx, ns.rds)
-	ctx = nsctx.WithAPI(ctx, ns.api)
-	ctx = nsctx.WithDotaAPI(ctx, ns.apiDota)
+	ctx = nsctx.WithLogger(ctx, app.log)
+	ctx = nsctx.WithBus(ctx, app.bus)
+	ctx = nsctx.WithDB(ctx, app.db)
+	ctx = nsctx.WithRedis(ctx, app.rds)
+	ctx = nsctx.WithAPI(ctx, app.api)
+	ctx = nsctx.WithDotaAPI(ctx, app.apiDota)
 
-	ns.ctx = ctx
-	ns.cancel = cancel
+	app.ctx = ctx
+	app.cancel = cancel
 }
 
-func (ns *App) Start() error {
+func (app *App) Start() error {
 	defer func() {
-		ns.cancel()
-		ns.bus.Shutdown()
+		app.cancel()
+		app.bus.Shutdown()
 	}()
 
-	return ns.supervisor.Start(ns.ctx)
+	return app.supervisor.Start(app.ctx)
 }
 
-func (ns *App) Stop() {
-	ns.cancel()
+func (app *App) Stop() {
+	app.cancel()
 }
