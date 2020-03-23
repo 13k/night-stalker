@@ -29,10 +29,9 @@ import (
 )
 
 const (
-	processorName              = "rtstats"
-	resultsQueueSize           = 10
-	resultsBufferSize          = 10
-	resultsBufferFlushInterval = 5 * time.Second
+	processorName   = "rtstats"
+	flusherCap      = 10
+	flusherInterval = 5 * time.Second
 )
 
 type MonitorOptions struct {
@@ -58,8 +57,7 @@ type Monitor struct {
 	liveMatchesMtx        sync.RWMutex
 	liveMatches           nscol.LiveMatches
 	activeReqs            *sync.Map
-	results               nscol.LiveMatchStats
-	resultsCh             chan *models.LiveMatchStats
+	flusher               *flusher
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {
@@ -117,10 +115,10 @@ func (p *Monitor) start(ctx context.Context) error {
 		return xerrors.Errorf("error setting up worker pool: %w", err)
 	}
 
-	p.setupResults()
 	p.busSubscribe()
+	p.setupFlusher()
 
-	go p.resultsLoop()
+	go p.flusherLoop()
 
 	return p.loop()
 }
@@ -129,7 +127,7 @@ func (p *Monitor) stop(t *time.Ticker) {
 	t.Stop()
 	p.busUnsubscribe()
 	p.teardownWorkerPool()
-	p.teardownResults()
+	p.teardownFlusher()
 	p.ctx = nil
 	p.log.Warn("stop")
 }
@@ -196,17 +194,19 @@ func (p *Monitor) teardownWorkerPool() {
 	}
 }
 
-func (p *Monitor) setupResults() {
-	if p.resultsCh == nil {
-		p.resultsCh = make(chan *models.LiveMatchStats, resultsQueueSize)
-	}
+func (p *Monitor) setupFlusher() {
+	p.flusher = newFlusher(&flusherOptions{
+		Log:      p.log,
+		Bus:      p.bus,
+		Interval: flusherInterval,
+		Cap:      flusherCap,
+	})
+
+	p.flusher.Start(p.ctx)
 }
 
-func (p *Monitor) teardownResults() {
-	if p.resultsCh != nil {
-		close(p.resultsCh)
-		p.resultsCh = nil
-	}
+func (p *Monitor) teardownFlusher() {
+	p.flusher = nil
 }
 
 func (p *Monitor) loop() error {
@@ -236,45 +236,18 @@ func (p *Monitor) loop() error {
 	}
 }
 
-func (p *Monitor) resultsLoop() {
-	t := time.NewTicker(resultsBufferFlushInterval)
-
-	defer func() {
-		t.Stop()
-		p.log.Debug("stop results")
-	}()
-
-	p.log.Debug("start results")
-
+func (p *Monitor) flusherLoop() {
 	for {
-		select {
-		case <-t.C:
-			p.flushResults()
-		case stats, ok := <-p.resultsCh:
-			if !ok {
-				return
-			}
+		err, ok := <-p.flusher.Errors()
 
-			p.results = append(p.results, stats)
+		if !ok {
+			return
+		}
 
-			if len(p.results) >= resultsBufferSize {
-				p.flushResults()
-			}
+		if err != nil {
+			p.handleError(xerrors.Errorf("error flushing live match stats: %w", err))
 		}
 	}
-}
-
-func (p *Monitor) flushResults() {
-	if len(p.results) == 0 {
-		return
-	}
-
-	if err := p.busPublishLiveMatchStatsAdd(p.results...); err != nil {
-		p.handleError(xerrors.Errorf("error publishing live match stats change: %w", err))
-		return
-	}
-
-	p.results = nil
 }
 
 func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
@@ -332,7 +305,7 @@ func (p *Monitor) workerFunc(w *worker) func() {
 		stats, err = w.Run(p.ctx)
 
 		if err == nil && stats != nil {
-			p.resultsCh <- stats
+			p.flusher.Add(stats)
 		}
 	}
 }
@@ -364,28 +337,23 @@ func (p *Monitor) enqueueWorker(liveMatch *models.LiveMatch) error {
 	return nil
 }
 
-func (p *Monitor) busPublishLiveMatchStatsAdd(stats ...*models.LiveMatchStats) error {
-	return p.bus.Pub(nsbus.Message{
-		Topic: nsbus.TopicLiveMatchStatsAdd,
-		Payload: &nsbus.LiveMatchStatsChangeMessage{
-			Op:    nspb.CollectionOp_COLLECTION_OP_ADD,
-			Stats: stats,
-		},
-	})
-}
-
 func (p *Monitor) handleError(err error) {
+	if xerrors.Is(err, context.Canceled) {
+		// safe to ignore
+		return
+	}
+
+	if e := (&errInvalidResponse{}); xerrors.As(err, &e) {
+		// safe to ignore
+		return
+	}
+
 	if e := (&errRequestInProgress{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
 			"server_id", e.LiveMatch.ServerID.ToUint64(),
 		).Warn("request in progress")
 
-		return
-	}
-
-	if e := (&errInvalidResponse{}); xerrors.As(err, &e) {
-		// safe to ignore
 		return
 	}
 
