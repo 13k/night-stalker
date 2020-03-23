@@ -39,20 +39,23 @@ module Shell
       orig_sh(env, *args.map(&:to_s), **options)
     end
 
-    def run(*args, trace: true, quiet: false, **options)
+    def run(*args, raise_error: true, trace: true, quiet: false, **options)
       cmd_options = options.slice(*CMD_OPTIONS)
       cmd_options[:printer] ||= trace ? :pretty : :quiet
 
       options = options.reject { |k| CMD_OPTIONS.include?(k) }
       options[:only_output_on_error] = quiet
 
-      TTY::Command.new(**cmd_options).run(*args, **options)
+      cmd = TTY::Command.new(**cmd_options)
+      run_method = raise_error ? :run : :run!
+
+      cmd.method(run_method).call(*args, **options)
     end
 
     def capture(*args, trace: false, quiet: true, strip: true, **options)
       options = options.merge(trace: trace, quiet: quiet)
       result = run(*args, **options)
-      strip ? result.out.strip : result.out
+      (strip ? result.out.strip : result.out) if result.success?
     end
 
     def require_env!(var, msg: nil, code: 1)

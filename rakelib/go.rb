@@ -27,9 +27,7 @@ module Go
     Shell.run(GO_CMD, 'install', pkg, *args, **options)
   end
 
-  def self.build_pkg(pkg, *args, output: nil, **options)
-    args += ['-o', output] if output
-
+  def self.build_pkg(pkg, *args, **options)
     Shell.run(GO_CMD, 'build', *args, pkg, **options)
   end
 

@@ -6,15 +6,26 @@ require_relative 'shell'
 module Commands
   include Paths
 
-  def self.current_tag
-    @current_tag ||= Shell.capture(GIT_CMD, 'rev-parse', '--short', 'HEAD')
+  def self.version
+    return @version if defined?(@version)
+
+    @version = Shell.capture(
+      GIT_CMD, 'describe', '--tags', '--exact-match', 'HEAD',
+      raise_error: false,
+    )
+
+    @version ||= 'dev'
+  end
+
+  def self.revision
+    @revision ||= Shell.capture(GIT_CMD, 'rev-parse', '--short', 'HEAD')
   end
 
   def self.specs
     @specs ||= CMD_PKG_PATH.glob('*').map do |pkg_path|
       name = pkg_path.basename.to_s
       outname = name
-      outname += "-#{current_tag}" if ENV['CMD_TAG']
+      outname += "-#{revision}" if ENV['CMD_REV']
 
       pkg_rel_path = pkg_path.relative_path_from(CMD_PKG_PATH)
       pkg_rel_dir = pkg_rel_path.dirname
@@ -23,6 +34,8 @@ module Commands
         name: name,
         input: pkg_path,
         output: CMD_OUT_PATH / pkg_rel_dir / outname,
+        version: version,
+        revision: revision,
       }
     end
   end

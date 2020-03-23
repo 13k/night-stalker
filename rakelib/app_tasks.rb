@@ -18,12 +18,25 @@ module AppTasks
   end
 
   gen_task :build_proto do
-    compile_tasks = anon_multitask(*Protobuf.specs_go.map { |spec| compile_proto_go(**spec) })
-    anon_task(require_go_tool('protoc-gen-go'), compile_tasks)
+    compile_task = anon_multitask(*Protobuf.specs_go.map { |spec| compile_proto_go(**spec) })
+    anon_task(require_go_tool('protoc-gen-go'), compile_task)
   end
 
   gen_task :build_commands do
-    anon_task(*Commands.specs.map { |spec| compile_go_command(**spec) })
+    build_tasks = Commands.specs.map do |spec|
+      input, output = spec.fetch_values(:input, :output)
+      variables = spec.slice(:version, :revision)
+      args = []
+
+      unless variables.empty?
+        var_flags = variables.map { |k, v| "-X main.#{k}=#{v}" }
+        args += ['-ldflags', var_flags.join(' ')]
+      end
+
+      compile_go_command(input, output, *args)
+    end
+
+    anon_task(*build_tasks)
   end
 
   gen_task :clean_commands do
