@@ -10,30 +10,12 @@ import (
 	nsrds "github.com/13k/night-stalker/internal/redis"
 )
 
-func (app *App) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
-	result := app.rds.ZRevRange(nsrds.KeyLiveMatches, 0, -1)
-
-	if err := result.Err(); err != nil {
-		err = xerrors.Errorf("error loading redis key %s: %w", nsrds.KeyLiveMatches, err)
-		return nil, err
-	}
-
-	matchIDs := make([]uint64, len(result.Val()))
-
-	if err := result.ScanSlice(&matchIDs); err != nil {
-		err = xerrors.Errorf("error parsing live matches IDs: %w", err)
-		return nil, err
-	}
-
-	return nscol.NewMatchIDs(matchIDs...), nil
-}
-
 func (app *App) seedLiveMatches() error {
 	if app.matches != nil {
 		return nil
 	}
 
-	matchIDs, err := app.rdsLiveMatchIDs()
+	matchIDs, err := app.rds.LiveMatchIDs()
 
 	if err != nil {
 		err = xerrors.Errorf("error loading live matches IDs: %w", err)
@@ -60,14 +42,14 @@ func (app *App) seedLiveMatches() error {
 }
 
 func (app *App) watchLiveMatches() error {
-	pubsub, err := nsrds.PSubscribe(app.rds, nsrds.TopicPatternLiveMatchesAll)
+	pubsub, err := app.rds.PSubscribe(nsrds.TopicPatternLiveMatchesAll)
 
 	if err != nil {
 		err = xerrors.Errorf("error subscribing to live matches: %w", err)
 		return err
 	}
 
-	go nsrds.WatchPubsub(app.ctx, pubsub, app.handleLiveMatchesChange)
+	go pubsub.Watch(app.ctx, app.handleLiveMatchesChange)
 
 	return nil
 }
@@ -187,14 +169,14 @@ func (app *App) removeLiveMatches(matchIDs nscol.MatchIDs) (*nspb.LiveMatches, e
 }
 
 func (app *App) watchLiveMatchStats() error {
-	pubsub, err := nsrds.PSubscribe(app.rds, nsrds.TopicPatternLiveMatchStatsAll)
+	pubsub, err := app.rds.PSubscribe(nsrds.TopicPatternLiveMatchStatsAll)
 
 	if err != nil {
 		err = xerrors.Errorf("error subscribing to live matches: %w", err)
 		return err
 	}
 
-	go nsrds.WatchPubsub(app.ctx, pubsub, app.handleLiveMatchStatsChange)
+	go pubsub.Watch(app.ctx, app.handleLiveMatchStatsChange)
 
 	return nil
 }

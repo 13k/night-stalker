@@ -6,12 +6,12 @@ import (
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
 	"github.com/faceit/go-steam"
-	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nslog "github.com/13k/night-stalker/internal/logger"
+	nsrds "github.com/13k/night-stalker/internal/redis"
 )
 
 type ctxKey int
@@ -57,13 +57,13 @@ func GetDB(ctx context.Context) *gorm.DB {
 	return v
 }
 
-func WithRedis(ctx context.Context, rds *redis.Client) context.Context {
+func WithRedis(ctx context.Context, rds *nsrds.Redis) context.Context {
 	return context.WithValue(ctx, ctxKeyRedis, rds)
 }
 
-func GetRedis(ctx context.Context) *redis.Client {
+func GetRedis(ctx context.Context) *nsrds.Redis {
 	i := ctx.Value(ctxKeyRedis)
-	v, ok := i.(*redis.Client)
+	v, ok := i.(*nsrds.Redis)
 
 	if !ok {
 		return nil

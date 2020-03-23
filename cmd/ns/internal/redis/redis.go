@@ -6,13 +6,14 @@ import (
 	"github.com/go-redis/redis/v7"
 
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
+	nsrds "github.com/13k/night-stalker/internal/redis"
 )
 
 var (
 	ErrMissingRedisURL = errors.New("empty redis URL")
 )
 
-func Connect() (*redis.Client, error) {
+func Connect() (*nsrds.Redis, error) {
 	redisURL := v.GetString(v.KeyRedisURL)
 
 	if redisURL == "" {
@@ -45,5 +46,5 @@ func Connect() (*redis.Client, error) {
 		return nil, err
 	}
 
-	return client, nil
+	return nsrds.NewRedis(client), nil
 }

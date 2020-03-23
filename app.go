@@ -7,13 +7,13 @@ import (
 	"cirello.io/oversight"
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nssess "github.com/13k/night-stalker/internal/processors/session"
+	nsrds "github.com/13k/night-stalker/internal/redis"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 type AppOptions struct {
 	Log             *nslog.Logger
 	DB              *gorm.DB
-	Redis           *redis.Client
+	Redis           *nsrds.Redis
 	Credentials     *SteamCredentials
 	ShutdownTimeout time.Duration
 }
@@ -39,7 +39,7 @@ type App struct {
 	log        *nslog.Logger
 	bus        *nsbus.Bus
 	db         *gorm.DB
-	rds        *redis.Client
+	rds        *nsrds.Redis
 	api        *geyser.Client
 	apiDota    *geyserd2.Client
 	supervisor *oversight.Tree

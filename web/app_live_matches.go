@@ -16,7 +16,7 @@ import (
 func (app *App) serveLiveMatches(c echo.Context) error {
 	cc := c.(*nswebctx.Context)
 
-	matchIDs, err := app.rdsLiveMatchIDs()
+	matchIDs, err := app.rds.LiveMatchIDs()
 
 	if err != nil {
 		app.log.WithError(err).Error("error fetching live match IDs from redis")

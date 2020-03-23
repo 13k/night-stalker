@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/xerrors"
 
@@ -37,7 +36,7 @@ type Collector struct {
 	matches              *nscol.LiveMatchesContainer
 	log                  *nslog.Logger
 	db                   *gorm.DB
-	rds                  *redis.Client
+	rds                  *nsrds.Redis
 	bus                  *nsbus.Bus
 	busLiveMatchesAll    *nsbus.Subscription
 	busLiveMatchStatsAll *nsbus.Subscription
@@ -145,7 +144,7 @@ func (p *Collector) seedLiveMatches() error {
 		return nil
 	}
 
-	matchIDs, err := p.rdsLiveMatchIDs()
+	matchIDs, err := p.rds.LiveMatchIDs()
 
 	if err != nil {
 		return xerrors.Errorf("error loading live matches ids: %w", err)
@@ -167,28 +166,6 @@ func (p *Collector) seedLiveMatches() error {
 	p.log.WithField("count", len(liveMatches)).Trace("seeded matches")
 
 	return nil
-}
-
-func (p *Collector) rdsLiveMatchIDs() (nscol.MatchIDs, error) {
-	result := p.rds.ZRevRange(nsrds.KeyLiveMatches, 0, -1)
-
-	if err := result.Err(); err != nil {
-		return nil, xerrors.Errorf("error fetching cached live matches IDs: %w", &errRedisOp{
-			Key: nsrds.KeyLiveMatches,
-			Err: err,
-		})
-	}
-
-	matchIDs := make([]uint64, len(result.Val()))
-
-	if err := result.ScanSlice(&matchIDs); err != nil {
-		return nil, xerrors.Errorf("error parsing live match IDs: %w", &errRedisOp{
-			Key: nsrds.KeyLiveMatches,
-			Err: err,
-		})
-	}
-
-	return nscol.NewMatchIDs(matchIDs...), nil
 }
 
 func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatches, error) {
@@ -262,7 +239,7 @@ func (p *Collector) add(matches nscol.LiveMatches) error {
 		return nil
 	}
 
-	if err := p.rdsAddLiveMatches(matches); err != nil {
+	if err := p.rds.AddLiveMatches(matches); err != nil {
 		return xerrors.Errorf("error adding live matches to redis: %w", err)
 	}
 
@@ -290,7 +267,7 @@ func (p *Collector) remove(matchIDs nscol.MatchIDs) error {
 		return nil
 	}
 
-	if err := p.rdsRemoveLiveMatches(matchIDs); err != nil {
+	if err := p.rds.RemoveLiveMatches(matchIDs); err != nil {
 		return xerrors.Errorf("error removing live matches from redis: %w", err)
 	}
 
@@ -329,7 +306,7 @@ func (p *Collector) handleLiveMatchStatsChange(msg *nsbus.LiveMatchStatsChangeMe
 }
 
 func (p *Collector) addStats(stats nscol.LiveMatchStats) error {
-	if err := p.rdsPubLiveMatchStatsAdd(stats); err != nil {
+	if err := p.rds.PubLiveMatchStatsAdd(stats); err != nil {
 		return xerrors.Errorf("error publishing match stats update: %w", err)
 	}
 
@@ -343,7 +320,7 @@ func (p *Collector) notifyLiveMatchesAdd(liveMatches nscol.LiveMatches) error {
 		return xerrors.Errorf("error publishing to bus: %w", err)
 	}
 
-	if err := p.rdsPubLiveMatchesAdd(liveMatches); err != nil {
+	if err := p.rds.PubLiveMatchesAdd(liveMatches); err != nil {
 		return xerrors.Errorf("error publishing live matches change: %w", err)
 	}
 
@@ -355,7 +332,7 @@ func (p *Collector) notifyLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
 		return xerrors.Errorf("error publishing to bus: %w", err)
 	}
 
-	if err := p.rdsPubLiveMatchesRemove(matchIDs); err != nil {
+	if err := p.rds.PubLiveMatchesRemove(matchIDs); err != nil {
 		return xerrors.Errorf("error publishing live matches change: %w", err)
 	}
 
@@ -370,93 +347,6 @@ func (p *Collector) busPubAllMatches() error {
 			Matches: p.matches.All(),
 		},
 	})
-}
-
-func (p *Collector) rdsAddLiveMatches(liveMatches nscol.LiveMatches) error {
-	zValues := nsrds.LiveMatchesToZValues(liveMatches)
-	result := p.rds.ZAdd(nsrds.KeyLiveMatches, zValues...)
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error adding live matches IDs: %w", &errRedisOp{
-			Key: nsrds.KeyLiveMatches,
-			Err: result.Err(),
-		})
-	}
-
-	zValues = nsrds.LiveMatchesToZValuesByTime(liveMatches)
-	result = p.rds.ZAdd(nsrds.KeyLiveMatchesByTime, zValues...)
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error adding live matches IDs: %w", &errRedisOp{
-			Key: nsrds.KeyLiveMatchesByTime,
-			Err: result.Err(),
-		})
-	}
-
-	return nil
-}
-
-func (p *Collector) rdsRemoveLiveMatches(matchIDs nscol.MatchIDs) error {
-	ifaceMatchIDs := matchIDs.ToUint64Interfaces()
-
-	result := p.rds.ZRem(nsrds.KeyLiveMatches, ifaceMatchIDs...)
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error removing live matches IDs: %w", &errRedisOp{
-			Key: nsrds.KeyLiveMatches,
-			Err: result.Err(),
-		})
-	}
-
-	result = p.rds.ZRem(nsrds.KeyLiveMatchesByTime, ifaceMatchIDs...)
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error removing live matches IDs: %w", &errRedisOp{
-			Key: nsrds.KeyLiveMatchesByTime,
-			Err: result.Err(),
-		})
-	}
-
-	return nil
-}
-
-func (p *Collector) rdsPubLiveMatchesAdd(liveMatches nscol.LiveMatches) error {
-	result := p.rds.Publish(nsrds.TopicLiveMatchesAdd, liveMatches.MatchIDs().Join(","))
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error publishing live matches change: %w", &errRedisPubsub{
-			Topic: nsrds.TopicLiveMatchesAdd,
-			Err:   result.Err(),
-		})
-	}
-
-	return nil
-}
-
-func (p *Collector) rdsPubLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
-	result := p.rds.Publish(nsrds.TopicLiveMatchesRemove, matchIDs.Join(","))
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error publishing live matches change: %w", &errRedisPubsub{
-			Topic: nsrds.TopicLiveMatchesRemove,
-			Err:   result.Err(),
-		})
-	}
-
-	return nil
-}
-
-func (p *Collector) rdsPubLiveMatchStatsAdd(stats nscol.LiveMatchStats) error {
-	result := p.rds.Publish(nsrds.TopicLiveMatchStatsAdd, stats.MatchIDs().Join(","))
-
-	if result.Err() != nil {
-		return xerrors.Errorf("error publishing live match stats change: %w", &errRedisPubsub{
-			Topic: nsrds.TopicLiveMatchStatsAdd,
-			Err:   result.Err(),
-		})
-	}
-
-	return nil
 }
 
 func (p *Collector) handleError(err error) {

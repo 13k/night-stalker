@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-redis/redis/v7"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/acme/autocert"
@@ -14,6 +13,7 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nslog "github.com/13k/night-stalker/internal/logger"
+	nsrds "github.com/13k/night-stalker/internal/redis"
 	nswebhdl "github.com/13k/night-stalker/web/internal/handlers"
 	nswebmw "github.com/13k/night-stalker/web/internal/middleware"
 )
@@ -25,7 +25,7 @@ const (
 type AppOptions struct {
 	Log             *nslog.Logger
 	DB              *gorm.DB
-	Redis           *redis.Client
+	Redis           *nsrds.Redis
 	StaticFS        http.FileSystem
 	Address         string
 	CertFile        string
@@ -45,7 +45,7 @@ type App struct {
 	sv      *http.Server
 	ctx     context.Context
 	cancel  context.CancelFunc
-	rds     *redis.Client
+	rds     *nsrds.Redis
 	matches *nscol.LiveMatchesContainer
 }
 
