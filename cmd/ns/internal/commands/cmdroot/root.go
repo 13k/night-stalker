@@ -1,6 +1,7 @@
 package cmdroot
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -12,6 +13,7 @@ import (
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdstart"
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdweb"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscmdmeta "github.com/13k/night-stalker/cmd/ns/internal/meta"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 )
 
@@ -89,6 +91,7 @@ func preRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func Execute() error {
+func Execute(meta *nscmdmeta.Meta) error {
+	Cmd.Version = fmt.Sprintf("%s (rev %s)", meta.Version, meta.Revision)
 	return Cmd.Execute()
 }
