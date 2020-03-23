@@ -7,7 +7,7 @@ import (
 	"cirello.io/oversight"
 	"github.com/faceit/go-steam"
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
-	protov1 "github.com/golang/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto" //nolint: staticcheck
 	"github.com/paralin/go-dota2"
 	"github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
