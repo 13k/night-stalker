@@ -48,7 +48,7 @@ type session struct {
 func newSession(ctx context.Context, conn *conn, options sessionOptions) (*session, error) {
 	s := &session{
 		options: options,
-		log:     options.Log.WithPackage("dota_gc"),
+		log:     options.Log.WithPackage("sess"),
 		conn:    conn,
 		steam:   conn.Client(),
 		dota:    dota2.New(conn.Client(), options.Log.WithPackage("dota2").LogrusLogger()),

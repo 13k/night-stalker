@@ -164,7 +164,7 @@ func (p *Collector) seedLiveMatches() error {
 
 	p.matches = nscol.NewLiveMatchesContainer(liveMatches...)
 
-	p.log.WithField("count", len(liveMatches)).Debug("seeded matches")
+	p.log.WithField("count", len(liveMatches)).Trace("seeded matches")
 
 	return nil
 }
@@ -333,7 +333,7 @@ func (p *Collector) addStats(stats nscol.LiveMatchStats) error {
 		return xerrors.Errorf("error publishing match stats update: %w", err)
 	}
 
-	p.log.WithField("count", len(stats)).Debug("received match stats")
+	p.log.WithField("count", len(stats)).Debug("stats added")
 
 	return nil
 }
