@@ -5,7 +5,8 @@ lint:
   use:
     - DEFAULT
   except:
-    - PACKAGE_VERSION_SUFFIX
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_VERSION_SUFFIX # re-enable after stabilizing API
   ignore_only:
     ENUM_ZERO_VALUE_SUFFIX:
       - protocol/enums.proto
