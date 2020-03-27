@@ -1,6 +1,6 @@
 import Vue from "vue";
-import ky from "ky";
 import _ from "lodash";
+import ky from "ky";
 import { compile } from "path-to-regexp";
 
 const log = Vue.log({ context: { location: "api" } });
@@ -42,15 +42,14 @@ const afterResponse = DEBUG ? [debugResponse] : [];
 
 class API {
   constructor(baseURL) {
-    this.client = ky.create(
-      Object.assign({}, CLIENT_OPTIONS, {
-        prefixUrl: baseURL,
-        hooks: {
-          beforeRequest,
-          afterResponse,
-        },
-      })
-    );
+    this.client = ky.create({
+      ...CLIENT_OPTIONS,
+      prefixUrl: baseURL,
+      hooks: {
+        beforeRequest,
+        afterResponse,
+      },
+    });
   }
 
   request(method, route, options) {
@@ -58,7 +57,9 @@ class API {
     const toPath = _.get(ROUTES, route.name);
     const path = toPath(routeParams);
 
-    return this.client[method].call(this.client, path, options).json();
+    options = { method, ...options };
+
+    return this.client(path, options).json();
   }
 
   get(route, options) {
