@@ -145,7 +145,7 @@ func (s *LiveMatches) RemoveDeactivated() LiveMatches {
 	var indices []int
 
 	for i, liveMatch := range *s {
-		if liveMatch.DeactivateTime != nil {
+		if liveMatch.DeactivateTime.Valid {
 			// items will be sequentially removed below, so account for previously removed indices
 			indices = append(indices, i-len(indices))
 		}

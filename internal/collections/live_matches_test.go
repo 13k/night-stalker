@@ -1,10 +1,12 @@
 package collections_test
 
 import (
+	"database/sql"
 	"testing"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -481,47 +483,47 @@ func TestLiveMatches_RemoveDeactivated(t *testing.T) {
 			Subject: nscol.LiveMatches{
 				{
 					MatchID:        1,
-					DeactivateTime: nil,
+					DeactivateTime: sql.NullTime{},
 				},
 				{
 					MatchID:        2,
-					DeactivateTime: models.NullUnixTimestamp(2),
+					DeactivateTime: nssql.NullTimeUnix(2),
 				},
 				{
 					MatchID:        3,
-					DeactivateTime: nil,
+					DeactivateTime: sql.NullTime{},
 				},
 				{
 					MatchID:        4,
-					DeactivateTime: models.NullUnixTimestamp(4),
+					DeactivateTime: nssql.NullTimeUnix(4),
 				},
 				{
 					MatchID:        5,
-					DeactivateTime: models.NullUnixTimestamp(5),
+					DeactivateTime: nssql.NullTimeUnix(5),
 				},
 			},
 			Removed: nscol.LiveMatches{
 				{
 					MatchID:        2,
-					DeactivateTime: models.NullUnixTimestamp(2),
+					DeactivateTime: nssql.NullTimeUnix(2),
 				},
 				{
 					MatchID:        4,
-					DeactivateTime: models.NullUnixTimestamp(4),
+					DeactivateTime: nssql.NullTimeUnix(4),
 				},
 				{
 					MatchID:        5,
-					DeactivateTime: models.NullUnixTimestamp(5),
+					DeactivateTime: nssql.NullTimeUnix(5),
 				},
 			},
 			Result: nscol.LiveMatches{
 				{
 					MatchID:        1,
-					DeactivateTime: nil,
+					DeactivateTime: sql.NullTime{},
 				},
 				{
 					MatchID:        3,
-					DeactivateTime: nil,
+					DeactivateTime: sql.NullTime{},
 				},
 			},
 		},
@@ -553,8 +555,8 @@ func TestLiveMatches_RemoveDeactivated(t *testing.T) {
 				t.Fatalf("case %d: index %d: expected removed non-nil", testCaseIdx, i)
 			}
 
-			if actual.DeactivateTime == nil {
-				t.Fatalf("case %d: index %d: expected removed non-nil DeactivateTime", testCaseIdx, i)
+			if !actual.DeactivateTime.Valid {
+				t.Fatalf("case %d: index %d: expected removed valid DeactivateTime", testCaseIdx, i)
 			}
 
 			if actual.MatchID != expected.MatchID {
@@ -581,8 +583,8 @@ func TestLiveMatches_RemoveDeactivated(t *testing.T) {
 				t.Fatalf("case %d: index %d: expected result non-nil", testCaseIdx, i)
 			}
 
-			if actual.DeactivateTime != nil {
-				t.Fatalf("case %d: index %d: expected result nil DeactivateTime", testCaseIdx, i)
+			if actual.DeactivateTime.Valid {
+				t.Fatalf("case %d: index %d: expected result invalid DeactivateTime", testCaseIdx, i)
 			}
 
 			if actual.MatchID != expected.MatchID {
