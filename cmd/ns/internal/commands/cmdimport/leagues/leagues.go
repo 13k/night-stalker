@@ -8,6 +8,7 @@ import (
 	nscmdgeyser "github.com/13k/night-stalker/cmd/ns/internal/geyser"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -81,9 +82,9 @@ func run(cmd *cobra.Command, args []string) {
 			Region:         nspb.LeagueRegion(info.GetRegion()),
 			Status:         nspb.LeagueStatus(info.GetStatus()),
 			TotalPrizePool: info.GetTotalPrizePool(),
-			LastActivityAt: models.NullUnixTimestamp(int64(info.GetMostRecentActivity())),
-			StartAt:        models.NullUnixTimestamp(int64(info.GetStartTimestamp())),
-			FinishAt:       models.NullUnixTimestamp(int64(info.GetEndTimestamp())),
+			LastActivityAt: nssql.NullTimeUnix(int64(info.GetMostRecentActivity())),
+			StartAt:        nssql.NullTimeUnix(int64(info.GetStartTimestamp())),
+			FinishAt:       nssql.NullTimeUnix(int64(info.GetEndTimestamp())),
 		}
 
 		result := db.

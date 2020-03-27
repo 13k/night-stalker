@@ -87,8 +87,6 @@ func run(cmd *cobra.Command, args []string) {
 		app.Stop()
 	}()
 
-	log.Info("starting")
-
 	if err := app.Start(); err != nil {
 		log.Errorx(err)
 		log.WithError(err).Fatal("ns error")

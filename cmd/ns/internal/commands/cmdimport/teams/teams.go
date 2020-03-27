@@ -7,6 +7,7 @@ import (
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
+	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -68,17 +69,14 @@ func run(cmd *cobra.Command, args []string) {
 		l := log.WithField("team_id", entry.TeamID)
 
 		team := &models.Team{
-			ID:      entry.TeamID,
-			Name:    entry.Name,
-			Tag:     entry.Tag,
-			Rating:  entry.Rating,
-			Wins:    entry.Wins,
-			Losses:  entry.Losses,
-			LogoURL: entry.LogoURL,
-		}
-
-		if entry.LastMatchTime != nil {
-			team.LastMatchTime = entry.LastMatchTime.Time
+			ID:            entry.TeamID,
+			Name:          entry.Name,
+			Tag:           entry.Tag,
+			Rating:        entry.Rating,
+			Wins:          entry.Wins,
+			Losses:        entry.Losses,
+			LogoURL:       entry.LogoURL,
+			LastMatchTime: nssql.NullTimeFromUnixJSON(entry.LastMatchTime),
 		}
 
 		dbres := db.

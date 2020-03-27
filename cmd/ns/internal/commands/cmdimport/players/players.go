@@ -9,6 +9,7 @@ import (
 	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -116,10 +117,7 @@ func run(cmd *cobra.Command, args []string) {
 			TeamID:      entry.TeamID,
 			IsLocked:    entry.IsLocked,
 			FantasyRole: entry.FantasyRole,
-		}
-
-		if entry.LockedUntil != nil {
-			pro.LockedUntil = entry.LockedUntil.Time
+			LockedUntil: nssql.NullTimeFromUnixJSON(entry.LockedUntil),
 		}
 
 		dbres = tx.
