@@ -25,8 +25,8 @@ func LiveMatchesToZValuesByTime(liveMatches nscol.LiveMatches) []*redis.Z {
 	for i, liveMatch := range liveMatches {
 		var activateTimeUnix int64
 
-		if liveMatch.ActivateTime != nil {
-			activateTimeUnix = liveMatch.ActivateTime.UTC().Unix()
+		if liveMatch.ActivateTime.Valid {
+			activateTimeUnix = liveMatch.ActivateTime.Time.UTC().Unix()
 		}
 
 		zValues[i] = &redis.Z{
