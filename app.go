@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/13k/geyser"
-	geyserd2 "github.com/13k/geyser/dota2"
+	gsdota2 "github.com/13k/geyser/dota2"
 	"github.com/faceit/go-steam"
 	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2"
@@ -46,7 +46,7 @@ type App struct {
 	steam      *nssteam.Client
 	dota       *nsdota2.Client
 	api        *geyser.Client
-	apiDota    *geyserd2.Client
+	apiDota    *gsdota2.Client
 	supervisor *supervisor
 	ctx        context.Context
 	cancel     context.CancelFunc
@@ -106,7 +106,7 @@ func (app *App) setupAPI() error {
 		return err
 	}
 
-	if app.apiDota, err = geyserd2.New(options...); err != nil {
+	if app.apiDota, err = gsdota2.New(options...); err != nil {
 		app.log.WithError(err).Error("error creating Dota2 API client")
 		return err
 	}

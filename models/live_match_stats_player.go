@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
@@ -45,7 +45,7 @@ func (*LiveMatchStatsPlayer) TableName() string {
 
 func NewLiveMatchStatsPlayer(
 	liveMatchStats *LiveMatchStats,
-	pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails,
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_PlayerDetails,
 ) *LiveMatchStatsPlayer {
 	p := LiveMatchStatsPlayerDotaProto(pb)
 	p.LiveMatchStatsID = liveMatchStats.ID
@@ -53,7 +53,7 @@ func NewLiveMatchStatsPlayer(
 	return p
 }
 
-func LiveMatchStatsPlayerDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
+func LiveMatchStatsPlayerDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
 	return &LiveMatchStatsPlayer{
 		AccountID:  nspb.AccountID(pb.GetAccountid()),
 		PlayerSlot: nspb.GamePlayerIndex(pb.GetPlayerid()).GamePlayerSlot(),

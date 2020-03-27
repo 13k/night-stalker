@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nserr "github.com/13k/night-stalker/internal/errors"
 )
@@ -27,7 +27,7 @@ func (err *ErrClientSuspended) Error() string {
 }
 
 type ErrLostSession struct {
-	Status protocol.GCConnectionStatus
+	Status d2pb.GCConnectionStatus
 }
 
 func (err *ErrLostSession) Error() string {

@@ -9,7 +9,7 @@ import (
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
 	protov1 "github.com/golang/protobuf/proto" //nolint: staticcheck
 	"github.com/paralin/go-dota2"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 	"google.golang.org/protobuf/proto"
 
@@ -179,7 +179,7 @@ func (p *Dispatcher) recvLoop() {
 			return
 		}
 
-		msgType := protocol.EDOTAGCMsg(packet.MsgType)
+		msgType := d2pb.EDOTAGCMsg(packet.MsgType)
 
 		if err := p.recv(msgType, packet); err != nil {
 			p.handleError(xerrors.Errorf("error receiving packet: %w", err))
@@ -289,7 +289,7 @@ func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) error {
 	}
 }
 
-func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) error {
+func (p *Dispatcher) recv(msgType d2pb.EDOTAGCMsg, packet *gc.GCPacket) error {
 	if p.ctx.Err() != nil {
 		return xerrors.Errorf("error receiving message: %w", &recvError{
 			MsgType: msgType,
@@ -325,7 +325,7 @@ func (p *Dispatcher) recv(msgType protocol.EDOTAGCMsg, packet *gc.GCPacket) erro
 	return nil
 }
 
-func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) error {
+func (p *Dispatcher) send(msgType d2pb.EDOTAGCMsg, message proto.Message) error {
 	if p.ctx.Err() != nil {
 		return xerrors.Errorf("error sending message: %w", &sendError{
 			MsgType: msgType,
@@ -360,7 +360,7 @@ func (p *Dispatcher) busPubReceivedMessage(incoming *IncomingMessage) error {
 func (p *Dispatcher) handleError(err error) {
 	if e := (&recvQueueTimeoutError{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
-			"msg_type", protocol.EDOTAGCMsg(e.Packet.MsgType),
+			"msg_type", d2pb.EDOTAGCMsg(e.Packet.MsgType),
 			"timeout", e.Timeout,
 		).Warn("ignored incoming packet (queue is full)")
 	} else if e := (&sendQueueTimeoutError{}); xerrors.As(err, &e) {

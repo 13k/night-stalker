@@ -4,7 +4,7 @@ import (
 	"time"
 
 	gc "github.com/faceit/go-steam/protocol/gamecoordinator"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"google.golang.org/protobuf/proto"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
@@ -29,7 +29,7 @@ func (*sendQueueTimeoutError) Error() string {
 }
 
 type recvError struct {
-	MsgType protocol.EDOTAGCMsg
+	MsgType d2pb.EDOTAGCMsg
 	Packet  *gc.GCPacket
 	Err     error
 }
@@ -43,7 +43,7 @@ func (err *recvError) Unwrap() error {
 }
 
 type sendError struct {
-	MsgType protocol.EDOTAGCMsg
+	MsgType d2pb.EDOTAGCMsg
 	Message proto.Message
 	Err     error
 }

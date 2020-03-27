@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/lib/pq"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
@@ -45,13 +45,13 @@ func (*LiveMatchStats) TableName() string {
 	return "live_match_stats"
 }
 
-func NewLiveMatchStats(liveMatch *LiveMatch, pb *protocol.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
+func NewLiveMatchStats(liveMatch *LiveMatch, pb *d2pb.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
 	m := LiveMatchStatsDotaProto(pb)
 	m.LiveMatchID = liveMatch.ID
 	return m
 }
 
-func LiveMatchStatsDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
+func LiveMatchStatsDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
 	return &LiveMatchStats{
 		MatchID:                    nspb.MatchID(pb.GetMatch().GetMatchid()),
 		ServerID:                   nspb.SteamID(pb.GetMatch().GetServerSteamId()),

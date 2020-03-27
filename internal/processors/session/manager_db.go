@@ -7,7 +7,7 @@ import (
 	"github.com/faceit/go-steam"
 	"github.com/faceit/go-steam/netutil"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -123,7 +123,7 @@ func (p *Manager) saveAccountDetails(ev *steam.LoggedOnEvent) error {
 	return nil
 }
 
-func (p *Manager) saveDotaWelcome(welcome *protocol.CMsgClientWelcome) error {
+func (p *Manager) saveDotaWelcome(welcome *d2pb.CMsgClientWelcome) error {
 	update := &models.SteamLogin{
 		GameVersion:       welcome.GetVersion(),
 		LocationCountry:   welcome.GetLocation().GetCountry(),

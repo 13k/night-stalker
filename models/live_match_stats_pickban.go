@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
@@ -29,7 +29,7 @@ func (LiveMatchStatsPickBan) TableName() string {
 
 func LiveMatchStatsPickBanDotaProto(
 	isBan bool,
-	pb *protocol.CMsgDOTARealtimeGameStatsTerse_PickBanDetails,
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_PickBanDetails,
 ) *LiveMatchStatsPickBan {
 	return &LiveMatchStatsPickBan{
 		HeroID:   nspb.HeroID(pb.GetHero()),

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
@@ -33,7 +33,7 @@ func (*MatchPlayer) TableName() string {
 	return "match_players"
 }
 
-func MatchPlayerDotaProto(pb *protocol.CMsgDOTAMatchMinimal_Player) *MatchPlayer {
+func MatchPlayerDotaProto(pb *d2pb.CMsgDOTAMatchMinimal_Player) *MatchPlayer {
 	return &MatchPlayer{
 		AccountID:  nspb.AccountID(pb.GetAccountId()),
 		HeroID:     nspb.HeroID(pb.GetHeroId()),

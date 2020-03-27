@@ -1,7 +1,7 @@
 package leagues
 
 import (
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"github.com/spf13/cobra"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
@@ -55,7 +55,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	log.Info("fetching leagues ...")
 
-	result := &protocol.CMsgDOTALeagueInfoList{}
+	result := &d2pb.CMsgDOTALeagueInfoList{}
 	req.SetResult(result)
 
 	res, err := req.Execute()

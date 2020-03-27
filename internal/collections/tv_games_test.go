@@ -3,7 +3,7 @@ package collections_test
 import (
 	"testing"
 
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"google.golang.org/protobuf/proto"
 
 	nscol "github.com/13k/night-stalker/internal/collections"
@@ -266,7 +266,7 @@ func TestTVGames_Remove(t *testing.T) {
 		Subject  nscol.TVGames
 		Index    int
 		Expected nscol.TVGames
-		Removed  *protocol.CSourceTVGameSmall
+		Removed  *d2pb.CSourceTVGameSmall
 	}{
 		// nil
 		{
@@ -334,7 +334,7 @@ func TestTVGames_Remove(t *testing.T) {
 			},
 			Index:    0,
 			Expected: nscol.TVGames{},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(1),
 			},
 		},
@@ -348,7 +348,7 @@ func TestTVGames_Remove(t *testing.T) {
 			Expected: nscol.TVGames{
 				{MatchId: proto.Uint64(2)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(1),
 			},
 		},
@@ -362,7 +362,7 @@ func TestTVGames_Remove(t *testing.T) {
 			Expected: nscol.TVGames{
 				{MatchId: proto.Uint64(1)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(2),
 			},
 		},
@@ -378,7 +378,7 @@ func TestTVGames_Remove(t *testing.T) {
 				{MatchId: proto.Uint64(1)},
 				{MatchId: proto.Uint64(3)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(2),
 			},
 		},
@@ -451,7 +451,7 @@ func TestTVGames_RemoveByMatchID(t *testing.T) {
 		Subject  nscol.TVGames
 		MatchID  nspb.MatchID
 		Expected nscol.TVGames
-		Removed  *protocol.CSourceTVGameSmall
+		Removed  *d2pb.CSourceTVGameSmall
 	}{
 		// nil
 		{
@@ -507,7 +507,7 @@ func TestTVGames_RemoveByMatchID(t *testing.T) {
 			},
 			MatchID:  1,
 			Expected: nscol.TVGames{},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(1),
 			},
 		},
@@ -521,7 +521,7 @@ func TestTVGames_RemoveByMatchID(t *testing.T) {
 			Expected: nscol.TVGames{
 				{MatchId: proto.Uint64(2)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(1),
 			},
 		},
@@ -535,7 +535,7 @@ func TestTVGames_RemoveByMatchID(t *testing.T) {
 			Expected: nscol.TVGames{
 				{MatchId: proto.Uint64(1)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(2),
 			},
 		},
@@ -551,7 +551,7 @@ func TestTVGames_RemoveByMatchID(t *testing.T) {
 				{MatchId: proto.Uint64(1)},
 				{MatchId: proto.Uint64(3)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(2),
 			},
 		},
@@ -569,7 +569,7 @@ func TestTVGames_RemoveByMatchID(t *testing.T) {
 				{MatchId: proto.Uint64(2)},
 				{MatchId: proto.Uint64(3)},
 			},
-			Removed: &protocol.CSourceTVGameSmall{
+			Removed: &d2pb.CSourceTVGameSmall{
 				MatchId: proto.Uint64(2),
 			},
 		},
@@ -658,7 +658,7 @@ func TestTVGames_Clean(t *testing.T) {
 		},
 		{
 			Subject: nscol.TVGames{
-				&protocol.CSourceTVGameSmall{},
+				&d2pb.CSourceTVGameSmall{},
 			},
 			Expected: nscol.TVGames{},
 		},

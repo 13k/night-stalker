@@ -6,7 +6,7 @@ import (
 
 	"cirello.io/oversight"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
@@ -25,7 +25,7 @@ const (
 	processorName = "match_details"
 	batchSize     = 25
 
-	msgTypeMatchesMinimalRequest = protocol.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalRequest
+	msgTypeMatchesMinimalRequest = d2pb.EDOTAGCMsg_k_EMsgClientToGCMatchesMinimalRequest
 )
 
 type MonitorOptions struct {
@@ -153,7 +153,7 @@ func (p *Monitor) loop() error {
 			}
 
 			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
-				if res, ok := dspmsg.Message.(*protocol.CMsgClientToGCMatchesMinimalResponse); ok {
+				if res, ok := dspmsg.Message.(*d2pb.CMsgClientToGCMatchesMinimalResponse); ok {
 					p.handleMatchesMinimalResponse(res)
 				}
 			}
@@ -185,7 +185,7 @@ func (p *Monitor) tick() {
 	}
 }
 
-func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatchesMinimalResponse) {
+func (p *Monitor) handleMatchesMinimalResponse(msg *d2pb.CMsgClientToGCMatchesMinimalResponse) {
 	if len(msg.GetMatches()) == 0 {
 		return
 	}
@@ -207,7 +207,7 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatch
 	}
 }
 
-func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nscol.Matches, error) {
+func (p *Monitor) saveMatches(minMatches []*d2pb.CMsgDOTAMatchMinimal) (nscol.Matches, error) {
 	matches := make(nscol.Matches, len(minMatches))
 
 	for i, pbMatch := range minMatches {
@@ -287,7 +287,7 @@ func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) error {
 		return nil
 	}
 
-	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
+	req := &d2pb.CMsgClientToGCMatchesMinimalRequest{
 		MatchIds: matchIDs.ToUint64s(),
 	}
 

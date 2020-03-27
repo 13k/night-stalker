@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
@@ -32,7 +32,7 @@ func (*LiveMatchStatsTeam) TableName() string {
 	return "live_match_stats_teams"
 }
 
-func LiveMatchStatsTeamDotaProto(pb *protocol.CMsgDOTARealtimeGameStatsTerse_TeamDetails) *LiveMatchStatsTeam {
+func LiveMatchStatsTeamDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse_TeamDetails) *LiveMatchStatsTeam {
 	return &LiveMatchStatsTeam{
 		TeamID:   nspb.TeamID(pb.GetTeamId()),
 		GameTeam: nspb.GameTeam(pb.GetTeamNumber()),

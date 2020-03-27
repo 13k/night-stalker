@@ -3,12 +3,12 @@ package collections
 import (
 	"sort"
 
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-type TVGames []*protocol.CSourceTVGameSmall
+type TVGames []*d2pb.CSourceTVGameSmall
 
 func (s TVGames) MatchIDs() MatchIDs {
 	if s == nil {
@@ -57,7 +57,7 @@ func (s TVGames) GroupByMatchID() map[nspb.MatchID]TVGames {
 	return m
 }
 
-func (s TVGames) Shift() (TVGames, *protocol.CSourceTVGameSmall) {
+func (s TVGames) Shift() (TVGames, *d2pb.CSourceTVGameSmall) {
 	if len(s) == 0 {
 		return s, nil
 	}
@@ -65,7 +65,7 @@ func (s TVGames) Shift() (TVGames, *protocol.CSourceTVGameSmall) {
 	return s[1:], s[0]
 }
 
-func (s TVGames) Pop() (TVGames, *protocol.CSourceTVGameSmall) {
+func (s TVGames) Pop() (TVGames, *d2pb.CSourceTVGameSmall) {
 	if len(s) == 0 {
 		return s, nil
 	}
@@ -73,7 +73,7 @@ func (s TVGames) Pop() (TVGames, *protocol.CSourceTVGameSmall) {
 	return s[:len(s)-1], s[len(s)-1]
 }
 
-func (s TVGames) Remove(i int) (TVGames, *protocol.CSourceTVGameSmall) {
+func (s TVGames) Remove(i int) (TVGames, *d2pb.CSourceTVGameSmall) {
 	if i < 0 || i >= len(s) {
 		return s, nil
 	}
@@ -95,7 +95,7 @@ func (s TVGames) Remove(i int) (TVGames, *protocol.CSourceTVGameSmall) {
 	return s, game
 }
 
-func (s TVGames) RemoveByMatchID(matchID nspb.MatchID) (TVGames, *protocol.CSourceTVGameSmall) {
+func (s TVGames) RemoveByMatchID(matchID nspb.MatchID) (TVGames, *d2pb.CSourceTVGameSmall) {
 	return s.Remove(s.FindIndexByMatchID(matchID))
 }
 

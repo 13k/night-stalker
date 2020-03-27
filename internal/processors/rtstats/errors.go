@@ -3,7 +3,7 @@ package rtstats
 import (
 	"github.com/13k/geyser"
 	"github.com/go-resty/resty/v2"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	"github.com/13k/night-stalker/models"
 )
@@ -40,7 +40,7 @@ func (*errRequestInProgress) Error() string {
 
 type errInvalidResponse struct {
 	LiveMatch *models.LiveMatch
-	Result    *protocol.CMsgDOTARealtimeGameStatsTerse
+	Result    *d2pb.CMsgDOTARealtimeGameStatsTerse
 }
 
 func (*errInvalidResponse) Error() string {

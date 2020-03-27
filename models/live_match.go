@@ -3,7 +3,7 @@ package models
 import (
 	"database/sql"
 
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
@@ -88,7 +88,7 @@ func (m *LiveMatch) Equal(other *LiveMatch) bool {
 		m.WeekendTourneyBracketRound == other.WeekendTourneyBracketRound
 }
 
-func LiveMatchDotaProto(pb *protocol.CSourceTVGameSmall) *LiveMatch {
+func LiveMatchDotaProto(pb *d2pb.CSourceTVGameSmall) *LiveMatch {
 	return &LiveMatch{
 		MatchID:                    nspb.MatchID(pb.GetMatchId()),
 		ServerID:                   nspb.SteamID(pb.GetServerSteamId()),

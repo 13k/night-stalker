@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/13k/geyser"
-	geyserd2 "github.com/13k/geyser/dota2"
+	gsdota2 "github.com/13k/geyser/dota2"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
 	nsd2 "github.com/13k/night-stalker/internal/dota2"
@@ -20,7 +20,7 @@ import (
 
 type worker struct {
 	db         *gorm.DB
-	api        *geyserd2.DOTA2MatchStats
+	api        *gsdota2.DOTA2MatchStats
 	activeReqs *sync.Map
 	liveMatch  *models.LiveMatch
 }
@@ -62,7 +62,7 @@ func (w *worker) Run(ctx context.Context) (*models.LiveMatchStats, error) {
 	return stats, nil
 }
 
-func (w *worker) requestMatchStats(ctx context.Context) (*protocol.CMsgDOTARealtimeGameStatsTerse, error) {
+func (w *worker) requestMatchStats(ctx context.Context) (*d2pb.CMsgDOTARealtimeGameStatsTerse, error) {
 	if ctx.Err() != nil {
 		return nil, xerrors.Errorf("worker error: %w", ctx.Err())
 	}
@@ -119,7 +119,7 @@ func (w *worker) requestMatchStats(ctx context.Context) (*protocol.CMsgDOTARealt
 func (w *worker) createLiveMatchStats(
 	ctx context.Context,
 	liveMatch *models.LiveMatch,
-	result *protocol.CMsgDOTARealtimeGameStatsTerse,
+	result *d2pb.CMsgDOTARealtimeGameStatsTerse,
 ) (*models.LiveMatchStats, error) {
 	if ctx.Err() != nil {
 		return nil, xerrors.Errorf("worker error: %w", ctx.Err())

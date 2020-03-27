@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	geyserd2 "github.com/13k/geyser/dota2"
+	gsdota2 "github.com/13k/geyser/dota2"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
 	"golang.org/x/xerrors"
@@ -49,8 +49,8 @@ type Monitor struct {
 	log           *nslog.Logger
 	db            *gorm.DB
 	workerPool    *ants.Pool
-	api           *geyserd2.Client
-	apiMatchStats *geyserd2.DOTA2MatchStats
+	api           *gsdota2.Client
+	apiMatchStats *gsdota2.DOTA2MatchStats
 	bus           *nsbus.Bus
 	liveMatches   *nsbussub.LiveMatches
 	activeReqs    *sync.Map

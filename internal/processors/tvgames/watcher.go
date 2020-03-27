@@ -6,7 +6,7 @@ import (
 
 	"cirello.io/oversight"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 	"google.golang.org/protobuf/proto"
 
@@ -24,7 +24,7 @@ import (
 const (
 	processorName = "tv_games"
 
-	msgTypeFindTopSourceTVGames = protocol.EDOTAGCMsg_k_EMsgClientToGCFindTopSourceTVGames
+	msgTypeFindTopSourceTVGames = d2pb.EDOTAGCMsg_k_EMsgClientToGCFindTopSourceTVGames
 )
 
 type WatcherOptions struct {
@@ -151,7 +151,7 @@ func (p *Watcher) loop() error {
 			}
 
 			if dspmsg, ok := busmsg.Payload.(*nsbus.GCDispatcherReceivedMessage); ok {
-				if res, ok := dspmsg.Message.(*protocol.CMsgGCToClientFindTopSourceTVGamesResponse); ok {
+				if res, ok := dspmsg.Message.(*d2pb.CMsgGCToClientFindTopSourceTVGamesResponse); ok {
 					p.handleFindTopSourceTVGamesResponse(res)
 				}
 			}
@@ -216,7 +216,7 @@ func (p *Watcher) queryPage(page *queryPage) error {
 	return nil
 }
 
-func (p *Watcher) handleFindTopSourceTVGamesResponse(msg *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) {
+func (p *Watcher) handleFindTopSourceTVGamesResponse(msg *d2pb.CMsgGCToClientFindTopSourceTVGamesResponse) {
 	go func() {
 		if err := p.handleResponse(newQueryPage(msg)); err != nil {
 			p.handleError(xerrors.Errorf("error handling response: %w", err))
@@ -394,7 +394,7 @@ func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
 }
 
 func (p *Watcher) busPubRequestTVGames(page *queryPage) error {
-	req := &protocol.CMsgClientToGCFindTopSourceTVGames{
+	req := &d2pb.CMsgClientToGCFindTopSourceTVGames{
 		GameListIndex: proto.Uint32(page.index),
 		StartGame:     proto.Uint32(page.start),
 	}

@@ -3,7 +3,7 @@ package models
 import (
 	"database/sql"
 
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
@@ -33,7 +33,7 @@ func (*PlayerProfileCard) TableName() string {
 	return "player_profile_cards"
 }
 
-func PlayerProfileCardProto(pb *protocol.CMsgDOTAProfileCard) *PlayerProfileCard {
+func PlayerProfileCardProto(pb *d2pb.CMsgDOTAProfileCard) *PlayerProfileCard {
 	return &PlayerProfileCard{
 		AccountID:        nspb.AccountID(pb.GetAccountId()),
 		BadgePoints:      pb.GetBadgePoints(),

@@ -3,7 +3,7 @@ package tvgames
 import (
 	"sync"
 
-	"github.com/paralin/go-dota2/protocol"
+	d2pb "github.com/paralin/go-dota2/protocol"
 )
 
 type queryPage struct {
@@ -11,10 +11,10 @@ type queryPage struct {
 	start uint32
 	total uint32
 	psize int
-	res   *protocol.CMsgGCToClientFindTopSourceTVGamesResponse
+	res   *d2pb.CMsgGCToClientFindTopSourceTVGamesResponse
 }
 
-func newQueryPage(res *protocol.CMsgGCToClientFindTopSourceTVGamesResponse) *queryPage {
+func newQueryPage(res *d2pb.CMsgGCToClientFindTopSourceTVGamesResponse) *queryPage {
 	return &queryPage{
 		index: res.GetGameListIndex(),
 		start: res.GetStartGame(),
