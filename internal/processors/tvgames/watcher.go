@@ -13,6 +13,7 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -36,26 +37,23 @@ type WatcherOptions struct {
 var _ nsproc.Processor = (*Watcher)(nil)
 
 type Watcher struct {
-	options        WatcherOptions
-	discoveryPage  *discoveryPage
-	ctx            context.Context
-	log            *nslog.Logger
-	db             *gorm.DB
-	bus            *nsbus.Bus
-	busTVGamesResp *nsbus.Subscription
+	options           WatcherOptions
+	discoveryPage     *discoveryPage
+	ctx               context.Context
+	log               *nslog.Logger
+	db                *gorm.DB
+	dota              *nsdota2.Client
+	bus               *nsbus.Bus
+	busSubTVGamesResp *nsbus.Subscription
 }
 
 func NewWatcher(options WatcherOptions) *Watcher {
-	p := &Watcher{
+	return &Watcher{
 		options:       options,
 		log:           options.Log.WithPackage(processorName),
 		bus:           options.Bus,
 		discoveryPage: &discoveryPage{},
 	}
-
-	p.busSubscribe()
-
-	return p
 }
 
 func (p *Watcher) ChildSpec() oversight.ChildProcessSpecification {
@@ -97,22 +95,33 @@ func (p *Watcher) start(ctx context.Context) error {
 	return p.loop()
 }
 
+func (p *Watcher) stop(t *time.Ticker) {
+	t.Stop()
+	p.busUnsubscribe()
+	p.ctx = nil
+	p.log.Warn("stop")
+}
+
 func (p *Watcher) busSubscribe() {
-	if p.busTVGamesResp == nil {
-		p.busTVGamesResp = p.bus.Sub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse)
+	if p.busSubTVGamesResp == nil {
+		p.busSubTVGamesResp = p.bus.Sub(nsbus.TopicGCDispatcherReceivedFindTopSourceTVGamesResponse)
 	}
 }
 
 func (p *Watcher) busUnsubscribe() {
-	if p.busTVGamesResp != nil {
-		p.bus.Unsub(p.busTVGamesResp)
-		p.busTVGamesResp = nil
+	if p.busSubTVGamesResp != nil {
+		p.bus.Unsub(p.busSubTVGamesResp)
+		p.busSubTVGamesResp = nil
 	}
 }
 
 func (p *Watcher) setupContext(ctx context.Context) error {
 	if p.db = nsctx.GetDB(ctx); p.db == nil {
 		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
+	}
+
+	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDotaClient)
 	}
 
 	p.ctx = ctx
@@ -134,10 +143,10 @@ func (p *Watcher) loop() error {
 			return nil
 		case <-t.C:
 			p.tick()
-		case busmsg, ok := <-p.busTVGamesResp.C:
+		case busmsg, ok := <-p.busSubTVGamesResp.C:
 			if !ok {
 				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busTVGamesResp,
+					Subscription: p.busSubTVGamesResp,
 				})
 			}
 
@@ -150,20 +159,21 @@ func (p *Watcher) loop() error {
 	}
 }
 
-func (p *Watcher) stop(t *time.Ticker) {
-	t.Stop()
-	p.busUnsubscribe()
-	p.ctx = nil
-	p.log.Warn("stop")
-}
-
 func (p *Watcher) tick() {
+	if !p.dota.Session.IsReady() {
+		return
+	}
+
 	if err := p.query(); err != nil {
 		p.handleError(xerrors.Errorf("error querying tv games: %w", err))
 	}
 }
 
 func (p *Watcher) query() error {
+	if !p.dota.Session.IsReady() {
+		return nil
+	}
+
 	if p.ctx.Err() != nil {
 		return xerrors.Errorf("error querying: %w", p.ctx.Err())
 	}
@@ -180,6 +190,10 @@ func (p *Watcher) query() error {
 }
 
 func (p *Watcher) queryPage(page *queryPage) error {
+	if !p.dota.Session.IsReady() {
+		return nil
+	}
+
 	if p.ctx.Err() != nil {
 		return xerrors.Errorf("error querying page: %w", &errQueryPageFailure{
 			Page: page,

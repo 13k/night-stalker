@@ -1,8 +1,10 @@
 package bus
 
 const (
-	TopicSession                                          = "session"
 	TopicSteamEvents                                      = "steam.events"
+	TopicSession                                          = "session"
+	TopicSessionSteam                                     = "session.steam"
+	TopicSessionDota                                      = "session.dota"
 	TopicLiveMatchesReplace                               = "live_matches.replace"
 	TopicLiveMatchesAdd                                   = "live_matches.add"
 	TopicLiveMatchesUpdate                                = "live_matches.update"

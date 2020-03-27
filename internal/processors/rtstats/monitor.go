@@ -19,11 +19,10 @@ import (
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
-	nscol "github.com/13k/night-stalker/internal/collections"
+	nsbussub "github.com/13k/night-stalker/internal/bus/subscribers"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
-	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
 	"github.com/13k/night-stalker/models"
 )
@@ -45,32 +44,35 @@ type MonitorOptions struct {
 var _ nsproc.Processor = (*Monitor)(nil)
 
 type Monitor struct {
-	options               MonitorOptions
-	ctx                   context.Context
-	log                   *nslog.Logger
-	db                    *gorm.DB
-	workerPool            *ants.Pool
-	api                   *geyserd2.Client
-	apiMatchStats         *geyserd2.DOTA2MatchStats
-	bus                   *nsbus.Bus
-	busLiveMatchesReplace *nsbus.Subscription
-	liveMatchesMtx        sync.RWMutex
-	liveMatches           nscol.LiveMatches
-	activeReqs            *sync.Map
-	flusher               *flusher
+	options       MonitorOptions
+	ctx           context.Context
+	log           *nslog.Logger
+	db            *gorm.DB
+	workerPool    *ants.Pool
+	api           *geyserd2.Client
+	apiMatchStats *geyserd2.DOTA2MatchStats
+	bus           *nsbus.Bus
+	liveMatches   *nsbussub.LiveMatches
+	activeReqs    *sync.Map
+	flusher       *flusher
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {
-	p := &Monitor{
-		options:    options,
-		log:        options.Log.WithPackage(processorName),
-		bus:        options.Bus,
-		activeReqs: &sync.Map{},
+	log := options.Log.WithPackage(processorName)
+
+	return &Monitor{
+		options:     options,
+		log:         log,
+		bus:         options.Bus,
+		liveMatches: nsbussub.NewLiveMatchesSubscriber(options.Bus),
+		activeReqs:  &sync.Map{},
+		flusher: newFlusher(&flusherOptions{
+			Log:      log,
+			Bus:      options.Bus,
+			Interval: flusherInterval,
+			Cap:      flusherCap,
+		}),
 	}
-
-	p.busSubscribe()
-
-	return p
 }
 
 func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
@@ -115,8 +117,8 @@ func (p *Monitor) start(ctx context.Context) error {
 		return xerrors.Errorf("error setting up worker pool: %w", err)
 	}
 
-	p.busSubscribe()
-	p.setupFlusher()
+	p.liveMatches.Start(p.ctx)
+	p.flusher.Start(p.ctx)
 
 	go p.flusherLoop()
 
@@ -125,24 +127,9 @@ func (p *Monitor) start(ctx context.Context) error {
 
 func (p *Monitor) stop(t *time.Ticker) {
 	t.Stop()
-	p.busUnsubscribe()
 	p.teardownWorkerPool()
-	p.teardownFlusher()
 	p.ctx = nil
 	p.log.Warn("stop")
-}
-
-func (p *Monitor) busSubscribe() {
-	if p.busLiveMatchesReplace == nil {
-		p.busLiveMatchesReplace = p.bus.Sub(nsbus.TopicLiveMatchesReplace)
-	}
-}
-
-func (p *Monitor) busUnsubscribe() {
-	if p.busLiveMatchesReplace != nil {
-		p.bus.Unsub(p.busLiveMatchesReplace)
-		p.busLiveMatchesReplace = nil
-	}
 }
 
 func (p *Monitor) setupContext(ctx context.Context) error {
@@ -194,21 +181,6 @@ func (p *Monitor) teardownWorkerPool() {
 	}
 }
 
-func (p *Monitor) setupFlusher() {
-	p.flusher = newFlusher(&flusherOptions{
-		Log:      p.log,
-		Bus:      p.bus,
-		Interval: flusherInterval,
-		Cap:      flusherCap,
-	})
-
-	p.flusher.Start(p.ctx)
-}
-
-func (p *Monitor) teardownFlusher() {
-	p.flusher = nil
-}
-
 func (p *Monitor) loop() error {
 	t := time.NewTicker(p.options.Interval)
 
@@ -222,20 +194,11 @@ func (p *Monitor) loop() error {
 			return nil
 		case <-t.C:
 			p.tick()
-		case busmsg, ok := <-p.busLiveMatchesReplace.C:
-			if !ok {
-				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busLiveMatchesReplace,
-				})
-			}
-
-			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
-				p.handleLiveMatchesChange(msg)
-			}
 		}
 	}
 }
 
+// flusher closes the errors channel when finished
 func (p *Monitor) flusherLoop() {
 	for {
 		err, ok := <-p.flusher.Errors()
@@ -250,34 +213,18 @@ func (p *Monitor) flusherLoop() {
 	}
 }
 
-func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
-	if msg.Op != nspb.CollectionOp_COLLECTION_OP_REPLACE {
-		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
-		return
-	}
-
-	p.log.
-		WithField("count", len(msg.Matches)).
-		Debug("received live matches")
-
-	p.liveMatchesMtx.Lock()
-	defer p.liveMatchesMtx.Unlock()
-	p.liveMatches = msg.Matches
-}
-
 func (p *Monitor) tick() {
-	p.liveMatchesMtx.RLock()
-	defer p.liveMatchesMtx.RUnlock()
+	liveMatches := p.liveMatches.Get()
 
-	if len(p.liveMatches) == 0 {
+	if len(liveMatches) == 0 {
 		return
 	}
 
 	p.log.
-		WithField("count", len(p.liveMatches)).
+		WithField("count", len(liveMatches)).
 		Debug("requesting stats")
 
-	for _, liveMatch := range p.liveMatches {
+	for _, liveMatch := range liveMatches {
 		if err := p.enqueueWorker(liveMatch); err != nil {
 			p.handleError(xerrors.Errorf("error enqueuing worker: %w", err))
 		}

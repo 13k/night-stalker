@@ -1,6 +1,7 @@
 package session
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/faceit/go-steam"
@@ -26,7 +27,7 @@ func (p *Manager) loadLogin() error {
 }
 
 func (p *Manager) isSuspended() bool {
-	return p.login.SuspendedUntil != nil && time.Now().Before(*p.login.SuspendedUntil)
+	return p.login.SuspendedUntil.Valid && time.Now().Before(p.login.SuspendedUntil.Time)
 }
 
 func (p *Manager) updateLogin(update *models.SteamLogin) error {
@@ -137,8 +138,9 @@ func (p *Manager) saveDotaWelcome(welcome *protocol.CMsgClientWelcome) error {
 	return nil
 }
 
-func (p *Manager) saveDotaClientSuspended(until *time.Time) error {
-	update := &models.SteamLogin{SuspendedUntil: until}
+func (p *Manager) saveDotaClientSuspended(until time.Time) error {
+	t := sql.NullTime{Time: until, Valid: !until.IsZero()}
+	update := &models.SteamLogin{SuspendedUntil: t}
 
 	if err := p.updateLogin(update); err != nil {
 		return xerrors.Errorf("error saving dota client suspended info: %w", err)
@@ -160,6 +162,28 @@ func (p *Manager) randomServer() (*models.SteamServer, error) {
 	}
 
 	return server, nil
+}
+
+func (p *Manager) randomServerAddr() (*netutil.PortAddr, error) {
+	server, err := p.randomServer()
+
+	if err != nil {
+		return nil, xerrors.Errorf("error loading random steam server: %w", err)
+	}
+
+	var addr *netutil.PortAddr
+
+	if server != nil {
+		addr = netutil.ParsePortAddr(server.Address)
+
+		if addr == nil {
+			return nil, xerrors.Errorf("error parsing server address: %w", &ErrInvalidServerAddress{
+				Address: server.Address,
+			})
+		}
+	}
+
+	return addr, nil
 }
 
 func (p *Manager) saveServers(addresses []*netutil.PortAddr) error {

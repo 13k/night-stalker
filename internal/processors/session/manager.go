@@ -9,9 +9,11 @@ import (
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
+	nssteam "github.com/13k/night-stalker/internal/steam"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -20,29 +22,29 @@ const (
 )
 
 type ManagerOptions struct {
-	Log                   *nslog.Logger
-	Bus                   *nsbus.Bus
-	Credentials           *Credentials
-	ShutdownTimeout       time.Duration
-	TVGamesInterval       time.Duration
-	RealtimeStatsPoolSize int
-	RealtimeStatsInterval time.Duration
-	MatchInfoPoolSize     int
-	MatchInfoInterval     time.Duration
+	Log             *nslog.Logger
+	Bus             *nsbus.Bus
+	Credentials     *Credentials
+	ShutdownTimeout time.Duration
 }
 
 var _ nsproc.Processor = (*Manager)(nil)
 
 type Manager struct {
-	options    ManagerOptions
-	login      *models.SteamLogin
-	ctx        context.Context
-	log        *nslog.Logger
-	bus        *nsbus.Bus
-	db         *gorm.DB
-	conn       *conn
-	session    *session
-	supervisor *supervisor
+	options            ManagerOptions
+	login              *models.SteamLogin
+	log                *nslog.Logger
+	bus                *nsbus.Bus
+	db                 *gorm.DB
+	steam              *nssteam.Client
+	dota               *nsdota2.Client
+	ctx                context.Context
+	cancel             context.CancelFunc
+	supervisor         *supervisor
+	busSubSteamEvents  *nsbus.Subscription
+	busSubSessionSteam *nsbus.Subscription
+	busSubSessionDota  *nsbus.Subscription
+	err                error
 }
 
 func NewManager(options ManagerOptions) *Manager {
@@ -66,7 +68,7 @@ func (p *Manager) ChildSpec() oversight.ChildProcessSpecification {
 	return oversight.ChildProcessSpecification{
 		Name:     processorName,
 		Start:    p.Start,
-		Restart:  oversight.Permanent(),
+		Restart:  oversight.Transient(),
 		Shutdown: shutdown,
 	}
 }
@@ -84,144 +86,98 @@ func (p *Manager) Start(ctx context.Context) (err error) {
 }
 
 func (p *Manager) start(ctx context.Context) error {
-	if err := p.setupContext(ctx); err != nil {
-		return xerrors.Errorf("error setting up context: %w", err)
+	p.err = nil
+
+	if err := p.setup(ctx); err != nil {
+		return err
 	}
 
-	if err := p.loadLogin(); err != nil {
-		return xerrors.Errorf("error loading login info: %w", err)
-	}
+	go p.loop()
 
-	if p.isSuspended() {
-		return xerrors.Errorf("fatal error: %w", &ErrDotaClientSuspended{
-			Until: p.login.SuspendedUntil,
-		})
-	}
+	p.err = p.supervisor.Start(p.ctx)
 
-	return p.loop()
+	<-p.ctx.Done()
+	p.ctx = nil
+
+	return p.err
 }
 
 func (p *Manager) stop() {
-	p.log.Warn("stopping...")
-	p.disconnect()
-	p.ctx = nil
+	p.busUnsubscribe()
+	p.cancel()
 	p.log.Warn("stop")
 }
 
-func (p *Manager) loop() error {
+func (p *Manager) loop() {
 	defer p.stop()
-
-	var subConn *nsbus.Subscription
-	var subSession *nsbus.Subscription
-
-	defer func() {
-		if p.conn != nil && subConn != nil {
-			p.conn.Bus().Unsub(subConn)
-		}
-
-		if p.session != nil && subSession != nil {
-			p.session.Bus().Unsub(subSession)
-		}
-	}()
 
 	p.log.Info("start")
 
-	// FIXME: connect/startSession must run concurrently with loop
-
 	for {
-		if p.conn == nil {
-			if err := p.connect(); err != nil {
-				return xerrors.Errorf("error creating connection: %w", err)
-			}
-
-			subConn = nil
-
-			if p.session != nil {
-				p.closeSession()
-			}
-		}
-
-		if p.session == nil {
-			if err := p.startSession(); err != nil {
-				return xerrors.Errorf("error creating session: %w", err)
-			}
-
-			subSession = nil
-		}
-
-		if subConn == nil {
-			subConn = p.conn.Bus().Sub("events")
-		}
-
-		if subSession == nil {
-			subSession = p.session.Bus().Sub("events")
-		}
-
 		select {
 		case <-p.ctx.Done():
-			return nil
-		case busMsg, ok := <-subConn.C:
+			return
+		case busmsg, ok := <-p.busSubSessionSteam.C:
 			if !ok {
-				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: subConn,
+				p.err = xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busSubSessionSteam,
 				})
+
+				return
 			}
 
-			if _, ok := busMsg.Payload.(*connectionClosedEvent); ok {
-				p.log.Warn("connection closed")
-				p.disconnect()
-				continue
+			if sessmsg, ok := busmsg.Payload.(*nsbus.SteamSessionChangeMessage); ok {
+				p.handleSteamSessionChange(sessmsg)
 			}
-
-			if err := p.handleEvent(busMsg.Payload); err != nil {
-				return err
-			}
-		case busMsg, ok := <-subSession.C:
+		case busmsg, ok := <-p.busSubSessionDota.C:
 			if !ok {
-				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: subSession,
+				p.err = xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busSubSessionDota,
 				})
+
+				return
 			}
 
-			if _, ok := busMsg.Payload.(*sessionClosedEvent); ok {
-				p.log.Warn("session closed")
-				p.closeSession()
-				continue
+			if sessmsg, ok := busmsg.Payload.(*nsbus.DotaSessionChangeMessage); ok {
+				p.handleDotaSessionChange(sessmsg)
+			}
+		case busmsg, ok := <-p.busSubSteamEvents.C:
+			if !ok {
+				p.err = xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
+					Subscription: p.busSubSteamEvents,
+				})
+
+				return
 			}
 
-			if stateMsg, ok := busMsg.Payload.(*sessionStateChangeEvent); ok && stateMsg.UnreadyToReady {
-				p.startSupervisor()
+			if steammsg, ok := busmsg.Payload.(*nsbus.SteamEventMessage); ok {
+				if err := p.handleSteamEvent(steammsg.Event); err != nil {
+					p.err = xerrors.Errorf("error handling event %T: %w", steammsg.Event, err)
+					return
+				}
 			}
 		}
 	}
-}
-
-func (p *Manager) busPubEvent(ev interface{}) error {
-	return p.bus.Pub(nsbus.Message{
-		Topic:   nsbus.TopicSteamEvents,
-		Payload: &nsbus.SteamEventMessage{Event: ev},
-	})
 }
 
 func (p *Manager) handleError(err error) {
-	l := p.log
+	/*
+		l := p.log
 
-	if e := (&ErrInvalidServerAddress{}); xerrors.As(err, &e) {
-		l = l.WithField("address", e.Address)
-	} else if e := (&ErrSteamDisconnected{}); xerrors.As(err, &e) {
-	} else if e := (&ErrSteamLogOnFailed{}); xerrors.As(err, &e) {
-		l = l.WithField("reason", e.Reason)
-	} else if e := (&ErrSteamLoggedOff{}); xerrors.As(err, &e) {
-		l = l.WithField("reason", e.Reason)
-	} else if e := (&ErrDotaClientSuspended{}); xerrors.As(err, &e) {
-		l = l.WithField("until", e.Until)
-	} else if e := (&ErrDotaGCWelcomeTimeout{}); xerrors.As(err, &e) {
-		l = l.WithOFields(
-			"retry_count", e.RetryCount,
-			"retry_interval", e.RetryInterval,
-		)
-	}
+		if e := (&ErrInvalidServerAddress{}); xerrors.As(err, &e) {
+			l = l.WithField("address", e.Address)
+		} else if e := (&ErrSteamLogOnFailed{}); xerrors.As(err, &e) {
+			l = l.WithField("reason", e.Reason)
+		} else if e := (&ErrDotaClientSuspended{}); xerrors.As(err, &e) {
+			l = l.WithField("until", e.Until)
+		} else if e := (&ErrDotaGCWelcomeTimeout{}); xerrors.As(err, &e) {
+			l = l.WithOFields(
+				"retry_count", e.RetryCount,
+				"retry_interval", e.RetryInterval,
+			)
+		}
 
-	l.WithError(err).Error("session error")
-	p.log.Errorx(err)
+		l.WithError(err).Error("session manager error")
+		p.log.Errorx(err)
+	*/
 }

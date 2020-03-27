@@ -2,18 +2,21 @@ package ns
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"cirello.io/oversight"
 	"github.com/13k/geyser"
 	geyserd2 "github.com/13k/geyser/dota2"
+	"github.com/faceit/go-steam"
 	"github.com/jinzhu/gorm"
+	"github.com/paralin/go-dota2"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
-	nssess "github.com/13k/night-stalker/internal/processors/session"
 	nsrds "github.com/13k/night-stalker/internal/redis"
+	nssteam "github.com/13k/night-stalker/internal/steam"
 )
 
 const (
@@ -40,22 +43,26 @@ type App struct {
 	bus        *nsbus.Bus
 	db         *gorm.DB
 	rds        *nsrds.Redis
+	steam      *nssteam.Client
+	dota       *nsdota2.Client
 	api        *geyser.Client
 	apiDota    *geyserd2.Client
-	supervisor *oversight.Tree
+	supervisor *supervisor
 	ctx        context.Context
 	cancel     context.CancelFunc
 }
 
 func New(options AppOptions) (*App, error) {
+	log := options.Log.WithPackage("app")
+
 	bus := nsbus.New(nsbus.Options{
 		Cap: busBufSize,
-		Log: options.Log,
+		Log: log,
 	})
 
 	app := &App{
 		options: options,
-		log:     options.Log,
+		log:     log,
 		db:      options.DB,
 		rds:     options.Redis,
 		bus:     bus,
@@ -69,10 +76,21 @@ func New(options AppOptions) (*App, error) {
 		return nil, err
 	}
 
-	app.setupSupervisor()
+	app.setupSteam()
+	app.setupDota()
 	app.setupContext()
+	app.setupSupervisor()
 
 	return app, nil
+}
+
+func (app *App) setupSteam() {
+	app.steam = nssteam.NewClient(steam.NewClient())
+}
+
+func (app *App) setupDota() {
+	dota2 := dota2.New(app.steam.Client, app.log.WithPackage("dota2").LogrusLogger())
+	app.dota = nsdota2.NewClient(dota2)
 }
 
 func (app *App) setupAPI() error {
@@ -96,35 +114,15 @@ func (app *App) setupAPI() error {
 	return nil
 }
 
-func (app *App) setupSupervisor() {
-	sessOptions := nssess.ManagerOptions{
-		Log:                   app.log,
-		Bus:                   app.bus,
-		Credentials:           app.options.Credentials.sessionCredentials(),
-		ShutdownTimeout:       app.options.ShutdownTimeout,
-		TVGamesInterval:       tvGamesInterval,
-		RealtimeStatsPoolSize: rtStatsPoolSize,
-		RealtimeStatsInterval: rtStatsInterval,
-		MatchInfoPoolSize:     matchInfoPoolSize,
-		MatchInfoInterval:     matchInfoInterval,
-	}
-
-	session := nssess.NewManager(sessOptions)
-
-	app.supervisor = oversight.New(
-		oversight.WithRestartStrategy(oversight.OneForOne()),
-		oversight.WithLogger(app.log.WithPackage("supervisor").OversightLogger()),
-		oversight.Process(session.ChildSpec()),
-	)
-}
-
 func (app *App) setupContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ctx = nsctx.WithLogger(ctx, app.log)
+	ctx = nsctx.WithLogger(ctx, app.options.Log)
 	ctx = nsctx.WithBus(ctx, app.bus)
 	ctx = nsctx.WithDB(ctx, app.db)
 	ctx = nsctx.WithRedis(ctx, app.rds)
+	ctx = nsctx.WithSteam(ctx, app.steam)
+	ctx = nsctx.WithDota(ctx, app.dota)
 	ctx = nsctx.WithAPI(ctx, app.api)
 	ctx = nsctx.WithDotaAPI(ctx, app.apiDota)
 
@@ -132,15 +130,60 @@ func (app *App) setupContext() {
 	app.cancel = cancel
 }
 
+func (app *App) setupSupervisor() {
+	app.supervisor = newSupervisor(supervisorOptions{
+		Log:                   app.options.Log,
+		Bus:                   app.bus,
+		ShutdownTimeout:       app.options.ShutdownTimeout,
+		Credentials:           app.options.Credentials,
+		TVGamesInterval:       tvGamesInterval,
+		RealtimeStatsPoolSize: rtStatsPoolSize,
+		RealtimeStatsInterval: rtStatsInterval,
+		MatchInfoPoolSize:     matchInfoPoolSize,
+		MatchInfoInterval:     matchInfoInterval,
+	})
+}
+
 func (app *App) Start() error {
 	defer func() {
 		app.cancel()
 		app.bus.Shutdown()
+		app.log.Warn("stopped")
 	}()
+
+	go app.eventsLoop()
+
+	app.log.Info("starting")
 
 	return app.supervisor.Start(app.ctx)
 }
 
 func (app *App) Stop() {
 	app.cancel()
+}
+
+func (app *App) eventsLoop() {
+	for {
+		select {
+		case <-app.ctx.Done():
+			return
+		case ev, ok := <-app.steam.Events():
+			if !ok {
+				app.log.Warn("steam events channel closed")
+				return
+			}
+
+			err := app.bus.Pub(nsbus.Message{
+				Topic:   nsbus.TopicSteamEvents,
+				Payload: &nsbus.SteamEventMessage{Event: ev},
+			})
+
+			if err != nil {
+				app.log.WithOFields(
+					"topic", nsbus.TopicSteamEvents,
+					"event", fmt.Sprintf("%T", ev),
+				).WithError(err).Error("error publishing event")
+			}
+		}
+	}
 }

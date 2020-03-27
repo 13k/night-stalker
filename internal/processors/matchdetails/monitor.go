@@ -2,7 +2,6 @@ package matchdetails
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"cirello.io/oversight"
@@ -11,8 +10,10 @@ import (
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nsbussub "github.com/13k/night-stalker/internal/bus/subscribers"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -38,27 +39,23 @@ type MonitorOptions struct {
 var _ nsproc.Processor = (*Monitor)(nil)
 
 type Monitor struct {
-	options               MonitorOptions
-	ctx                   context.Context
-	log                   *nslog.Logger
-	db                    *gorm.DB
-	bus                   *nsbus.Bus
-	busLiveMatchesReplace *nsbus.Subscription
-	busMatchesMinimalResp *nsbus.Subscription
-	liveMatchesMtx        sync.RWMutex
-	liveMatches           nscol.LiveMatches
+	options                  MonitorOptions
+	ctx                      context.Context
+	log                      *nslog.Logger
+	db                       *gorm.DB
+	bus                      *nsbus.Bus
+	dota                     *nsdota2.Client
+	liveMatches              *nsbussub.LiveMatches
+	busSubMatchesMinimalResp *nsbus.Subscription
 }
 
 func NewMonitor(options MonitorOptions) *Monitor {
-	p := &Monitor{
-		options: options,
-		log:     options.Log.WithPackage(processorName),
-		bus:     options.Bus,
+	return &Monitor{
+		options:     options,
+		log:         options.Log.WithPackage(processorName),
+		bus:         options.Bus,
+		liveMatches: nsbussub.NewLiveMatchesSubscriber(options.Bus),
 	}
-
-	p.busSubscribe()
-
-	return p
 }
 
 func (p *Monitor) ChildSpec() oversight.ChildProcessSpecification {
@@ -96,6 +93,7 @@ func (p *Monitor) start(ctx context.Context) error {
 	}
 
 	p.busSubscribe()
+	p.liveMatches.Start(p.ctx)
 
 	return p.loop()
 }
@@ -108,24 +106,15 @@ func (p *Monitor) stop(t *time.Ticker) {
 }
 
 func (p *Monitor) busSubscribe() {
-	if p.busLiveMatchesReplace == nil {
-		p.busLiveMatchesReplace = p.bus.Sub(nsbus.TopicLiveMatchesReplace)
-	}
-
-	if p.busMatchesMinimalResp == nil {
-		p.busMatchesMinimalResp = p.bus.Sub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse)
+	if p.busSubMatchesMinimalResp == nil {
+		p.busSubMatchesMinimalResp = p.bus.Sub(nsbus.TopicGCDispatcherReceivedMatchesMinimalResponse)
 	}
 }
 
 func (p *Monitor) busUnsubscribe() {
-	if p.busLiveMatchesReplace != nil {
-		p.bus.Unsub(p.busLiveMatchesReplace)
-		p.busLiveMatchesReplace = nil
-	}
-
-	if p.busMatchesMinimalResp != nil {
-		p.bus.Unsub(p.busMatchesMinimalResp)
-		p.busMatchesMinimalResp = nil
+	if p.busSubMatchesMinimalResp != nil {
+		p.bus.Unsub(p.busSubMatchesMinimalResp)
+		p.busSubMatchesMinimalResp = nil
 	}
 }
 
@@ -134,32 +123,13 @@ func (p *Monitor) setupContext(ctx context.Context) error {
 		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
 	}
 
+	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDotaClient)
+	}
+
 	p.ctx = ctx
 
 	return nil
-}
-
-func (p *Monitor) setLiveMatches(liveMatches nscol.LiveMatches) {
-	p.liveMatchesMtx.Lock()
-	defer p.liveMatchesMtx.Unlock()
-	p.liveMatches = liveMatches
-}
-
-func (p *Monitor) getLiveMatchesCount() int {
-	p.liveMatchesMtx.RLock()
-	defer p.liveMatchesMtx.RUnlock()
-	return len(p.liveMatches)
-}
-
-func (p *Monitor) getLiveMatchesBatches() []nscol.LiveMatches {
-	p.liveMatchesMtx.RLock()
-	defer p.liveMatchesMtx.RUnlock()
-
-	if len(p.liveMatches) == 0 {
-		return nil
-	}
-
-	return p.liveMatches.Batches(batchSize)
 }
 
 func (p *Monitor) loop() error {
@@ -175,20 +145,10 @@ func (p *Monitor) loop() error {
 			return nil
 		case <-t.C:
 			p.tick()
-		case busmsg, ok := <-p.busLiveMatchesReplace.C:
+		case busmsg, ok := <-p.busSubMatchesMinimalResp.C:
 			if !ok {
 				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busLiveMatchesReplace,
-				})
-			}
-
-			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
-				p.handleLiveMatchesChange(msg)
-			}
-		case busmsg, ok := <-p.busMatchesMinimalResp.C:
-			if !ok {
-				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busMatchesMinimalResp,
+					Subscription: p.busSubMatchesMinimalResp,
 				})
 			}
 
@@ -202,7 +162,11 @@ func (p *Monitor) loop() error {
 }
 
 func (p *Monitor) tick() {
-	batches := p.getLiveMatchesBatches()
+	if !p.dota.Session.IsReady() {
+		return
+	}
+
+	batches := p.liveMatches.Batches(batchSize)
 
 	if len(batches) == 0 {
 		return
@@ -211,7 +175,7 @@ func (p *Monitor) tick() {
 	p.log.WithOFields(
 		"batch_size", batchSize,
 		"batch_count", len(batches),
-		"total", p.getLiveMatchesCount(),
+		"total", p.liveMatches.Len(),
 	).Debug("requesting matches details")
 
 	for _, batch := range batches {
@@ -219,17 +183,6 @@ func (p *Monitor) tick() {
 			p.handleError(xerrors.Errorf("error publishing request match details: %w", err))
 		}
 	}
-}
-
-func (p *Monitor) handleLiveMatchesChange(msg *nsbus.LiveMatchesChangeMessage) {
-	if msg.Op != nspb.CollectionOp_COLLECTION_OP_REPLACE {
-		p.log.WithField("op", msg.Op.String()).Warn("ignored live matches change message")
-		return
-	}
-
-	p.log.WithField("count", len(msg.Matches)).Debug("received live matches")
-
-	p.setLiveMatches(msg.Matches)
 }
 
 func (p *Monitor) handleMatchesMinimalResponse(msg *protocol.CMsgClientToGCMatchesMinimalResponse) {
@@ -330,6 +283,10 @@ func (p *Monitor) saveMatches(minMatches []*protocol.CMsgDOTAMatchMinimal) (nsco
 }
 
 func (p *Monitor) busPubRequestMatchesMinimal(matchIDs nscol.MatchIDs) error {
+	if !p.dota.Session.IsReady() {
+		return nil
+	}
+
 	req := &protocol.CMsgClientToGCMatchesMinimalRequest{
 		MatchIds: matchIDs.ToUint64s(),
 	}

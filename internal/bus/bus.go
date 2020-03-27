@@ -1,6 +1,9 @@
 package bus
 
 import (
+	"fmt"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/olebedev/emitter"
@@ -65,7 +68,10 @@ func (b *Bus) PubSync(message Message) {
 }
 
 func (b *Bus) Sub(topic string) *Subscription {
-	b.log.WithField("topic", topic).Trace("sub")
+	b.log.WithOFields(
+		"topic", topic,
+		"caller", getCaller(),
+	).Trace("sub")
 
 	events := b.Emitter.On(topic)
 	messages := make(chan Message, b.Emitter.Cap)
@@ -94,8 +100,36 @@ func (b *Bus) Sub(topic string) *Subscription {
 }
 
 func (b *Bus) Unsub(subs ...*Subscription) {
+	caller := getCaller()
+
 	for _, sub := range subs {
-		b.log.WithField("topic", sub.Topic).Trace("unsub")
+		b.log.WithOFields(
+			"topic", sub.Topic,
+			"caller", caller,
+		).Trace("unsub")
+
 		b.Emitter.Off(sub.Topic, sub.ev)
 	}
+}
+
+func getCaller() string {
+	var framePtrs [3]uintptr
+
+	runtime.Callers(2, framePtrs[:])
+
+	frames := runtime.CallersFrames(framePtrs[:])
+
+	if _, ok := frames.Next(); !ok {
+		return ""
+	}
+
+	fr, ok := frames.Next()
+
+	if !ok {
+		return ""
+	}
+
+	file := strings.TrimPrefix(fr.File, "/home/k/Projects/dota2/night-stalker/")
+
+	return fmt.Sprintf("%s:%d", file, fr.Line)
 }

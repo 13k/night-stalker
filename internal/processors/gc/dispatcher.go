@@ -15,9 +15,11 @@ import (
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
+	nssteam "github.com/13k/night-stalker/internal/steam"
 )
 
 const (
@@ -35,28 +37,25 @@ type DispatcherOptions struct {
 var _ nsproc.Processor = (*Dispatcher)(nil)
 
 type Dispatcher struct {
-	options  DispatcherOptions
-	ctx      context.Context
-	log      *nslog.Logger
-	steam    *steam.Client
-	handling map[*steam.GameCoordinator]bool
-	bus      *nsbus.Bus
-	busSend  *nsbus.Subscription
-	rx       chan *gc.GCPacket
-	tx       chan *nsbus.GCDispatcherSendMessage
+	options    DispatcherOptions
+	ctx        context.Context
+	log        *nslog.Logger
+	steam      *nssteam.Client
+	dota       *nsdota2.Client
+	handling   map[*steam.GameCoordinator]bool
+	bus        *nsbus.Bus
+	rx         chan *gc.GCPacket
+	tx         chan *nsbus.GCDispatcherSendMessage
+	busSubSend *nsbus.Subscription
 }
 
 func NewDispatcher(options DispatcherOptions) *Dispatcher {
-	p := &Dispatcher{
+	return &Dispatcher{
 		options:  options,
 		log:      options.Log.WithPackage(processorName),
 		bus:      options.Bus,
 		handling: map[*steam.GameCoordinator]bool{},
 	}
-
-	p.busSubscribe()
-
-	return p
 }
 
 func (p *Dispatcher) ChildSpec() oversight.ChildProcessSpecification {
@@ -111,21 +110,25 @@ func (p *Dispatcher) stop() {
 }
 
 func (p *Dispatcher) busSubscribe() {
-	if p.busSend == nil {
-		p.busSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
+	if p.busSubSend == nil {
+		p.busSubSend = p.bus.Sub(nsbus.TopicGCDispatcherSend)
 	}
 }
 
 func (p *Dispatcher) busUnsubscribe() {
-	if p.busSend != nil {
-		p.bus.Unsub(p.busSend)
-		p.busSend = nil
+	if p.busSubSend != nil {
+		p.bus.Unsub(p.busSubSend)
+		p.busSubSend = nil
 	}
 }
 
 func (p *Dispatcher) setupContext(ctx context.Context) error {
 	if p.steam = nsctx.GetSteam(ctx); p.steam == nil {
 		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextSteamClient)
+	}
+
+	if p.dota = nsctx.GetDota(ctx); p.dota == nil {
+		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDotaClient)
 	}
 
 	p.ctx = ctx
@@ -213,10 +216,10 @@ func (p *Dispatcher) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSend.C:
+		case busmsg, ok := <-p.busSubSend.C:
 			if !ok {
 				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busSend,
+					Subscription: p.busSubSend,
 				})
 			}
 
@@ -268,6 +271,11 @@ func (p *Dispatcher) enqueueRx(packet *gc.GCPacket) error {
 func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) error {
 	if p.ctx.Err() != nil {
 		return xerrors.Errorf("error enqueuing tx: %w", p.ctx.Err())
+	}
+
+	if !p.dota.Session.IsReady() {
+		p.log.WithField("msg_type", sendmsg.MsgType).Warn("tried to enqueue tx while disconnected")
+		return nil
 	}
 
 	select {
@@ -324,6 +332,11 @@ func (p *Dispatcher) send(msgType protocol.EDOTAGCMsg, message proto.Message) er
 			Message: message,
 			Err:     p.ctx.Err(),
 		})
+	}
+
+	if !p.dota.Session.IsReady() {
+		p.log.WithField("msg_type", msgType).Warn("tried to send while disconnected")
+		return nil
 	}
 
 	messageV1 := protov1.MessageV1(message)

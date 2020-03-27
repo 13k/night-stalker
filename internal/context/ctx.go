@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/13k/geyser"
-	geyserd2 "github.com/13k/geyser/dota2"
-	"github.com/faceit/go-steam"
+	gsdota2 "github.com/13k/geyser/dota2"
 	"github.com/jinzhu/gorm"
-	"github.com/paralin/go-dota2"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsrds "github.com/13k/night-stalker/internal/redis"
+	nssteam "github.com/13k/night-stalker/internal/steam"
 )
 
 type ctxKey int
@@ -34,6 +34,21 @@ func WithLogger(ctx context.Context, logger *nslog.Logger) context.Context {
 func GetLogger(ctx context.Context) *nslog.Logger {
 	i := ctx.Value(ctxKeyLogger)
 	v, ok := i.(*nslog.Logger)
+
+	if !ok {
+		return nil
+	}
+
+	return v
+}
+
+func WithBus(ctx context.Context, bus *nsbus.Bus) context.Context {
+	return context.WithValue(ctx, ctxKeyBus, bus)
+}
+
+func GetBus(ctx context.Context) *nsbus.Bus {
+	i := ctx.Value(ctxKeyBus)
+	v, ok := i.(*nsbus.Bus)
 
 	if !ok {
 		return nil
@@ -72,13 +87,13 @@ func GetRedis(ctx context.Context) *nsrds.Redis {
 	return v
 }
 
-func WithSteam(ctx context.Context, steam *steam.Client) context.Context {
+func WithSteam(ctx context.Context, steam *nssteam.Client) context.Context {
 	return context.WithValue(ctx, ctxKeySteam, steam)
 }
 
-func GetSteam(ctx context.Context) *steam.Client {
+func GetSteam(ctx context.Context) *nssteam.Client {
 	i := ctx.Value(ctxKeySteam)
-	v, ok := i.(*steam.Client)
+	v, ok := i.(*nssteam.Client)
 
 	if !ok {
 		return nil
@@ -87,28 +102,13 @@ func GetSteam(ctx context.Context) *steam.Client {
 	return v
 }
 
-func WithDota(ctx context.Context, dota *dota2.Dota2) context.Context {
+func WithDota(ctx context.Context, dota *nsdota2.Client) context.Context {
 	return context.WithValue(ctx, ctxKeyDota, dota)
 }
 
-func GetDota(ctx context.Context) *dota2.Dota2 {
+func GetDota(ctx context.Context) *nsdota2.Client {
 	i := ctx.Value(ctxKeyDota)
-	v, ok := i.(*dota2.Dota2)
-
-	if !ok {
-		return nil
-	}
-
-	return v
-}
-
-func WithBus(ctx context.Context, bus *nsbus.Bus) context.Context {
-	return context.WithValue(ctx, ctxKeyBus, bus)
-}
-
-func GetBus(ctx context.Context) *nsbus.Bus {
-	i := ctx.Value(ctxKeyBus)
-	v, ok := i.(*nsbus.Bus)
+	v, ok := i.(*nsdota2.Client)
 
 	if !ok {
 		return nil
@@ -132,13 +132,13 @@ func GetAPI(ctx context.Context) *geyser.Client {
 	return v
 }
 
-func WithDotaAPI(ctx context.Context, api *geyserd2.Client) context.Context {
+func WithDotaAPI(ctx context.Context, api *gsdota2.Client) context.Context {
 	return context.WithValue(ctx, ctxKeyDotaAPI, api)
 }
 
-func GetDotaAPI(ctx context.Context) *geyserd2.Client {
+func GetDotaAPI(ctx context.Context) *gsdota2.Client {
 	i := ctx.Value(ctxKeyDotaAPI)
-	v, ok := i.(*geyserd2.Client)
+	v, ok := i.(*gsdota2.Client)
 
 	if !ok {
 		return nil

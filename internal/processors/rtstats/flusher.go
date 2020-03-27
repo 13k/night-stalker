@@ -26,21 +26,19 @@ type flusher struct {
 	log     *nslog.Logger
 	bus     *nsbus.Bus
 	buf     nscol.LiveMatchStats
-	mu      *sync.Mutex
+	mtx     *sync.Mutex
 	ctx     context.Context
 	values  chan *models.LiveMatchStats
 	errors  chan error
 }
 
 func newFlusher(options *flusherOptions) *flusher {
-	f := &flusher{
+	return &flusher{
 		options: options,
 		log:     options.Log.WithPackage("flusher"),
 		bus:     options.Bus,
-		mu:      &sync.Mutex{},
+		mtx:     &sync.Mutex{},
 	}
-
-	return f
 }
 
 func (f *flusher) Errors() <-chan error {
@@ -96,8 +94,8 @@ func (f *flusher) Add(stats *models.LiveMatchStats) {
 }
 
 func (f *flusher) add(stats *models.LiveMatchStats) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
 
 	f.buf = append(f.buf, stats)
 
@@ -107,8 +105,8 @@ func (f *flusher) add(stats *models.LiveMatchStats) {
 }
 
 func (f *flusher) Flush() {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
 
 	if len(f.buf) == 0 {
 		return
@@ -117,9 +115,8 @@ func (f *flusher) Flush() {
 	f.safeFlush()
 }
 
+// TODO: it should reset flush timer
 func (f *flusher) safeFlush() {
-	// TODO: it should reset flush timer
-
 	f.log.WithField("count", len(f.buf)).Trace("flush")
 
 	busMsg := nsbus.Message{

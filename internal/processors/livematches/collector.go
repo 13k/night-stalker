@@ -31,27 +31,23 @@ type CollectorOptions struct {
 var _ nsproc.Processor = (*Collector)(nil)
 
 type Collector struct {
-	ctx                  context.Context
-	options              CollectorOptions
-	matches              *nscol.LiveMatchesContainer
-	log                  *nslog.Logger
-	db                   *gorm.DB
-	rds                  *nsrds.Redis
-	bus                  *nsbus.Bus
-	busLiveMatchesAll    *nsbus.Subscription
-	busLiveMatchStatsAll *nsbus.Subscription
+	ctx                     context.Context
+	options                 CollectorOptions
+	matches                 *nscol.LiveMatchesContainer
+	log                     *nslog.Logger
+	db                      *gorm.DB
+	rds                     *nsrds.Redis
+	bus                     *nsbus.Bus
+	busSubLiveMatchesAll    *nsbus.Subscription
+	busSubLiveMatchStatsAll *nsbus.Subscription
 }
 
 func NewCollector(options CollectorOptions) *Collector {
-	p := &Collector{
+	return &Collector{
 		options: options,
 		log:     options.Log.WithPackage(processorName),
 		bus:     options.Bus,
 	}
-
-	p.busSubscribe()
-
-	return p
 }
 
 func (p *Collector) ChildSpec() oversight.ChildProcessSpecification {
@@ -104,24 +100,24 @@ func (p *Collector) stop() {
 }
 
 func (p *Collector) busSubscribe() {
-	if p.busLiveMatchesAll == nil {
-		p.busLiveMatchesAll = p.bus.Sub(nsbus.TopicPatternLiveMatchesAll)
+	if p.busSubLiveMatchesAll == nil {
+		p.busSubLiveMatchesAll = p.bus.Sub(nsbus.TopicPatternLiveMatchesAll)
 	}
 
-	if p.busLiveMatchStatsAll == nil {
-		p.busLiveMatchStatsAll = p.bus.Sub(nsbus.TopicPatternLiveMatchStatsAll)
+	if p.busSubLiveMatchStatsAll == nil {
+		p.busSubLiveMatchStatsAll = p.bus.Sub(nsbus.TopicPatternLiveMatchStatsAll)
 	}
 }
 
 func (p *Collector) busUnsubscribe() {
-	if p.busLiveMatchesAll != nil {
-		p.bus.Unsub(p.busLiveMatchesAll)
-		p.busLiveMatchesAll = nil
+	if p.busSubLiveMatchesAll != nil {
+		p.bus.Unsub(p.busSubLiveMatchesAll)
+		p.busSubLiveMatchesAll = nil
 	}
 
-	if p.busLiveMatchStatsAll != nil {
-		p.bus.Unsub(p.busLiveMatchStatsAll)
-		p.busLiveMatchStatsAll = nil
+	if p.busSubLiveMatchStatsAll != nil {
+		p.bus.Unsub(p.busSubLiveMatchStatsAll)
+		p.busSubLiveMatchStatsAll = nil
 	}
 }
 
@@ -193,20 +189,20 @@ func (p *Collector) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busLiveMatchesAll.C:
+		case busmsg, ok := <-p.busSubLiveMatchesAll.C:
 			if !ok {
 				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busLiveMatchesAll,
+					Subscription: p.busSubLiveMatchesAll,
 				})
 			}
 
 			if msg, ok := busmsg.Payload.(*nsbus.LiveMatchesChangeMessage); ok {
 				p.handleLiveMatchesChange(msg)
 			}
-		case busmsg, ok := <-p.busLiveMatchStatsAll.C:
+		case busmsg, ok := <-p.busSubLiveMatchStatsAll.C:
 			if !ok {
 				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busLiveMatchStatsAll,
+					Subscription: p.busSubLiveMatchStatsAll,
 				})
 			}
 

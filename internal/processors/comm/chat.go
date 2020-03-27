@@ -6,6 +6,7 @@ import (
 
 	"cirello.io/oversight"
 	"github.com/faceit/go-steam"
+	"github.com/faceit/go-steam/protocol/steamlang"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
@@ -13,10 +14,12 @@ import (
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
+	nssteam "github.com/13k/night-stalker/internal/steam"
 )
 
 const (
 	processorName = "comm.chat"
+	adminSteamID  = steamlang.SteamId(76561197982474165)
 )
 
 type ChatOptions struct {
@@ -28,24 +31,20 @@ type ChatOptions struct {
 var _ nsproc.Processor = (*Chat)(nil)
 
 type Chat struct {
-	options        ChatOptions
-	ctx            context.Context
-	log            *nslog.Logger
-	steam          *steam.Client
-	bus            *nsbus.Bus
-	busSteamEvents *nsbus.Subscription
+	options           ChatOptions
+	ctx               context.Context
+	log               *nslog.Logger
+	steam             *nssteam.Client
+	bus               *nsbus.Bus
+	busSubSteamEvents *nsbus.Subscription
 }
 
 func NewChat(options ChatOptions) *Chat {
-	p := &Chat{
+	return &Chat{
 		options: options,
 		log:     options.Log.WithPackage(processorName),
 		bus:     options.Bus,
 	}
-
-	p.busSubscribe()
-
-	return p
 }
 
 func (p *Chat) ChildSpec() oversight.ChildProcessSpecification {
@@ -93,15 +92,15 @@ func (p *Chat) stop() {
 }
 
 func (p *Chat) busSubscribe() {
-	if p.busSteamEvents == nil {
-		p.busSteamEvents = p.bus.Sub(nsbus.TopicSteamEvents)
+	if p.busSubSteamEvents == nil {
+		p.busSubSteamEvents = p.bus.Sub(nsbus.TopicSteamEvents)
 	}
 }
 
 func (p *Chat) busUnsubscribe() {
-	if p.busSteamEvents != nil {
-		p.bus.Unsub(p.busSteamEvents)
-		p.busSteamEvents = nil
+	if p.busSubSteamEvents != nil {
+		p.bus.Unsub(p.busSubSteamEvents)
+		p.busSubSteamEvents = nil
 	}
 }
 
@@ -124,10 +123,10 @@ func (p *Chat) loop() error {
 		select {
 		case <-p.ctx.Done():
 			return nil
-		case busmsg, ok := <-p.busSteamEvents.C:
+		case busmsg, ok := <-p.busSubSteamEvents.C:
 			if !ok {
 				return xerrors.Errorf("bus error: %w", &nsbus.ErrSubscriptionExpired{
-					Subscription: p.busSteamEvents,
+					Subscription: p.busSubSteamEvents,
 				})
 			}
 
@@ -155,7 +154,7 @@ func (p *Chat) handleMessage(chatmsg *steam.ChatMsgEvent) {
 		"message", chatmsg.Message,
 	).Info("chat message")
 
-	if chatmsg.ChatterId != 76561197982474165 {
+	if chatmsg.ChatterId != adminSteamID || chatmsg.ChatRoomId != 0 {
 		return
 	}
 
