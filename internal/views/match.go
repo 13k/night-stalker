@@ -6,6 +6,7 @@ import (
 	"golang.org/x/xerrors"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -31,7 +32,7 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 		pb.RadiantScore = data.Match.RadiantScore
 		pb.DireScore = data.Match.DireScore
 
-		if pb.StartTime, err = models.NullTimestampProto(data.Match.StartTime); err != nil {
+		if pb.StartTime, err = nssql.NullTimeProto(data.Match.StartTime); err != nil {
 			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 			return nil, err
 		}
@@ -53,17 +54,17 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 		pb.DireTeamName = data.LiveMatch.DireTeamName
 		pb.DireTeamLogo = uint64(data.LiveMatch.DireTeamLogo)
 
-		if pb.ActivateTime, err = models.NullTimestampProto(data.LiveMatch.ActivateTime); err != nil {
+		if pb.ActivateTime, err = nssql.NullTimeProto(data.LiveMatch.ActivateTime); err != nil {
 			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 			return nil, err
 		}
 
-		if pb.DeactivateTime, err = models.NullTimestampProto(data.LiveMatch.DeactivateTime); err != nil {
+		if pb.DeactivateTime, err = nssql.NullTimeProto(data.LiveMatch.DeactivateTime); err != nil {
 			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 			return nil, err
 		}
 
-		if pb.LastUpdateTime, err = models.NullTimestampProto(data.LiveMatch.LastUpdateTime); err != nil {
+		if pb.LastUpdateTime, err = nssql.NullTimeProto(data.LiveMatch.LastUpdateTime); err != nil {
 			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 			return nil, err
 		}

@@ -4,6 +4,7 @@ import (
 	"golang.org/x/xerrors"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 	"github.com/13k/night-stalker/models"
 )
 
@@ -19,17 +20,17 @@ func NewLeague(league *models.League) (*nspb.League, error) {
 
 	var err error
 
-	if pb.LastActivityAt, err = models.NullTimestampProto(league.LastActivityAt); err != nil {
+	if pb.LastActivityAt, err = nssql.NullTimeProto(league.LastActivityAt); err != nil {
 		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		return nil, err
 	}
 
-	if pb.StartAt, err = models.NullTimestampProto(league.StartAt); err != nil {
+	if pb.StartAt, err = nssql.NullTimeProto(league.StartAt); err != nil {
 		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		return nil, err
 	}
 
-	if pb.FinishAt, err = models.NullTimestampProto(league.FinishAt); err != nil {
+	if pb.FinishAt, err = nssql.NullTimeProto(league.FinishAt); err != nil {
 		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		return nil, err
 	}
