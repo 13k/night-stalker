@@ -10,17 +10,17 @@ UnixTime is a time.Time wrapper type used for JSON encoding.
 
 Used to deserialize unix timestamps encoded as integer into time.Time and
 serialize time.Time to integer.
-
-See UnmarshalJSON for details on deserialization.
 */
 type UnixTime struct {
-	*time.Time
+	time.Time
 }
+
+var zeroTime = time.Time{}
 
 // UnmarshalJSON deserializes JSON integer into Time value.
 func (ut *UnixTime) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 {
-		ut.Time = nil
+		ut.Time = zeroTime
 		return nil
 	}
 
@@ -31,10 +31,9 @@ func (ut *UnixTime) UnmarshalJSON(data []byte) error {
 	}
 
 	if secs == 0 {
-		ut.Time = nil
+		ut.Time = zeroTime
 	} else {
-		t := time.Unix(secs, 0)
-		ut.Time = &t
+		ut.Time = time.Unix(secs, 0)
 	}
 
 	return nil
@@ -42,7 +41,7 @@ func (ut *UnixTime) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON serializes the Time value to JSON integer.
 func (ut UnixTime) MarshalJSON() ([]byte, error) {
-	if ut.Time == nil {
+	if ut.Time.IsZero() {
 		return nil, nil
 	}
 
