@@ -38,4 +38,8 @@ module Go
   def self.test(*args, **options)
     Shell.sh(GO_CMD, 'test', *args, **options)
   end
+
+  def self.format(path, **options)
+    Shell.sh(GOFMT_CMD, '-s', '-w', path, **options)
+  end
 end

@@ -45,4 +45,9 @@ namespace :app do
     desc 'Remove built app command binaries'
     task commands: AppTasks[:clean_commands]
   end
+
+  namespace :format do
+    desc 'Format Go files'
+    task go: AppTasks[:format_go]
+  end
 end

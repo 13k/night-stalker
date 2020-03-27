@@ -31,6 +31,7 @@ module Paths
   GIT_CMD = Shell.require_command!(ENV.fetch('GIT', 'git'))
   PROTOC_CMD = Shell.require_command!(ENV.fetch('PROTOC', 'protoc'))
   GO_CMD = Shell.require_command!(ENV.fetch('GO', 'go'))
+  GOFMT_CMD = Shell.require_command!(ENV.fetch('GOFMT', 'gofmt'))
   NODE_CMD = Shell.require_command!(ENV.fetch('NODE', 'node'))
   YARN_CMD = Shell.require_command!(ENV.fetch('YARN', 'yarn'))
 end
