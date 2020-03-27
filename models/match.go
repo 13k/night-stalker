@@ -1,11 +1,12 @@
 package models
 
 import (
-	"time"
+	"database/sql"
 
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var MatchModel Model = (*Match)(nil)
@@ -17,7 +18,7 @@ type Match struct {
 	SeriesType                   nspb.SeriesType   `gorm:"column:series_type"`
 	SeriesGame                   uint32            `gorm:"column:series_game"`
 	GameMode                     nspb.GameMode     `gorm:"column:game_mode"`
-	StartTime                    *time.Time        `gorm:"column:start_time"`
+	StartTime                    sql.NullTime      `gorm:"column:start_time"`
 	Duration                     uint32            `gorm:"column:duration"`
 	Outcome                      nspb.MatchOutcome `gorm:"column:outcome"`
 	RadiantTeamID                nspb.TeamID       `gorm:"column:radiant_team_id"`
@@ -51,7 +52,7 @@ func MatchDotaProto(pb *protocol.CMsgDOTAMatchMinimal) *Match {
 		SeriesType:                   nspb.SeriesType(pb.GetTourney().GetSeriesType()),
 		SeriesGame:                   pb.GetTourney().GetSeriesGame(),
 		GameMode:                     nspb.GameMode(pb.GetGameMode()),
-		StartTime:                    NullUnixTimestamp(int64(pb.GetStartTime())),
+		StartTime:                    nssql.NullTimeUnix(int64(pb.GetStartTime())),
 		Duration:                     pb.GetDuration(),
 		Outcome:                      nspb.MatchOutcome(pb.GetMatchOutcome()),
 		RadiantTeamID:                nspb.TeamID(pb.GetTourney().GetRadiantTeamId()),

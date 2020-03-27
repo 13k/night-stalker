@@ -1,7 +1,7 @@
 package models
 
 import (
-	"time"
+	"database/sql"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
@@ -16,7 +16,7 @@ type ProPlayer struct {
 	AccountID   nspb.AccountID   `gorm:"column:account_id;unique_index;not null"`
 	TeamID      nspb.TeamID      `gorm:"column:team_id"`
 	IsLocked    bool             `gorm:"column:is_locked"`
-	LockedUntil *time.Time       `gorm:"column:locked_until"`
+	LockedUntil sql.NullTime     `gorm:"column:locked_until"`
 	FantasyRole nspb.FantasyRole `gorm:"column:fantasy_role"`
 	Timestamps
 

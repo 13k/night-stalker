@@ -1,12 +1,12 @@
 package models
 
 import (
-	"time"
+	"database/sql"
 
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	nstime "github.com/13k/night-stalker/internal/time"
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var LiveMatchModel Model = (*LiveMatch)(nil)
@@ -34,9 +34,9 @@ type LiveMatch struct {
 	DireTeamLogo               nspb.SteamID       `gorm:"column:dire_team_logo"`
 	DireScore                  uint32             `gorm:"column:dire_score"`
 	Delay                      uint32             `gorm:"column:delay"`
-	ActivateTime               *time.Time         `gorm:"column:activate_time"`
-	DeactivateTime             *time.Time         `gorm:"column:deactivate_time"`
-	LastUpdateTime             *time.Time         `gorm:"column:last_update_time"`
+	ActivateTime               sql.NullTime       `gorm:"column:activate_time"`
+	DeactivateTime             sql.NullTime       `gorm:"column:deactivate_time"`
+	LastUpdateTime             sql.NullTime       `gorm:"column:last_update_time"`
 	GameTime                   int32              `gorm:"column:game_time"`
 	Spectators                 uint32             `gorm:"column:spectators"`
 	SortScore                  float64            `gorm:"column:sort_score"`
@@ -75,9 +75,9 @@ func (m *LiveMatch) Equal(other *LiveMatch) bool {
 		m.DireTeamLogo == other.DireTeamLogo &&
 		m.DireScore == other.DireScore &&
 		m.Delay == other.Delay &&
-		nstime.EqualPtr(m.ActivateTime, other.ActivateTime) &&
-		nstime.EqualPtr(m.DeactivateTime, other.DeactivateTime) &&
-		nstime.EqualPtr(m.LastUpdateTime, other.LastUpdateTime) &&
+		nssql.NullTimeEqual(m.ActivateTime, other.ActivateTime) &&
+		nssql.NullTimeEqual(m.DeactivateTime, other.DeactivateTime) &&
+		nssql.NullTimeEqual(m.LastUpdateTime, other.LastUpdateTime) &&
 		m.GameTime == other.GameTime &&
 		m.Spectators == other.Spectators &&
 		m.SortScore == other.SortScore &&
@@ -107,9 +107,9 @@ func LiveMatchDotaProto(pb *protocol.CSourceTVGameSmall) *LiveMatch {
 		DireTeamName:               pb.GetTeamNameDire(),
 		DireTeamLogo:               nspb.SteamID(TruncateUint(pb.GetTeamLogoDire())),
 		DireScore:                  pb.GetDireScore(),
-		ActivateTime:               NullUnixTimestamp(int64(pb.GetActivateTime())),
-		DeactivateTime:             NullUnixTimestamp(int64(pb.GetDeactivateTime())),
-		LastUpdateTime:             NullUnixTimestampFrac(float64(pb.GetLastUpdateTime())),
+		ActivateTime:               nssql.NullTimeUnix(int64(pb.GetActivateTime())),
+		DeactivateTime:             nssql.NullTimeUnix(int64(pb.GetDeactivateTime())),
+		LastUpdateTime:             nssql.NullTimeUnix(int64(pb.GetLastUpdateTime())),
 		Delay:                      pb.GetDelay(),
 		GameTime:                   pb.GetGameTime(),
 		Spectators:                 pb.GetSpectators(),

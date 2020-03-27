@@ -1,7 +1,7 @@
 package models
 
 import (
-	"time"
+	"database/sql"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
@@ -24,7 +24,7 @@ type SteamLogin struct {
 	WebSessionID              string                 `gorm:"column:web_session_id;size:255"`
 	WebAuthToken              string                 `gorm:"column:web_auth_token;size:255"`
 	WebAuthTokenSecure        string                 `gorm:"column:web_auth_token_secure;size:255"`
-	SuspendedUntil            *time.Time             `gorm:"column:suspended_until"`
+	SuspendedUntil            sql.NullTime           `gorm:"column:suspended_until"`
 	GameVersion               uint32                 `gorm:"column:game_version"`
 	LocationCountry           string                 `gorm:"column:location_country;size:255"`
 	LocationLatitude          float32                `gorm:"column:location_latitude"`

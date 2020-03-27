@@ -1,11 +1,12 @@
 package models
 
 import (
-	"time"
+	"database/sql"
 
 	"github.com/paralin/go-dota2/protocol"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
 var PlayerProfileCardModel Model = (*PlayerProfileCard)(nil)
@@ -22,7 +23,7 @@ type PlayerProfileCard struct {
 	RankTierMMRType  uint32              `gorm:"column:rank_tier_mmr_type"`
 	PreviousRankTier uint32              `gorm:"column:previous_rank_tier"`
 	IsPlusSubscriber bool                `gorm:"column:is_plus_subscriber"`
-	PlusStartAt      *time.Time          `gorm:"column:plus_start_at"`
+	PlusStartAt      sql.NullTime        `gorm:"column:plus_start_at"`
 	EventID          uint32              `gorm:"column:event_id"`
 	EventPoints      uint32              `gorm:"column:event_points"`
 	Timestamps
@@ -44,6 +45,6 @@ func PlayerProfileCardProto(pb *protocol.CMsgDOTAProfileCard) *PlayerProfileCard
 		PreviousRankTier: pb.GetPreviousRankTier(),
 		RankTierMMRType:  pb.GetRankTierMmrType(),
 		IsPlusSubscriber: pb.GetIsPlusSubscriber(),
-		PlusStartAt:      NullUnixTimestamp(int64(pb.GetPlusOriginalStartDate())),
+		PlusStartAt:      nssql.NullTimeUnix(int64(pb.GetPlusOriginalStartDate())),
 	}
 }

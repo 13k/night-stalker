@@ -1,11 +1,6 @@
 package models
 
 import (
-	"math"
-	"time"
-
-	pbt "github.com/golang/protobuf/ptypes"
-	pbts "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/lib/pq"
 )
 
@@ -20,44 +15,6 @@ func TruncateUint(i uint64) uint64 {
 	}
 
 	return i
-}
-
-// NullUnixTimestamp converts a UNIX timestamp (in seconds) to a `*time.Time`.
-//
-// Returns nil if the timestamp is zero.
-func NullUnixTimestamp(sec int64) *time.Time {
-	if sec == 0 {
-		return nil
-	}
-
-	t := time.Unix(sec, 0)
-
-	return &t
-}
-
-// NullUnixTimestamp converts a fractional UNIX timestamp (in seconds) to a `*time.Time`.
-//
-// Returns nil if the timestamp is zero.
-func NullUnixTimestampFrac(fSec float64) *time.Time {
-	if fSec == 0 {
-		return nil
-	}
-
-	sec, frac := math.Modf(fSec)
-	t := time.Unix(int64(sec), int64(frac*float64(time.Second)))
-
-	return &t
-}
-
-// NullTimestampProto converts a Time to a protobuf Timestamp.
-//
-// Returns nil with nil error if the given Time is nil.
-func NullTimestampProto(t *time.Time) (*pbts.Timestamp, error) {
-	if t == nil {
-		return nil, nil
-	}
-
-	return pbt.TimestampProto(*t)
 }
 
 // Uint32Array converts a slice of uint32 values to a `pq.Int64Array`.
