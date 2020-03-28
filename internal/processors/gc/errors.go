@@ -8,6 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nserr "github.com/13k/night-stalker/internal/errors"
 )
 
 type recvQueueTimeoutError struct {
@@ -29,29 +30,13 @@ func (*sendQueueTimeoutError) Error() string {
 }
 
 type recvError struct {
+	*nserr.Err
 	MsgType d2pb.EDOTAGCMsg
 	Packet  *gc.GCPacket
-	Err     error
-}
-
-func (*recvError) Error() string {
-	return "receive error"
-}
-
-func (err *recvError) Unwrap() error {
-	return err.Err
 }
 
 type sendError struct {
+	*nserr.Err
 	MsgType d2pb.EDOTAGCMsg
 	Message proto.Message
-	Err     error
-}
-
-func (*sendError) Error() string {
-	return "send error"
-}
-
-func (err *sendError) Unwrap() error {
-	return err.Err
 }

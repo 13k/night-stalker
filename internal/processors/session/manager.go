@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cirello.io/oversight"
@@ -161,23 +162,25 @@ func (p *Manager) loop() {
 }
 
 func (p *Manager) handleError(err error) {
-	/*
-		l := p.log
+	msg := fmt.Sprintf("%s error", processorName)
+	l := p.log
 
-		if e := (&ErrInvalidServerAddress{}); xerrors.As(err, &e) {
-			l = l.WithField("address", e.Address)
-		} else if e := (&ErrSteamLogOnFailed{}); xerrors.As(err, &e) {
-			l = l.WithField("reason", e.Reason)
-		} else if e := (&ErrDotaClientSuspended{}); xerrors.As(err, &e) {
-			l = l.WithField("until", e.Until)
-		} else if e := (&ErrDotaGCWelcomeTimeout{}); xerrors.As(err, &e) {
-			l = l.WithOFields(
-				"retry_count", e.RetryCount,
-				"retry_interval", e.RetryInterval,
-			)
-		}
+	if e := (&ErrInvalidServerAddress{}); xerrors.As(err, &e) {
+		msg = "invalid server address"
+		l = l.WithField("address", e.Address)
+	} else if e := (&nssteam.ErrLogOnFailed{}); xerrors.As(err, &e) {
+		msg = "steam logon failed"
+		l = l.WithField("reason", e.Reason)
+	} else if e := (&nsdota2.ErrClientSuspended{}); xerrors.As(err, &e) {
+		msg = "dota client suspended"
+		l = l.WithField("until", e.Until)
+	} else if e := (&nsdota2.ErrWelcomeTimeout{}); xerrors.As(err, &e) {
+		msg = "dota welcome timeout"
+		l = l.WithOFields(
+			"retry_count", e.RetryCount,
+			"retry_interval", e.RetryInterval,
+		)
+	}
 
-		l.WithError(err).Error("session manager error")
-		p.log.Errorx(err)
-	*/
+	l.WithError(err).Error(msg)
 }

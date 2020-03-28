@@ -2,6 +2,7 @@ package matchdetails
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cirello.io/oversight"
@@ -14,6 +15,7 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
+	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -212,10 +214,10 @@ func (p *Monitor) saveMatches(minMatches []*d2pb.CMsgDOTAMatchMinimal) (nscol.Ma
 
 	for i, pbMatch := range minMatches {
 		if p.ctx.Err() != nil {
-			return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+			return nil, &errMatchSave{
 				MatchID: pbMatch.GetMatchId(),
-				Err:     p.ctx.Err(),
-			})
+				Err:     nserr.Wrap("error saving match", p.ctx.Err()),
+			}
 		}
 
 		match := models.MatchDotaProto(pbMatch)
@@ -230,20 +232,20 @@ func (p *Monitor) saveMatches(minMatches []*d2pb.CMsgDOTAMatchMinimal) (nscol.Ma
 		if err := result.Error; err != nil {
 			tx.Rollback()
 
-			return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+			return nil, &errMatchSave{
 				MatchID: pbMatch.GetMatchId(),
-				Err:     err,
-			})
+				Err:     nserr.Wrap("error saving match", err),
+			}
 		}
 
 		for _, pbPlayer := range pbMatch.GetPlayers() {
 			if p.ctx.Err() != nil {
 				tx.Rollback()
 
-				return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+				return nil, &errMatchSave{
 					MatchID: pbMatch.GetMatchId(),
-					Err:     p.ctx.Err(),
-				})
+					Err:     nserr.Wrap("error saving match", p.ctx.Err()),
+				}
 			}
 
 			matchPlayer := models.MatchPlayerDotaProto(pbPlayer)
@@ -262,18 +264,18 @@ func (p *Monitor) saveMatches(minMatches []*d2pb.CMsgDOTAMatchMinimal) (nscol.Ma
 			if err := result.Error; err != nil {
 				tx.Rollback()
 
-				return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+				return nil, &errMatchSave{
 					MatchID: pbMatch.GetMatchId(),
-					Err:     err,
-				})
+					Err:     nserr.Wrap("error saving match", err),
+				}
 			}
 		}
 
 		if err := tx.Commit().Error; err != nil {
-			return nil, xerrors.Errorf("error saving match: %w", &errMatchSave{
+			return nil, &errMatchSave{
 				MatchID: pbMatch.GetMatchId(),
-				Err:     err,
-			})
+				Err:     nserr.Wrap("error saving match", err),
+			}
 		}
 
 		matches[i] = match
@@ -311,11 +313,13 @@ func (p *Monitor) busPubLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
 }
 
 func (p *Monitor) handleError(err error) {
+	msg := fmt.Sprintf("%s error", processorName)
+	l := p.log
+
 	if e := (&errMatchSave{}); xerrors.As(err, &e) {
-		p.log.WithField("match_id", e.MatchID).WithError(e.Err).Error("error saving match")
-	} else {
-		p.log.WithError(err).Error("match_details error")
+		msg = "error saving match"
+		l = l.WithField("match_id", e.MatchID)
 	}
 
-	p.log.Errorx(err)
+	l.WithError(err).Error(msg)
 }

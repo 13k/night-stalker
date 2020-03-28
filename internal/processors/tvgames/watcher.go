@@ -2,6 +2,7 @@ package tvgames
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cirello.io/oversight"
@@ -14,6 +15,7 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
+	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -195,10 +197,10 @@ func (p *Watcher) queryPage(page *queryPage) error {
 	}
 
 	if p.ctx.Err() != nil {
-		return xerrors.Errorf("error querying page: %w", &errQueryPageFailure{
+		return &errQueryPageFailure{
 			Page: page,
-			Err:  p.ctx.Err(),
-		})
+			Err:  nserr.Wrap("error querying page", p.ctx.Err()),
+		}
 	}
 
 	p.log.WithOFields(
@@ -207,10 +209,10 @@ func (p *Watcher) queryPage(page *queryPage) error {
 	).Debug("requesting tv games")
 
 	if err := p.busPubRequestTVGames(page); err != nil {
-		return xerrors.Errorf("error querying page: %w", &errQueryPageFailure{
+		return &errQueryPageFailure{
 			Page: page,
-			Err:  err,
-		})
+			Err:  nserr.Wrap("error querying page", err),
+		}
 	}
 
 	return nil
@@ -256,38 +258,38 @@ func (p *Watcher) handleResponse(page *queryPage) error {
 	inProgress, err := p.filterFinished(cleaned)
 
 	if err != nil {
-		return xerrors.Errorf("error filtering finished tv games: %w", &errHandleResponseFailure{
+		return &errHandleResponseFailure{
 			Page: page,
-			Err:  err,
-		})
+			Err:  nserr.Wrap("error filtering finished tv games", err),
+		}
 	}
 
 	liveMatches, err := p.saveGames(inProgress)
 
 	if err != nil {
-		return xerrors.Errorf("error saving tv games: %w", &errHandleResponseFailure{
+		return &errHandleResponseFailure{
 			Page: page,
-			Err:  err,
-		})
+			Err:  nserr.Wrap("error saving tv games", err),
+		}
 	}
 
 	deactivated := liveMatches.RemoveDeactivated()
 
 	if len(liveMatches) > 0 {
 		if err := p.busPubLiveMatchesAdd(liveMatches); err != nil {
-			return xerrors.Errorf("error publishing live matches change: %w", &errHandleResponseFailure{
+			return &errHandleResponseFailure{
 				Page: page,
-				Err:  err,
-			})
+				Err:  nserr.Wrap("error publishing live matches change", err),
+			}
 		}
 	}
 
 	if len(deactivated) > 0 {
 		if err := p.busPubLiveMatchesRemove(deactivated); err != nil {
-			return xerrors.Errorf("error publishing live matches change: %w", &errHandleResponseFailure{
+			return &errHandleResponseFailure{
 				Page: page,
-				Err:  err,
-			})
+				Err:  nserr.Wrap("error publishing live matches change", err),
+			}
 		}
 	}
 
@@ -315,8 +317,8 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 		}
 
 		if p.ctx.Err() != nil {
-			errSave.Err = p.ctx.Err()
-			return nil, xerrors.Errorf("error saving game: %w", errSave)
+			errSave.Err = nserr.Wrap("error saving game", p.ctx.Err())
+			return nil, errSave
 		}
 
 		tx := p.db.Begin()
@@ -329,16 +331,16 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 		if dbres.Error != nil {
 			tx.Rollback()
 
-			errSave.Err = dbres.Error
-			return nil, xerrors.Errorf("error saving game: %w", errSave)
+			errSave.Err = nserr.Wrap("error saving game", dbres.Error)
+			return nil, errSave
 		}
 
 		for _, gamePlayer := range game.GetPlayers() {
 			if p.ctx.Err() != nil {
 				tx.Rollback()
 
-				errSave.Err = p.ctx.Err()
-				return nil, xerrors.Errorf("error saving game: %w", errSave)
+				errSave.Err = nserr.Wrap("error saving game", p.ctx.Err())
+				return nil, errSave
 			}
 
 			livePlayer := models.NewLiveMatchPlayer(liveMatch, gamePlayer)
@@ -356,14 +358,14 @@ func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
 			if dbres.Error != nil {
 				tx.Rollback()
 
-				errSave.Err = dbres.Error
-				return nil, xerrors.Errorf("error saving game: %w", errSave)
+				errSave.Err = nserr.Wrap("error saving game", dbres.Error)
+				return nil, errSave
 			}
 		}
 
 		if err := tx.Commit().Error; err != nil {
-			errSave.Err = err
-			return nil, xerrors.Errorf("error saving game: %w", errSave)
+			errSave.Err = nserr.Wrap("error saving game", err)
+			return nil, errSave
 		}
 
 		liveMatches = append(liveMatches, liveMatch)
@@ -440,27 +442,33 @@ func (p *Watcher) handleError(err error) {
 		return
 	}
 
+	msg := fmt.Sprintf("%s error", processorName)
+	l := p.log
+
 	if e := (&errQueryPageFailure{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "error querying page"
+		l = l.WithOFields(
 			"index", e.Page.index,
 			"start", e.Page.start,
 			"psize", e.Page.psize,
 			"total", e.Page.total,
-		).WithError(e.Err).Error("error querying page")
+		)
 	} else if e := (&errHandleResponseFailure{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "error handling response"
+		l = l.WithOFields(
 			"index", e.Page.index,
 			"start", e.Page.start,
 			"psize", e.Page.psize,
 			"total", e.Page.total,
-		).WithError(e.Err).Error("error handling response")
+		)
 	} else if e := (&errSaveGameFailure{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "error saving tv game"
+		l = l.WithOFields(
 			"match_id", e.MatchID,
 			"server_id", e.ServerID,
 			"lobby_id", e.LobbyID,
-		).WithError(e.Err).Error("error saving tv game")
+		)
 	}
 
-	p.log.Errorx(err)
+	l.WithError(err).Error(msg)
 }

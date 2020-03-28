@@ -1,14 +1,10 @@
 package matchdetails
 
+import (
+	nserr "github.com/13k/night-stalker/internal/errors"
+)
+
 type errMatchSave struct {
+	*nserr.Err
 	MatchID uint64
-	Err     error
-}
-
-func (*errMatchSave) Error() string {
-	return "match save error"
-}
-
-func (err *errMatchSave) Unwrap() error {
-	return err.Err
 }

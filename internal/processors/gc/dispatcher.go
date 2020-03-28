@@ -2,6 +2,7 @@ package gc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cirello.io/oversight"
@@ -16,6 +17,7 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
+	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
@@ -291,11 +293,11 @@ func (p *Dispatcher) enqueueTx(sendmsg *nsbus.GCDispatcherSendMessage) error {
 
 func (p *Dispatcher) recv(msgType d2pb.EDOTAGCMsg, packet *gc.GCPacket) error {
 	if p.ctx.Err() != nil {
-		return xerrors.Errorf("error receiving message: %w", &recvError{
+		return &recvError{
 			MsgType: msgType,
 			Packet:  packet,
-			Err:     p.ctx.Err(),
-		})
+			Err:     nserr.Wrap("error receiving message", p.ctx.Err()),
+		}
 	}
 
 	incoming := NewIncomingMessage(msgType)
@@ -305,19 +307,19 @@ func (p *Dispatcher) recv(msgType d2pb.EDOTAGCMsg, packet *gc.GCPacket) error {
 	}
 
 	if err := incoming.UnmarshalPacket(packet); err != nil {
-		return xerrors.Errorf("error unmarshaling packet: %w", &recvError{
+		return &recvError{
 			MsgType: msgType,
 			Packet:  packet,
-			Err:     err,
-		})
+			Err:     nserr.Wrap("error unmarshaling packet", err),
+		}
 	}
 
 	if err := p.busPubReceivedMessage(incoming); err != nil {
-		return xerrors.Errorf("error publishing bus message: %w", &recvError{
+		return &recvError{
 			MsgType: msgType,
 			Packet:  packet,
-			Err:     err,
-		})
+			Err:     nserr.Wrap("error publishing bus message", err),
+		}
 	}
 
 	p.log.WithField("msg_type", incoming.Type).Trace("received message")
@@ -327,11 +329,11 @@ func (p *Dispatcher) recv(msgType d2pb.EDOTAGCMsg, packet *gc.GCPacket) error {
 
 func (p *Dispatcher) send(msgType d2pb.EDOTAGCMsg, message proto.Message) error {
 	if p.ctx.Err() != nil {
-		return xerrors.Errorf("error sending message: %w", &sendError{
+		return &sendError{
 			MsgType: msgType,
 			Message: message,
-			Err:     p.ctx.Err(),
-		})
+			Err:     nserr.Wrap("error sending message", p.ctx.Err()),
+		}
 	}
 
 	if !p.dota.Session.IsReady() {
@@ -358,29 +360,28 @@ func (p *Dispatcher) busPubReceivedMessage(incoming *IncomingMessage) error {
 }
 
 func (p *Dispatcher) handleError(err error) {
+	msg := fmt.Sprintf("%s error", processorName)
+	l := p.log
+
 	if e := (&recvQueueTimeoutError{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "ignored incoming packet (queue is full)"
+		l = l.WithOFields(
 			"msg_type", d2pb.EDOTAGCMsg(e.Packet.MsgType),
 			"timeout", e.Timeout,
-		).Warn("ignored incoming packet (queue is full)")
+		)
 	} else if e := (&sendQueueTimeoutError{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "ignored outgoing message (queue is full)"
+		l = l.WithOFields(
 			"msg_type", e.BusMessage.MsgType,
 			"timeout", e.Timeout,
-		).Warn("ignored outgoing message (queue is full)")
+		)
 	} else if e := (&recvError{}); xerrors.As(err, &e) {
-		p.log.
-			WithField("msg_type", e.MsgType).
-			WithError(e.Err).
-			Error("error receiving message")
+		msg = "error receiving message"
+		l = l.WithField("msg_type", e.MsgType)
 	} else if e := (&sendError{}); xerrors.As(err, &e) {
-		p.log.
-			WithField("msg_type", e.MsgType).
-			WithError(e.Err).
-			Error("error sending message")
-	} else {
-		p.log.WithError(err).Error("dispatcher error")
+		msg = "error sending message"
+		l = l.WithField("msg_type", e.MsgType)
 	}
 
-	p.log.Errorx(err)
+	l.WithError(err).Error(msg)
 }

@@ -2,6 +2,7 @@ package livematches
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cirello.io/oversight"
@@ -346,13 +347,16 @@ func (p *Collector) busPubAllMatches() error {
 }
 
 func (p *Collector) handleError(err error) {
-	if e := (&errRedisOp{}); xerrors.As(err, &e) {
-		p.log.WithField("key", e.Key).WithError(e.Err).Error("redis error")
-	} else if e := (&errRedisPubsub{}); xerrors.As(err, &e) {
-		p.log.WithField("topic", e.Topic).WithError(e.Err).Error("redis error")
-	} else {
-		p.log.WithError(err).Error("live_matches error")
+	msg := fmt.Sprintf("%s error", processorName)
+	l := p.log
+
+	if e := (&nsrds.ErrCommandFailure{}); xerrors.As(err, &e) {
+		msg = "redis command error"
+		l = l.WithField("key", e.Key)
+	} else if e := (&nsrds.ErrPubsubFailure{}); xerrors.As(err, &e) {
+		msg = "redis pubsub error"
+		l = l.WithField("topic", e.Topic)
 	}
 
-	p.log.Errorx(err)
+	l.WithError(err).Error(msg)
 }
