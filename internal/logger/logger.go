@@ -12,7 +12,6 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/xerrors"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -161,7 +160,7 @@ func (l *Logger) WithField(key string, value interface{}) *Logger {
 }
 
 func (l *Logger) WithError(err error) *Logger {
-	return l.WithField(errorKey, err.Error())
+	return l.WithField(errorKey, err)
 }
 
 func (l *Logger) Panic(msg string) {
@@ -212,12 +211,6 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 
 func (l *Logger) Errorln(args ...interface{}) {
 	l.Error(fmt.Sprintln(args...))
-}
-
-func (l *Logger) Errorx(err error) {
-	if _, ok := err.(xerrors.Formatter); ok {
-		l.Errorf("%+v", err)
-	}
 }
 
 func (l *Logger) Warn(msg string) {

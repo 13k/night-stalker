@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-logfmt/logfmt"
+	"golang.org/x/xerrors"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -189,6 +190,12 @@ func TerminalFormat() log15.Format {
 
 		if err := enc.EndRecord(); err != nil {
 			panic(err)
+		}
+
+		for _, keyval := range ctx {
+			if _, ok := keyval.(xerrors.Formatter); ok {
+				fmt.Fprintf(b, "%+v\n", keyval)
+			}
 		}
 
 		return b.Bytes()
