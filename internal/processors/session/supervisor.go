@@ -30,15 +30,7 @@ type supervisor struct {
 func newSupervisor(options supervisorOptions) *supervisor {
 	log := options.Log.WithPackage("supervisor")
 
-	steamSession := newSteamSession(steamSessionOptions{
-		Log:             options.Log,
-		Bus:             options.Bus,
-		Addr:            options.Addr,
-		Credentials:     options.Credentials,
-		MachineHash:     options.MachineHash,
-		LoginKey:        options.LoginKey,
-		ShutdownTimeout: options.ShutdownTimeout,
-	})
+	steamSession := newSteamSession((steamSessionOptions)(options))
 
 	dotaSession := newDotaSession(dotaSessionOptions{
 		Log:             options.Log,
