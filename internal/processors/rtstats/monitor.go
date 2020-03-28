@@ -21,6 +21,7 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsbussub "github.com/13k/night-stalker/internal/bus/subscribers"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
@@ -231,67 +232,44 @@ func (p *Monitor) tick() {
 	}
 }
 
-func (p *Monitor) workerFunc(w *worker) func() {
-	return func() {
-		var err error
-		var stats *models.LiveMatchStats
-
-		defer func() {
-			if v := recover(); v != nil {
-				err = xerrors.Errorf("worker panic: %w", &errWorkerPanic{
-					LiveMatch: w.liveMatch,
-					Value:     v,
-				})
-			}
-
-			if err != nil {
-				p.handleError(xerrors.Errorf("worker error: %w", err))
-			}
-		}()
-
-		stats, err = w.Run(p.ctx)
-
-		if err == nil && stats != nil {
-			p.flusher.Add(stats)
-		}
-	}
-}
-
 func (p *Monitor) enqueueWorker(liveMatch *models.LiveMatch) error {
 	if p.ctx.Err() != nil {
-		return xerrors.Errorf("error enqueuing worker: %w", &errWorkerSubmitFailure{
+		return &errWorkerSubmitFailure{
 			LiveMatch: liveMatch,
-			Err:       p.ctx.Err(),
-		})
+			Err:       nserr.Wrap("error enqueuing worker", p.ctx.Err()),
+		}
 	}
 
 	w := &worker{
-		db:         p.db,
-		api:        p.apiMatchStats,
-		activeReqs: p.activeReqs,
-		liveMatch:  liveMatch,
+		ctx:          p.ctx,
+		db:           p.db,
+		api:          p.apiMatchStats,
+		activeReqs:   p.activeReqs,
+		liveMatch:    liveMatch,
+		results:      p.flusher,
+		errorHandler: p.handleError,
 	}
 
-	err := p.workerPool.Submit(p.workerFunc(w))
+	err := p.workerPool.Submit(w.Run)
 
 	if err != nil {
-		return xerrors.Errorf("error enqueuing worker: %w", &errWorkerSubmitFailure{
+		return &errWorkerSubmitFailure{
 			LiveMatch: liveMatch,
-			Err:       err,
-		})
+			Err:       nserr.Wrap("error enqueuing worker", err),
+		}
 	}
 
 	return nil
 }
 
 func (p *Monitor) handleError(err error) {
+	// safe to ignore
 	if xerrors.Is(err, context.Canceled) {
-		// safe to ignore
 		return
 	}
 
+	// safe to ignore
 	if e := (&errInvalidResponse{}); xerrors.As(err, &e) {
-		// safe to ignore
 		return
 	}
 
@@ -304,43 +282,55 @@ func (p *Monitor) handleError(err error) {
 		return
 	}
 
-	if e := (&errWorkerSubmitFailure{}); xerrors.As(err, &e) {
+	if e := (&errInvalidResponseStatus{}); xerrors.As(err, &e) {
 		p.log.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
 			"server_id", e.LiveMatch.ServerID.ToUint64(),
-		).WithError(e.Err).Error("error submitting worker")
+			"status", e.Response.StatusCode(),
+		).Warn("server returned invalid status")
+
+		return
+	}
+
+	msg := fmt.Sprintf("%s error", processorName)
+	l := p.log
+
+	if e := (&errWorkerSubmitFailure{}); xerrors.As(err, &e) {
+		msg = "submit worker failure"
+		l = l.WithOFields(
+			"match_id", e.LiveMatch.MatchID,
+			"server_id", e.LiveMatch.ServerID.ToUint64(),
+		)
 	} else if e := (&errWorkerPanic{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "recovered worker panic"
+		l = l.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
 			"server_id", e.LiveMatch.ServerID.ToUint64(),
 			"panic", e.Value,
-		).Error("recovered worker panic")
+		)
 	} else if e := (&errRequestFailure{}); xerrors.As(err, &e) {
-		l := p.log.WithOFields(
+		msg = "request failure"
+		l = l.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
 			"server_id", e.LiveMatch.ServerID.ToUint64(),
-		).WithError(e.Err)
+		)
 
 		fpath, eErr := handleRequestFailureError(e)
 
 		if eErr != nil {
-			l.WithError(eErr).Error("error handling request failure error")
-			p.log.Errorx(eErr)
+			l.WithError(eErr).Error("error handling request failure")
 		} else if fpath != "" {
 			l = l.WithField("error_file", fpath)
 		}
-
-		l.Error("request failed")
 	} else if e := (&errStatsSaveFailure{}); xerrors.As(err, &e) {
-		p.log.WithOFields(
+		msg = "stats save failure"
+		l = l.WithOFields(
 			"match_id", e.LiveMatch.MatchID,
 			"server_id", e.LiveMatch.ServerID.ToUint64(),
-		).WithError(e.Err).Error("error saving stats")
-	} else {
-		p.log.WithError(err).Error("rtstats error")
+		)
 	}
 
-	p.log.Errorx(err)
+	l.WithError(err).Error(msg)
 }
 
 func handleRequestFailureError(reqErr *errRequestFailure) (string, error) {
