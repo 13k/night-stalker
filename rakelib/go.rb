@@ -39,7 +39,7 @@ module Go
     Shell.sh(GO_CMD, 'test', *args, **options)
   end
 
-  def self.format(path, **options)
-    Shell.sh(GOFMT_CMD, '-s', '-w', path, **options)
+  def self.fmt(path, **options)
+    Shell.sh(GOFMT_CMD, '-s', '-w', '-l', path, **options)
   end
 end

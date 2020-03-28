@@ -86,7 +86,7 @@ module AppTasks
 
   gen_task :format_go do
     anon_task do
-      Go.format(ROOT_PATH)
+      Go.fmt(ROOT_PATH)
     end
   end
 end
