@@ -20,7 +20,6 @@ func (app *App) serveLiveMatches(c echo.Context) error {
 
 	if err != nil {
 		app.log.WithError(err).Error("error fetching live match IDs from redis")
-		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
@@ -33,7 +32,6 @@ func (app *App) serveLiveMatches(c echo.Context) error {
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading LiveMatches view")
-		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,

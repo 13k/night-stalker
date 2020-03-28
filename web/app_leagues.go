@@ -30,7 +30,6 @@ func (app *App) serveLeagues(c echo.Context) error {
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading Leagues view")
-		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,

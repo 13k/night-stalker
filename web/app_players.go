@@ -33,7 +33,6 @@ func (app *App) servePlayerMatches(c echo.Context) error {
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading PlayerMatches view")
-		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,

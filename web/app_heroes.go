@@ -19,7 +19,6 @@ func (app *App) serveHeroes(c echo.Context) error {
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading Heroes view")
-		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
@@ -56,7 +55,6 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading HeroMatches view")
-		app.log.Errorx(err)
 
 		return &echo.HTTPError{
 			Code:     http.StatusInternalServerError,
