@@ -45,7 +45,7 @@ func (app *App) serveLeagues(c echo.Context) error {
 	return cc.RespondWith(http.StatusOK, view)
 }
 
-func (app *App) loadLeaguesView(leagueIDs ...nspb.LeagueID) ([]*nspb.League, error) {
+func (app *App) loadLeaguesView(leagueIDs ...nspb.LeagueID) (*nspb.Leagues, error) {
 	data, err := app.loadLeaguesData(leagueIDs...)
 
 	if err != nil {

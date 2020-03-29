@@ -70,7 +70,7 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 	return cc.RespondWith(http.StatusOK, view)
 }
 
-func (app *App) loadHeroesView() ([]*nspb.Hero, error) {
+func (app *App) loadHeroesView() (*nspb.Heroes, error) {
 	data, err := app.loadHeroesData()
 
 	if err != nil {
