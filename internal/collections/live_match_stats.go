@@ -28,8 +28,22 @@ func (s LiveMatchStats) GroupByMatchID() map[nspb.MatchID]LiveMatchStats {
 
 	m := make(map[nspb.MatchID]LiveMatchStats)
 
-	for _, ss := range s {
-		m[ss.MatchID] = append(m[ss.MatchID], ss)
+	for _, stats := range s {
+		m[stats.MatchID] = append(m[stats.MatchID], stats)
+	}
+
+	return m
+}
+
+func (s LiveMatchStats) KeyByMatchID() map[nspb.MatchID]*models.LiveMatchStats {
+	if s == nil {
+		return nil
+	}
+
+	m := make(map[nspb.MatchID]*models.LiveMatchStats)
+
+	for _, stats := range s {
+		m[stats.MatchID] = stats
 	}
 
 	return m
