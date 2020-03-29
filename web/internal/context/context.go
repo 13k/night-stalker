@@ -54,7 +54,7 @@ func (c *Context) MediaTypes() nswebmime.HTTPAcceptMediaTypes {
 }
 
 func (c *Context) ValidateMediaType() error {
-	if c.Responder() == nil {
+	if len(c.MediaTypes()) > 0 && c.Responder() == nil {
 		return echo.ErrUnsupportedMediaType
 	}
 
