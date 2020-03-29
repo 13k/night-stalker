@@ -532,6 +532,214 @@ export const ns = $root.ns = (() => {
             return League;
         })();
 
+        protocol.Leagues = (function() {
+
+            /**
+             * Properties of a Leagues.
+             * @memberof ns.protocol
+             * @interface ILeagues
+             * @property {Array.<ns.protocol.ILeague>|null} [leagues] Leagues leagues
+             */
+
+            /**
+             * Constructs a new Leagues.
+             * @memberof ns.protocol
+             * @classdesc Represents a Leagues.
+             * @implements ILeagues
+             * @constructor
+             * @param {ns.protocol.ILeagues=} [properties] Properties to set
+             */
+            function Leagues(properties) {
+                this.leagues = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Leagues leagues.
+             * @member {Array.<ns.protocol.ILeague>} leagues
+             * @memberof ns.protocol.Leagues
+             * @instance
+             */
+            Leagues.prototype.leagues = $util.emptyArray;
+
+            /**
+             * Creates a new Leagues instance using the specified properties.
+             * @function create
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {ns.protocol.ILeagues=} [properties] Properties to set
+             * @returns {ns.protocol.Leagues} Leagues instance
+             */
+            Leagues.create = function create(properties) {
+                return new Leagues(properties);
+            };
+
+            /**
+             * Encodes the specified Leagues message. Does not implicitly {@link ns.protocol.Leagues.verify|verify} messages.
+             * @function encode
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {ns.protocol.ILeagues} message Leagues message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Leagues.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.leagues != null && message.leagues.length)
+                    for (let i = 0; i < message.leagues.length; ++i)
+                        $root.ns.protocol.League.encode(message.leagues[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Leagues message, length delimited. Does not implicitly {@link ns.protocol.Leagues.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {ns.protocol.ILeagues} message Leagues message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Leagues.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Leagues message from the specified reader or buffer.
+             * @function decode
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {ns.protocol.Leagues} Leagues
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Leagues.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ns.protocol.Leagues();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 100:
+                        if (!(message.leagues && message.leagues.length))
+                            message.leagues = [];
+                        message.leagues.push($root.ns.protocol.League.decode(reader, reader.uint32()));
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Leagues message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {ns.protocol.Leagues} Leagues
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Leagues.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Leagues message.
+             * @function verify
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Leagues.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.leagues != null && message.hasOwnProperty("leagues")) {
+                    if (!Array.isArray(message.leagues))
+                        return "leagues: array expected";
+                    for (let i = 0; i < message.leagues.length; ++i) {
+                        let error = $root.ns.protocol.League.verify(message.leagues[i]);
+                        if (error)
+                            return "leagues." + error;
+                    }
+                }
+                return null;
+            };
+
+            /**
+             * Creates a Leagues message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {ns.protocol.Leagues} Leagues
+             */
+            Leagues.fromObject = function fromObject(object) {
+                if (object instanceof $root.ns.protocol.Leagues)
+                    return object;
+                let message = new $root.ns.protocol.Leagues();
+                if (object.leagues) {
+                    if (!Array.isArray(object.leagues))
+                        throw TypeError(".ns.protocol.Leagues.leagues: array expected");
+                    message.leagues = [];
+                    for (let i = 0; i < object.leagues.length; ++i) {
+                        if (typeof object.leagues[i] !== "object")
+                            throw TypeError(".ns.protocol.Leagues.leagues: object expected");
+                        message.leagues[i] = $root.ns.protocol.League.fromObject(object.leagues[i]);
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Leagues message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof ns.protocol.Leagues
+             * @static
+             * @param {ns.protocol.Leagues} message Leagues
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Leagues.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.leagues = [];
+                if (message.leagues && message.leagues.length) {
+                    object.leagues = [];
+                    for (let j = 0; j < message.leagues.length; ++j)
+                        object.leagues[j] = $root.ns.protocol.League.toObject(message.leagues[j], options);
+                }
+                return object;
+            };
+
+            /**
+             * Converts this Leagues to JSON.
+             * @function toJSON
+             * @memberof ns.protocol.Leagues
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Leagues.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Leagues;
+        })();
+
         protocol.LiveMatch = (function() {
 
             /**
@@ -5690,6 +5898,214 @@ export const ns = $root.ns = (() => {
             };
 
             return Hero;
+        })();
+
+        protocol.Heroes = (function() {
+
+            /**
+             * Properties of a Heroes.
+             * @memberof ns.protocol
+             * @interface IHeroes
+             * @property {Array.<ns.protocol.IHero>|null} [heroes] Heroes heroes
+             */
+
+            /**
+             * Constructs a new Heroes.
+             * @memberof ns.protocol
+             * @classdesc Represents a Heroes.
+             * @implements IHeroes
+             * @constructor
+             * @param {ns.protocol.IHeroes=} [properties] Properties to set
+             */
+            function Heroes(properties) {
+                this.heroes = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Heroes heroes.
+             * @member {Array.<ns.protocol.IHero>} heroes
+             * @memberof ns.protocol.Heroes
+             * @instance
+             */
+            Heroes.prototype.heroes = $util.emptyArray;
+
+            /**
+             * Creates a new Heroes instance using the specified properties.
+             * @function create
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {ns.protocol.IHeroes=} [properties] Properties to set
+             * @returns {ns.protocol.Heroes} Heroes instance
+             */
+            Heroes.create = function create(properties) {
+                return new Heroes(properties);
+            };
+
+            /**
+             * Encodes the specified Heroes message. Does not implicitly {@link ns.protocol.Heroes.verify|verify} messages.
+             * @function encode
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {ns.protocol.IHeroes} message Heroes message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Heroes.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.heroes != null && message.heroes.length)
+                    for (let i = 0; i < message.heroes.length; ++i)
+                        $root.ns.protocol.Hero.encode(message.heroes[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Heroes message, length delimited. Does not implicitly {@link ns.protocol.Heroes.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {ns.protocol.IHeroes} message Heroes message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Heroes.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Heroes message from the specified reader or buffer.
+             * @function decode
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {ns.protocol.Heroes} Heroes
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Heroes.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ns.protocol.Heroes();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 100:
+                        if (!(message.heroes && message.heroes.length))
+                            message.heroes = [];
+                        message.heroes.push($root.ns.protocol.Hero.decode(reader, reader.uint32()));
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Heroes message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {ns.protocol.Heroes} Heroes
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Heroes.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Heroes message.
+             * @function verify
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Heroes.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.heroes != null && message.hasOwnProperty("heroes")) {
+                    if (!Array.isArray(message.heroes))
+                        return "heroes: array expected";
+                    for (let i = 0; i < message.heroes.length; ++i) {
+                        let error = $root.ns.protocol.Hero.verify(message.heroes[i]);
+                        if (error)
+                            return "heroes." + error;
+                    }
+                }
+                return null;
+            };
+
+            /**
+             * Creates a Heroes message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {ns.protocol.Heroes} Heroes
+             */
+            Heroes.fromObject = function fromObject(object) {
+                if (object instanceof $root.ns.protocol.Heroes)
+                    return object;
+                let message = new $root.ns.protocol.Heroes();
+                if (object.heroes) {
+                    if (!Array.isArray(object.heroes))
+                        throw TypeError(".ns.protocol.Heroes.heroes: array expected");
+                    message.heroes = [];
+                    for (let i = 0; i < object.heroes.length; ++i) {
+                        if (typeof object.heroes[i] !== "object")
+                            throw TypeError(".ns.protocol.Heroes.heroes: object expected");
+                        message.heroes[i] = $root.ns.protocol.Hero.fromObject(object.heroes[i]);
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Heroes message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof ns.protocol.Heroes
+             * @static
+             * @param {ns.protocol.Heroes} message Heroes
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Heroes.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.heroes = [];
+                if (message.heroes && message.heroes.length) {
+                    object.heroes = [];
+                    for (let j = 0; j < message.heroes.length; ++j)
+                        object.heroes[j] = $root.ns.protocol.Hero.toObject(message.heroes[j], options);
+                }
+                return object;
+            };
+
+            /**
+             * Converts this Heroes to JSON.
+             * @function toJSON
+             * @memberof ns.protocol.Heroes
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Heroes.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Heroes;
         })();
 
         protocol.HeroMatches = (function() {
