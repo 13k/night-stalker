@@ -37,24 +37,3 @@ func NewLeague(league *models.League) (*nspb.League, error) {
 
 	return pb, nil
 }
-
-func NewLeagues(leagues []*models.League) ([]*nspb.League, error) {
-	if len(leagues) == 0 {
-		return nil, nil
-	}
-
-	views := make([]*nspb.League, len(leagues))
-
-	var err error
-
-	for i, league := range leagues {
-		views[i], err = NewLeague(league)
-
-		if err != nil {
-			err = xerrors.Errorf("error creating League view: %w", err)
-			return nil, err
-		}
-	}
-
-	return views, nil
-}

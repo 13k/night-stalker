@@ -8,18 +8,18 @@ import (
 )
 
 func NewLiveMatches(
-	matches []*models.LiveMatch,
+	liveMatches []*models.LiveMatch,
 	stats map[nspb.MatchID]*models.LiveMatchStats,
 	followed map[nspb.AccountID]*models.FollowedPlayer,
 	players map[nspb.AccountID]*models.Player,
 	proPlayers map[nspb.AccountID]*models.ProPlayer,
 ) (*nspb.LiveMatches, error) {
-	pbMatches := make([]*nspb.LiveMatch, len(matches))
+	pbLiveMatches := make([]*nspb.LiveMatch, len(liveMatches))
 
-	for i, match := range matches {
-		pbMatch, err := NewLiveMatch(
-			match,
-			stats[match.MatchID],
+	for i, liveMatch := range liveMatches {
+		pbLiveMatch, err := NewLiveMatch(
+			liveMatch,
+			stats[liveMatch.MatchID],
 			followed,
 			players,
 			proPlayers,
@@ -30,11 +30,11 @@ func NewLiveMatches(
 			return nil, err
 		}
 
-		pbMatches[i] = pbMatch
+		pbLiveMatches[i] = pbLiveMatch
 	}
 
 	view := &nspb.LiveMatches{
-		Matches: pbMatches,
+		Matches: pbLiveMatches,
 	}
 
 	return view, nil
