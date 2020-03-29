@@ -5,6 +5,11 @@ import { transformMatchHistory } from "./match_common";
 
 export const transformHero = hero => hero;
 
+export function transformHeroes(heroes) {
+  _.each(heroes.heroes, transformHero);
+  return heroes;
+}
+
 export function transformHeroMatches(heroMatches, state) {
   transformHero(heroMatches.hero);
   transformMatchHistory(heroMatches, state);

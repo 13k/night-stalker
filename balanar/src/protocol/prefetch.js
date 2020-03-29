@@ -17,8 +17,8 @@ export function prefetchMatchesLeagues(matches) {
   }
 
   return fetchLeagues(leagueIds)
-    .then(leagues => {
-      const leaguesById = _.keyBy(leagues, "id");
+    .then(msg => {
+      const leaguesById = _.keyBy(msg.leagues, "id");
 
       _.each(matches, match => {
         set(match, "league", leaguesById[match.league_id]);

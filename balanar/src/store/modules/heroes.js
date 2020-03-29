@@ -16,9 +16,9 @@ const actions = {
   fetch({ commit }) {
     log.debug("<fetch>");
 
-    fetchHeroes().then(heroes => {
-      log.debug("<fetch> received response", heroes);
-      commit("setHeroes", heroes || []);
+    fetchHeroes().then(msg => {
+      log.debug("<fetch> received response", msg);
+      commit("setHeroes", msg.heroes);
     });
   },
 };

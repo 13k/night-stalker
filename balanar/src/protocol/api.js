@@ -1,97 +1,48 @@
-import _ from "lodash";
-
 import api from "@/api";
 import pb from "@/protocol/proto";
 import * as $t from "@/protocol/transform";
+import { decode } from "@/protocol/decode";
 import { prefetchMatchesLeagues } from "@/protocol/prefetch";
-import { preprocessMatches, preprocessLeagues } from "@/protocol/preprocess";
 
 const {
   ns: {
-    protocol: { Hero, League, LiveMatches, PlayerMatches, HeroMatches, Search },
+    protocol: { Heroes, Leagues, LiveMatches, PlayerMatches, HeroMatches, Search },
   },
 } = pb;
 
-export function fetchHeroes() {
-  return api.heroes().then(res => {
-    if (!_.isArray(res)) {
-      throw new TypeError("received non-array response", res);
-    }
+export const fetchHeroes = () =>
+  api
+    .heroes()
+    .then(res => decode(Heroes, res))
+    .then($t.transformHeroes);
 
-    return res.map(attrs => $t.transformHero(Hero.fromObject(attrs)));
-  });
-}
+export const fetchLeagues = id =>
+  api
+    .leagues(id)
+    .then(res => decode(Leagues, res))
+    .then($t.transformLeagues);
 
-export function fetchLeagues(id) {
-  return api.leagues(id).then(res => {
-    if (!_.isArray(res)) {
-      throw new TypeError("received non-array response", res);
-    }
+export const fetchLiveMatches = state =>
+  api
+    .liveMatches()
+    .then(res => decode(LiveMatches, res))
+    .then(msg => $t.transformLiveMatches(msg, state))
+    .then(msg => prefetchMatchesLeagues(msg.matches).then(() => msg));
 
-    preprocessLeagues(res);
+export const fetchPlayerMatches = (state, accountId) =>
+  api
+    .playerMatches(accountId)
+    .then(res => decode(PlayerMatches, res))
+    .then(msg => $t.transformPlayerMatches(msg, state));
 
-    return res.map(attrs => $t.transformLeague(League.fromObject(attrs)));
-  });
-}
+export const fetchHeroMatches = (state, heroId) =>
+  api
+    .heroMatches(heroId)
+    .then(res => decode(HeroMatches, res))
+    .then(msg => $t.transformHeroMatches(msg, state));
 
-export function fetchLiveMatches(state) {
-  return api.liveMatches().then(res => {
-    if (!_.isPlainObject(res)) {
-      throw new TypeError("received non-object response", res);
-    }
-
-    preprocessMatches(res.matches);
-
-    const liveMatches = LiveMatches.fromObject(res);
-
-    $t.transformLiveMatches(liveMatches, state);
-
-    return prefetchMatchesLeagues(liveMatches.matches).then(() => liveMatches);
-  });
-}
-
-export function fetchPlayerMatches(state, accountId) {
-  return api.playerMatches(accountId).then(res => {
-    if (!_.isPlainObject(res)) {
-      throw new TypeError("received non-object response", res);
-    }
-
-    preprocessMatches(res.matches);
-
-    const playerMatches = PlayerMatches.fromObject(res);
-
-    $t.transformPlayerMatches(playerMatches, state);
-
-    return playerMatches;
-  });
-}
-
-export function fetchHeroMatches(state, heroId) {
-  return api.heroMatches(heroId).then(res => {
-    if (!_.isPlainObject(res)) {
-      throw new TypeError("received non-object response", res);
-    }
-
-    preprocessMatches(res.matches);
-
-    const heroMatches = HeroMatches.fromObject(res);
-
-    $t.transformHeroMatches(heroMatches, state);
-
-    return heroMatches;
-  });
-}
-
-export function search(state, query) {
-  return api.search(query).then(res => {
-    if (!_.isPlainObject(res)) {
-      throw new TypeError("received non-object response", res);
-    }
-
-    const search = Search.fromObject(res);
-
-    $t.transformSearch(search, state);
-
-    return search;
-  });
-}
+export const search = (state, query) =>
+  api
+    .search(query)
+    .then(res => decode(Search, res))
+    .then(msg => $t.transformSearch(msg, state));

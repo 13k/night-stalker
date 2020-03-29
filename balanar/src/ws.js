@@ -11,13 +11,18 @@ const STATE_CLOSED = 3; // The connection is closed or couldn't be opened.
 const log = Vue.log({ context: { location: "ws" } });
 
 class WSEvent extends Event {
-  constructor(name, data) {
+  constructor(name, payload) {
     super(name);
-    _.assign(this, data || {});
+    _.assign(this, payload || {});
   }
 }
 
-class WSError extends Error {}
+class WSError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "WSError";
+  }
+}
 
 export default class WS extends EventTarget {
   constructor(url) {
@@ -57,7 +62,7 @@ export default class WS extends EventTarget {
       throw WSError("websocket not ready");
     }
 
-    this.socket.send(JSON.stringify(data));
+    this.socket.send(data);
   }
 
   _onopen(ev) {
@@ -77,8 +82,8 @@ export default class WS extends EventTarget {
   }
 
   _onmessage(ev) {
-    log.debug("message");
-    const body = JSON.parse(ev.data || "null");
-    this.dispatchEvent(new WSEvent("message", { ev, body }));
+    log.debug("message", ev);
+    const payload = { ev, data: ev.data, binaryType: this.socket.binaryType };
+    this.dispatchEvent(new WSEvent("message", payload));
   }
 }

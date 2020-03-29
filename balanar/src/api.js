@@ -33,6 +33,16 @@ const ROUTES = {
   },
 };
 
+const MEDIA_TYPES = {
+  json: "application/json",
+  protobuf: "application/protobuf",
+};
+
+const RESPONSE_BODY_METHODS = {
+  json: "json",
+  protobuf: "arrayBuffer",
+};
+
 const debugResponse = (request, _options, response) => {
   log.debug(request.method, request.url, "->", response.status, response.statusText);
 };
@@ -52,17 +62,22 @@ class API {
     });
   }
 
-  request(method, route, options) {
+  request(method, route, { type = "protobuf", ...options } = {}) {
+    if (!_.has(MEDIA_TYPES, type)) {
+      throw new TypeError(`invalid resource type '${type}'`);
+    }
+
+    const headers = { accept: MEDIA_TYPES[type] };
+    const bodyMethod = RESPONSE_BODY_METHODS[type];
     const routeParams = _.get(route, "params", {});
     const toPath = _.get(ROUTES, route.name);
     const path = toPath(routeParams);
+    const res = this.client(path, { method, headers, ...options });
 
-    options = { method, ...options };
-
-    return this.client(path, options).json();
+    return res[bodyMethod].call(res);
   }
 
-  get(route, options) {
+  get(route, options = {}) {
     return this.request("get", route, options);
   }
 

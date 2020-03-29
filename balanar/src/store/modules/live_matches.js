@@ -18,12 +18,12 @@ const actions = {
     log.debug("<watch>", rootState.ws);
 
     rootState.ws.addEventListener("message", ev => {
-      handleLiveMatchesChange(rootState, ev).then(liveMatchesChange => {
-        log.debug("<watch:message>", liveMatchesChange);
+      handleLiveMatchesChange(rootState, ev).then(msg => {
+        log.debug("<watch:message>", msg);
 
         let mutation;
 
-        switch (liveMatchesChange.op) {
+        switch (msg.op) {
           case pb.ns.protocol.CollectionOp.COLLECTION_OP_REPLACE:
             mutation = "setLiveMatches";
             break;
@@ -37,11 +37,11 @@ const actions = {
             mutation = "removeLiveMatches";
             break;
           default:
-            log.error("<watch:message> unknown LiveMatchesChange.op:", liveMatchesChange.op);
+            log.error("<watch:message> unknown LiveMatchesChange.op:", msg.op);
             break;
         }
 
-        commit(mutation, liveMatchesChange.change);
+        commit(mutation, msg.change);
       });
     });
   },
@@ -49,9 +49,9 @@ const actions = {
   fetch({ commit, rootState }) {
     log.debug("<fetch>");
 
-    fetchLiveMatches(rootState).then(liveMatches => {
-      log.debug("<fetch:response>", liveMatches);
-      commit("setLiveMatches", liveMatches);
+    fetchLiveMatches(rootState).then(msg => {
+      log.debug("<fetch:response>", msg);
+      commit("setLiveMatches", msg);
     });
   },
 };

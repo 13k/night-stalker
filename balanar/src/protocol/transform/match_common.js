@@ -1,11 +1,19 @@
 import _ from "lodash";
 
 import pb from "@/protocol/proto";
-import { MATCH_TIMESTAMP_FIELDS } from "@/protocol/preprocess";
 
 import { set } from "./object";
 import { transformMatch } from "./match";
 import { transformPlayer } from "./player";
+
+export const MATCH_TIMESTAMP_FIELDS = [
+  "activate_time",
+  "deactivate_time",
+  "last_update_time",
+  "start_time",
+  "created_at",
+  "updated_at",
+];
 
 export function transformMatchTimestamps(match) {
   _.each(MATCH_TIMESTAMP_FIELDS, field => {
