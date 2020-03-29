@@ -18,3 +18,7 @@ message League {
   google.protobuf.Timestamp start_at = 8;
   google.protobuf.Timestamp finish_at = 9;
 }
+
+message Leagues {
+  repeated ns.protocol.League leagues = 100;
+}

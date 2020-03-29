@@ -22,6 +22,10 @@ message Hero {
   ns.protocol.DotaUnitCap attack_capabilities = 11;
 }
 
+message Heroes {
+  repeated ns.protocol.Hero heroes = 100;
+}
+
 message HeroMatches {
   ns.protocol.Hero hero = 100;
   repeated ns.protocol.Match matches = 101;
