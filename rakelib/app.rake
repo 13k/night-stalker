@@ -3,9 +3,12 @@
 require_relative 'app_tasks'
 
 namespace :app do
-  namespace :install do
+  namespace :go do
     desc 'Install app tools'
-    task tools: AppTasks[:install_tools]
+    task tools: AppTasks[:go_tools]
+
+    desc 'Update direct dependencies'
+    task deps: AppTasks[:go_deps]
   end
 
   desc 'Run app linters'

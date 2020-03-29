@@ -78,6 +78,12 @@ module Tasks
     end
   end
 
+  def get_go_pkg(pkg)
+    anon_task do
+      Go.get_pkg(pkg, chdir: ROOT_PATH)
+    end
+  end
+
   def compile_go_command(input, output, *args, **options)
     task output do
       input_arg = input.absolute? ? input.relative_path_from(ROOT_PATH) : input

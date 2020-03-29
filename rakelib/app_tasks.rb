@@ -7,14 +7,21 @@ require_relative 'paths'
 require_relative 'proto'
 require_relative 'shell'
 require_relative 'tasks'
-require_relative 'tools'
 
 module AppTasks
   include Paths
   extend Tasks
 
-  gen_task :install_tools do
-    anon_task(*Tools.specs.map { |spec| install_go_tool(**spec) })
+  gen_task :go_tools do
+    anon_task(*Go::Tools.specs.map { |spec| install_go_tool(**spec) })
+  end
+
+  gen_task :go_deps do
+    anon_task do
+      Go::Deps.list(direct: true, update: true).each do |pkg|
+        Go.get_pkg(pkg.fetch('Path'), chdir: ROOT_PATH)
+      end
+    end
   end
 
   gen_task :build_proto do

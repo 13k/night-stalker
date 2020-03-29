@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require 'json'
+
 require_relative 'paths'
 require_relative 'shell'
+require_relative 'go/deps'
+require_relative 'go/tools'
 
 module Go
   include Paths
@@ -19,9 +23,10 @@ module Go
     Shell.capture(GO_CMD, 'list', '-m', chdir: path)
   end
 
-  def self.instrospect_pkg(pkg, *args)
-    json = Shell.capture(GO_CMD, 'list', '-json', *args, pkg)
-    JSON.parse(json)
+  def self.list(*args, json: false, json_parse: false, **options)
+    args = ['-json', *args] if json
+    out = Shell.capture(GO_CMD, 'list', *args, **options)
+    json_parse ? JSON.parse(out) : out
   end
 
   def self.install_pkg(pkg, *args, output_path: nil, **options)
@@ -29,6 +34,10 @@ module Go
     options[:env][:GOBIN] = output_path if output_path
 
     Shell.run(GO_CMD, 'install', pkg, *args, **options)
+  end
+
+  def self.get_pkg(pkg, *args, **options)
+    Shell.run(GO_CMD, 'get', *args, pkg, **options)
   end
 
   def self.build_pkg(pkg, *args, **options)
