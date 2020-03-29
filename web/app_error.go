@@ -10,9 +10,7 @@ import (
 )
 
 func (app *App) handleError(err error, c echo.Context) {
-	cc := c.(*nswebctx.Context)
-
-	if cc.Response().Committed {
+	if c.Response().Committed {
 		app.log.Warn("response already committed")
 		return
 	}
@@ -30,9 +28,9 @@ func (app *App) handleError(err error, c echo.Context) {
 		}
 	}
 
-	if cc.Request().Method == http.MethodHead {
-		err = cc.NoContent(he.Code)
-	} else {
+	if c.Request().Method == http.MethodHead {
+		err = c.NoContent(he.Code)
+	} else if cc, ok := c.(*nswebctx.Context); ok {
 		useResponder := cc.Responder() != nil
 
 		if useResponder {
