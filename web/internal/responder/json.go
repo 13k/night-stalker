@@ -8,6 +8,10 @@ import (
 	nswebmime "github.com/13k/night-stalker/web/internal/mime"
 )
 
+func init() {
+	Register(JSON(), 0)
+}
+
 func JSON() Responder {
 	return NewResponder(nswebmime.MediaTypeJSON, encodeJSON)
 }
