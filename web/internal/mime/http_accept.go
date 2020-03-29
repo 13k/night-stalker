@@ -45,7 +45,7 @@ func ParseHTTPAcceptMediaTypes(s string) HTTPAcceptMediaTypes {
 	mediaTypes := make([]*HTTPAcceptMediaType, 0, len(types))
 
 	for _, t := range types {
-		if mt, err := ParseMediaType(t); err == nil {
+		if mt, err := ParseMediaType(t); err == nil && mt != nil {
 			if acceptMT, err := NewHTTPAcceptMediaType(mt); err == nil {
 				mediaTypes = append(mediaTypes, acceptMT)
 			}
