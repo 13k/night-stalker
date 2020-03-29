@@ -1,8 +1,7 @@
 package responder
 
 import (
-	"encoding/json"
-
+	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/protobuf/proto"
 
 	nsjson "github.com/13k/night-stalker/internal/json"
@@ -14,13 +13,9 @@ func JSON() Responder {
 }
 
 func encodeJSON(v interface{}) ([]byte, error) {
-	switch body := v.(type) {
-	case proto.Message:
-		return nsjson.ProtoMarshal(body)
-	// case []proto.Message:
-	// 	return nsjson.ProtoMarshal(body)
-	default:
-		// TODO: use a fast encoder
-		return json.Marshal(body)
+	if msg, ok := v.(proto.Message); ok {
+		return nsjson.ProtoMarshal(msg)
 	}
+
+	return jsoniter.Marshal(v)
 }
