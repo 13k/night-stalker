@@ -7,6 +7,7 @@ require (
 	github.com/13k/geyser v0.2.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/go-units v0.4.0
+	github.com/doug-martin/goqu/v9 v9.8.0
 	github.com/faceit/go-steam v0.0.0-20190206021251-2be7df6980e1
 	github.com/fatih/color v1.9.0
 	github.com/galaco/KeyValues v1.4.1
