@@ -34,6 +34,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
+	golang.org/x/tools v0.0.0-20200318054722-11a475a590ac
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 	google.golang.org/protobuf v1.20.1
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20200109203555-b30bc20e4fd1
