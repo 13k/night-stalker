@@ -7,59 +7,58 @@ import (
 	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
-var LiveMatchStatsPlayerModel Model = (*LiveMatchStatsPlayer)(nil)
-
-type LiveMatchStatsPlayerID uint64
+var LiveMatchStatsPlayerTable = NewTable("live_match_stats_players")
 
 type LiveMatchStatsPlayer struct {
-	ID               LiveMatchStatsPlayerID `gorm:"column:id;primary_key"`
-	LiveMatchStatsID LiveMatchStatsID       `gorm:"column:live_match_stats_id;unique_index:uix_live_match_stats_players_live_match_stats_id_account_id;not null"` //nolint: lll
-	MatchID          nspb.MatchID           `gorm:"column:match_id;index;not null"`                                                                               //nolint: lll
-	AccountID        nspb.AccountID         `gorm:"column:account_id;unique_index:uix_live_match_stats_players_live_match_stats_id_account_id;not null"`          //nolint: lll
-	PlayerSlot       nspb.GamePlayerSlot    `gorm:"column:player_slot"`
-	Name             string                 `gorm:"column:name;size:255"`
-	GameTeam         nspb.GameTeam          `gorm:"column:game_team"`
-	HeroID           nspb.HeroID            `gorm:"column:hero_id"`
-	Level            uint32                 `gorm:"column:level"`
-	Kills            uint32                 `gorm:"column:kills"`
-	Deaths           uint32                 `gorm:"column:deaths"`
-	Assists          uint32                 `gorm:"column:assists"`
-	Denies           uint32                 `gorm:"column:denies"`
-	LastHits         uint32                 `gorm:"column:last_hits"`
-	Gold             uint32                 `gorm:"column:gold"`
-	NetWorth         uint32                 `gorm:"column:net_worth"`
-	PosX             float32                `gorm:"column:pos_x"`
-	PosY             float32                `gorm:"column:pos_y"`
-	Abilities        nssql.AbilityIDs       `gorm:"column:abilities"`
-	Items            nssql.ItemIDs          `gorm:"column:items"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	AccountID  nspb.AccountID      `db:"account_id"`
+	PlayerSlot nspb.GamePlayerSlot `db:"player_slot"`
+	Name       string              `db:"name"`
+	GameTeam   nspb.GameTeam       `db:"game_team"`
+	Level      uint32              `db:"level"`
+	Kills      uint32              `db:"kills"`
+	Deaths     uint32              `db:"deaths"`
+	Assists    uint32              `db:"assists"`
+	Denies     uint32              `db:"denies"`
+	LastHits   uint32              `db:"last_hits"`
+	Gold       uint32              `db:"gold"`
+	NetWorth   uint32              `db:"net_worth"`
+	PosX       float32             `db:"pos_x"`
+	PosY       float32             `db:"pos_y"`
+	Abilities  nssql.AbilityIDs    `db:"abilities"`
+	Items      nssql.ItemIDs       `db:"items"`
+
+	LiveMatchStatsID ID `db:"live_match_stats_id"`
+	MatchID          ID `db:"match_id"`
+	HeroID           ID `db:"hero_id"`
+
 	Timestamps
+	SoftDelete
 
-	LiveMatchStats *LiveMatchStats
-	Match          *Match
-	Hero           *Hero
+	LiveMatchStats *LiveMatchStats `db:"-" model:"belongs_to"`
+	Match          *Match          `db:"-" model:"belongs_to"`
+	Hero           *Hero           `db:"-" model:"belongs_to"`
 }
 
-func (*LiveMatchStatsPlayer) TableName() string {
-	return "live_match_stats_players"
-}
-
-func NewLiveMatchStatsPlayer(
+func NewLiveMatchStatsPlayerAssocProto(
 	liveMatchStats *LiveMatchStats,
 	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_PlayerDetails,
 ) *LiveMatchStatsPlayer {
-	p := LiveMatchStatsPlayerDotaProto(pb)
-	p.LiveMatchStatsID = liveMatchStats.ID
-	p.MatchID = liveMatchStats.MatchID
-	return p
+	m := NewLiveMatchStatsPlayerProto(pb)
+	m.LiveMatchStats = liveMatchStats
+	m.LiveMatchStatsID = liveMatchStats.ID
+	m.MatchID = liveMatchStats.MatchID
+	return m
 }
 
-func LiveMatchStatsPlayerDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
+func NewLiveMatchStatsPlayerProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse_PlayerDetails) *LiveMatchStatsPlayer {
 	return &LiveMatchStatsPlayer{
 		AccountID:  nspb.AccountID(pb.GetAccountid()),
 		PlayerSlot: nspb.GamePlayerIndex(pb.GetPlayerid()).GamePlayerSlot(),
 		Name:       pb.GetName(),
 		GameTeam:   nspb.GameTeam(pb.GetTeam()),
-		HeroID:     nspb.HeroID(pb.GetHeroid()),
+		HeroID:     ID(pb.GetHeroid()),
 		Level:      pb.GetLevel(),
 		Kills:      pb.GetKillCount(),
 		Deaths:     pb.GetDeathCount(),
@@ -71,6 +70,6 @@ func LiveMatchStatsPlayerDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse_Playe
 		PosY:       pb.GetY(),
 		NetWorth:   pb.GetNetWorth(),
 		Abilities:  nssql.NewAbilityIDs(pb.GetAbilities()),
-		Items:      nssql.NewItemIDsFromUint32s(pb.GetItems()),
+		Items:      nssql.NewItemIDs(pb.GetItems()),
 	}
 }

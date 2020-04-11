@@ -4,25 +4,21 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-var PlayerModel Model = (*Player)(nil)
+var PlayerTable = NewTable("players")
 
-type PlayerID uint64
-
-// Player ...
 type Player struct {
-	ID              PlayerID       `gorm:"column:id;primary_key"`
-	AccountID       nspb.AccountID `gorm:"column:account_id;unique_index;not null"`
-	SteamID         nspb.SteamID   `gorm:"column:steam_id"`
-	Name            string         `gorm:"column:name"`
-	PersonaName     string         `gorm:"column:persona_name"`
-	AvatarURL       string         `gorm:"column:avatar_url"`
-	AvatarMediumURL string         `gorm:"column:avatar_medium_url"`
-	AvatarFullURL   string         `gorm:"column:avatar_full_url"`
-	ProfileURL      string         `gorm:"column:profile_url"`
-	CountryCode     string         `gorm:"column:country_code"`
-	Timestamps
-}
+	ID `db:"id" goqu:"defaultifempty"`
 
-func (*Player) TableName() string {
-	return "players"
+	AccountID       nspb.AccountID `db:"account_id"`
+	SteamID         nspb.SteamID   `db:"steam_id"`
+	Name            string         `db:"name"`
+	PersonaName     string         `db:"persona_name"`
+	AvatarURL       string         `db:"avatar_url"`
+	AvatarMediumURL string         `db:"avatar_medium_url"`
+	AvatarFullURL   string         `db:"avatar_full_url"`
+	ProfileURL      string         `db:"profile_url"`
+	CountryCode     string         `db:"country_code"`
+
+	Timestamps
+	SoftDelete
 }

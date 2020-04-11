@@ -6,32 +6,39 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-var LiveMatchStatsBuildingModel Model = (*LiveMatchStatsBuilding)(nil)
+var LiveMatchStatsBuildingTable = NewTable("live_match_stats_buildings")
 
-type LiveMatchStatsBuildingID uint64
-
-// LiveMatchStatsBuilding ...
 type LiveMatchStatsBuilding struct {
-	ID               LiveMatchStatsBuildingID `gorm:"column:id;primary_key"`
-	LiveMatchStatsID LiveMatchStatsID         `gorm:"column:live_match_stats_id"`
-	GameTeam         nspb.GameTeam            `gorm:"column:game_team"`
-	Heading          float32                  `gorm:"column:heading"`
-	Type             nspb.BuildingType        `gorm:"column:type"`
-	Lane             nspb.LaneType            `gorm:"column:lane"`
-	Tier             uint32                   `gorm:"column:tier"`
-	PosX             float32                  `gorm:"column:pos_x"`
-	PosY             float32                  `gorm:"column:pos_y"`
-	Destroyed        bool                     `gorm:"column:destroyed"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	GameTeam  nspb.GameTeam     `db:"game_team"`
+	Heading   float32           `db:"heading"`
+	Type      nspb.BuildingType `db:"type"`
+	Lane      nspb.LaneType     `db:"lane"`
+	Tier      uint32            `db:"tier"`
+	PosX      float32           `db:"pos_x"`
+	PosY      float32           `db:"pos_y"`
+	Destroyed bool              `db:"destroyed"`
+
+	LiveMatchStatsID ID `db:"live_match_stats_id"`
+
 	Timestamps
+	SoftDelete
 
-	LiveMatchStats *LiveMatchStats
+	LiveMatchStats *LiveMatchStats `db:"-" model:"belongs_to"`
 }
 
-func (*LiveMatchStatsBuilding) TableName() string {
-	return "live_match_stats_buildings"
+func NewLiveMatchStatsBuildingAssocProto(
+	liveMatchStats *LiveMatchStats,
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_BuildingDetails,
+) *LiveMatchStatsBuilding {
+	m := NewLiveMatchStatsBuildingProto(pb)
+	m.LiveMatchStats = liveMatchStats
+	m.LiveMatchStatsID = liveMatchStats.ID
+	return m
 }
 
-func LiveMatchStatsBuildingDotaProto(
+func NewLiveMatchStatsBuildingProto(
 	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_BuildingDetails,
 ) *LiveMatchStatsBuilding {
 	return &LiveMatchStatsBuilding{

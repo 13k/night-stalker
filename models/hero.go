@@ -10,30 +10,29 @@ import (
 	nsstr "github.com/13k/night-stalker/internal/strings"
 )
 
-var HeroModel Model = (*Hero)(nil)
+var HeroTable = NewTable("heroes")
 
 type Hero struct {
-	ID                 nspb.HeroID        `gorm:"column:id;primary_key"`
-	Name               string             `gorm:"column:name;size:255;unique_index;not null"`
-	Slug               string             `gorm:"column:slug;size:255;unique_index;not null"`
-	LocalizedName      string             `gorm:"column:localized_name;size:255;not null"`
-	Aliases            pq.StringArray     `gorm:"column:aliases"`
-	Roles              nssql.HeroRoles    `gorm:"column:roles"`
-	RoleLevels         pq.Int64Array      `gorm:"column:role_levels"`
-	Complexity         int                `gorm:"column:complexity"`
-	Legs               int                `gorm:"column:legs"`
-	AttributePrimary   nspb.DotaAttribute `gorm:"column:attribute_primary"`
-	AttackCapabilities nspb.DotaUnitCap   `gorm:"column:attack_capabilities"`
+	ID `db:"id"`
+
+	Name               string             `db:"name"`
+	Slug               string             `db:"slug"`
+	LocalizedName      string             `db:"localized_name"`
+	Aliases            pq.StringArray     `db:"aliases"`
+	Roles              nssql.HeroRoles    `db:"roles"`
+	RoleLevels         pq.Int64Array      `db:"role_levels"`
+	Complexity         int                `db:"complexity"`
+	Legs               int                `db:"legs"`
+	AttributePrimary   nspb.DotaAttribute `db:"attribute_primary"`
+	AttackCapabilities nspb.DotaUnitCap   `db:"attack_capabilities"`
+
 	Timestamps
+	SoftDelete
 }
 
-func (*Hero) TableName() string {
-	return "heroes"
-}
-
-func (h *Hero) BeforeCreate() error {
-	if h.Slug == "" {
-		h.Slug = nsstr.Slugify(strings.Replace(h.Name, "npc_dota_hero_", "", 1))
+func (m *Hero) BeforeCreate() error {
+	if m.Slug == "" {
+		m.Slug = nsstr.Slugify(strings.Replace(m.Name, "npc_dota_hero_", "", 1))
 	}
 
 	return nil

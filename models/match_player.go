@@ -7,41 +7,48 @@ import (
 	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
-var MatchPlayerModel Model = (*MatchPlayer)(nil)
+var MatchPlayerTable = NewTable("match_players")
 
-type MatchPlayerID uint64
-
-// MatchPlayer ...
 type MatchPlayer struct {
-	ID         MatchPlayerID       `gorm:"column:id;primary_key"`
-	MatchID    nspb.MatchID        `gorm:"column:match_id;unique_index:uix_match_players_match_id_account_id;not null"`   //nolint: lll
-	AccountID  nspb.AccountID      `gorm:"column:account_id;unique_index:uix_match_players_match_id_account_id;not null"` //nolint: lll
-	HeroID     nspb.HeroID         `gorm:"column:hero_id"`
-	PlayerSlot nspb.GamePlayerSlot `gorm:"column:player_slot"`
-	ProName    string              `gorm:"column:pro_name"`
-	Kills      uint32              `gorm:"column:kills"`
-	Deaths     uint32              `gorm:"column:deaths"`
-	Assists    uint32              `gorm:"column:assists"`
-	Items      nssql.ItemIDs       `gorm:"column:items"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	AccountID  nspb.AccountID      `db:"account_id"`
+	PlayerSlot nspb.GamePlayerSlot `db:"player_slot"`
+	ProName    string              `db:"pro_name"`
+	Kills      uint32              `db:"kills"`
+	Deaths     uint32              `db:"deaths"`
+	Assists    uint32              `db:"assists"`
+	Items      nssql.ItemIDs       `db:"items"`
+
+	MatchID ID `db:"match_id"`
+	HeroID  ID `db:"hero_id"`
+
 	Timestamps
+	SoftDelete
 
-	Match *Match
-	Hero  *Hero
+	Match *Match `db:"-" model:"belongs_to"`
+	Hero  *Hero  `db:"-" model:"belongs_to"`
 }
 
-func (*MatchPlayer) TableName() string {
-	return "match_players"
+func NewMatchPlayerAssocProto(
+	match *Match,
+	pb *d2pb.CMsgDOTAMatchMinimal_Player,
+) *MatchPlayer {
+	m := NewMatchPlayerProto(pb)
+	m.Match = match
+	m.MatchID = match.ID
+	return m
 }
 
-func MatchPlayerDotaProto(pb *d2pb.CMsgDOTAMatchMinimal_Player) *MatchPlayer {
+func NewMatchPlayerProto(pb *d2pb.CMsgDOTAMatchMinimal_Player) *MatchPlayer {
 	return &MatchPlayer{
 		AccountID:  nspb.AccountID(pb.GetAccountId()),
-		HeroID:     nspb.HeroID(pb.GetHeroId()),
+		HeroID:     ID(pb.GetHeroId()),
 		PlayerSlot: nspb.GamePlayerSlot(pb.GetPlayerSlot()),
 		ProName:    pb.GetProName(),
 		Kills:      pb.GetKills(),
 		Deaths:     pb.GetDeaths(),
 		Assists:    pb.GetAssists(),
-		Items:      nssql.NewItemIDsFromUint32s(pb.GetItems()),
+		Items:      nssql.NewItemIDs(pb.GetItems()),
 	}
 }

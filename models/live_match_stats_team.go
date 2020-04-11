@@ -6,35 +6,44 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-var LiveMatchStatsTeamModel Model = (*LiveMatchStatsTeam)(nil)
+var LiveMatchStatsTeamTable = NewTable("live_match_stats_teams")
 
-type LiveMatchStatsTeamID uint64
-
-// LiveMatchStatsTeam ...
 type LiveMatchStatsTeam struct {
-	ID               LiveMatchStatsTeamID `gorm:"column:id;primary_key"`
-	LiveMatchStatsID LiveMatchStatsID     `gorm:"column:live_match_stats_id"`
-	TeamID           nspb.TeamID          `gorm:"column:team_id"`
-	GameTeam         nspb.GameTeam        `gorm:"column:game_team"`
-	Name             string               `gorm:"column:name;size:255"`
-	Tag              string               `gorm:"column:tag;size:255"`
-	LogoID           nspb.SteamID         `gorm:"column:logo_id"`
-	LogoURL          string               `gorm:"column:logo_url"`
-	Score            uint32               `gorm:"column:score"`
-	NetWorth         uint32               `gorm:"column:net_worth"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	GameTeam nspb.GameTeam `db:"game_team"`
+	Name     string        `db:"name"`
+	Tag      string        `db:"tag"`
+	LogoID   nspb.SteamID  `db:"logo_id"`
+	LogoURL  string        `db:"logo_url"`
+	Score    uint32        `db:"score"`
+	NetWorth uint32        `db:"net_worth"`
+
+	LiveMatchStatsID ID `db:"live_match_stats_id"`
+	TeamID           ID `db:"team_id"`
+
 	Timestamps
+	SoftDelete
 
-	LiveMatchStats *LiveMatchStats
-	Team           *Team
+	LiveMatchStats *LiveMatchStats `db:"-" model:"belongs_to,source=Teams"`
+	Team           *Team           `db:"-" model:"belongs_to"`
 }
 
-func (*LiveMatchStatsTeam) TableName() string {
-	return "live_match_stats_teams"
+func NewLiveMatchStatsTeamAssocProto(
+	liveMatchStats *LiveMatchStats,
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_TeamDetails,
+) *LiveMatchStatsTeam {
+	m := NewLiveMatchStatsTeamProto(pb)
+	m.LiveMatchStats = liveMatchStats
+	m.LiveMatchStatsID = liveMatchStats.ID
+	return m
 }
 
-func LiveMatchStatsTeamDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse_TeamDetails) *LiveMatchStatsTeam {
+func NewLiveMatchStatsTeamProto(
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse_TeamDetails,
+) *LiveMatchStatsTeam {
 	return &LiveMatchStatsTeam{
-		TeamID:   nspb.TeamID(pb.GetTeamId()),
+		TeamID:   ID(pb.GetTeamId()),
 		GameTeam: nspb.GameTeam(pb.GetTeamNumber()),
 		Name:     pb.GetTeamName(),
 		Tag:      pb.GetTeamTag(),

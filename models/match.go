@@ -9,58 +9,60 @@ import (
 	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
-var MatchModel Model = (*Match)(nil)
+var MatchTable = NewTable("matches")
 
-// Match ...
 type Match struct {
-	ID                           nspb.MatchID      `gorm:"column:id;primary_key"`
-	LeagueID                     nspb.LeagueID     `gorm:"column:league_id"`
-	SeriesType                   nspb.SeriesType   `gorm:"column:series_type"`
-	SeriesGame                   uint32            `gorm:"column:series_game"`
-	GameMode                     nspb.GameMode     `gorm:"column:game_mode"`
-	StartTime                    sql.NullTime      `gorm:"column:start_time"`
-	Duration                     uint32            `gorm:"column:duration"`
-	Outcome                      nspb.MatchOutcome `gorm:"column:outcome"`
-	RadiantTeamID                nspb.TeamID       `gorm:"column:radiant_team_id"`
-	RadiantTeamName              string            `gorm:"column:radiant_team_name;size:255"`
-	RadiantTeamLogo              nspb.SteamID      `gorm:"column:radiant_team_logo"`
-	RadiantTeamLogoURL           string            `gorm:"column:radiant_team_logo_url"`
-	RadiantScore                 uint32            `gorm:"column:radiant_score"`
-	DireTeamID                   nspb.TeamID       `gorm:"column:dire_team_id"`
-	DireTeamName                 string            `gorm:"column:dire_team_name;size:255"`
-	DireTeamLogo                 nspb.SteamID      `gorm:"column:dire_team_logo"`
-	DireTeamLogoURL              string            `gorm:"column:dire_team_logo_url"`
-	DireScore                    uint32            `gorm:"column:dire_score"`
-	WeekendTourneyTournamentID   uint32            `gorm:"column:weekend_tourney_tournament_id"`
-	WeekendTourneySeasonTrophyID uint32            `gorm:"column:weekend_tourney_season_trophy_id"`
-	WeekendTourneyDivision       uint32            `gorm:"column:weekend_tourney_division"`
-	WeekendTourneySkillLevel     uint32            `gorm:"column:weekend_tourney_skill_level"`
+	ID `db:"id"`
+
+	SeriesType                   nspb.SeriesType   `db:"series_type"`
+	SeriesGame                   uint32            `db:"series_game"`
+	GameMode                     nspb.GameMode     `db:"game_mode"`
+	StartTime                    sql.NullTime      `db:"start_time"`
+	Duration                     uint32            `db:"duration"`
+	Outcome                      nspb.MatchOutcome `db:"outcome"`
+	RadiantTeamName              string            `db:"radiant_team_name"`
+	RadiantTeamLogo              nspb.SteamID      `db:"radiant_team_logo"`
+	RadiantTeamLogoURL           string            `db:"radiant_team_logo_url"`
+	RadiantScore                 uint32            `db:"radiant_score"`
+	DireTeamName                 string            `db:"dire_team_name"`
+	DireTeamLogo                 nspb.SteamID      `db:"dire_team_logo"`
+	DireTeamLogoURL              string            `db:"dire_team_logo_url"`
+	DireScore                    uint32            `db:"dire_score"`
+	WeekendTourneyTournamentID   uint32            `db:"weekend_tourney_tournament_id"`
+	WeekendTourneySeasonTrophyID uint32            `db:"weekend_tourney_season_trophy_id"`
+	WeekendTourneyDivision       uint32            `db:"weekend_tourney_division"`
+	WeekendTourneySkillLevel     uint32            `db:"weekend_tourney_skill_level"`
+
+	LeagueID      ID `db:"league_id"`
+	RadiantTeamID ID `db:"radiant_team_id"`
+	DireTeamID    ID `db:"dire_team_id"`
+
 	Timestamps
+	SoftDelete
 
-	Players   []*MatchPlayer
-	LiveMatch *LiveMatch
+	League      *League        `db:"-" model:"belongs_to"`
+	RadiantTeam *Team          `db:"-" model:"belongs_to"`
+	DireTeam    *Team          `db:"-" model:"belongs_to"`
+	LiveMatch   *LiveMatch     `db:"-" model:"has_one"`
+	Players     []*MatchPlayer `db:"-" model:"has_many"`
 }
 
-func (*Match) TableName() string {
-	return "matches"
-}
-
-func MatchDotaProto(pb *d2pb.CMsgDOTAMatchMinimal) *Match {
+func NewMatchProto(pb *d2pb.CMsgDOTAMatchMinimal) *Match {
 	return &Match{
-		ID:                           nspb.MatchID(pb.GetMatchId()),
-		LeagueID:                     nspb.LeagueID(pb.GetTourney().GetLeagueId()),
+		ID:                           ID(pb.GetMatchId()),
+		LeagueID:                     ID(pb.GetTourney().GetLeagueId()),
 		SeriesType:                   nspb.SeriesType(pb.GetTourney().GetSeriesType()),
 		SeriesGame:                   pb.GetTourney().GetSeriesGame(),
 		GameMode:                     nspb.GameMode(pb.GetGameMode()),
 		StartTime:                    nssql.NullTimeUnix(int64(pb.GetStartTime())),
 		Duration:                     pb.GetDuration(),
 		Outcome:                      nspb.MatchOutcome(pb.GetMatchOutcome()),
-		RadiantTeamID:                nspb.TeamID(pb.GetTourney().GetRadiantTeamId()),
+		RadiantTeamID:                ID(pb.GetTourney().GetRadiantTeamId()),
 		RadiantTeamName:              pb.GetTourney().GetRadiantTeamName(),
 		RadiantTeamLogo:              nspb.SteamID(TruncateUint(pb.GetTourney().GetDireTeamLogo())),
 		RadiantTeamLogoURL:           pb.GetTourney().GetRadiantTeamLogoUrl(),
 		RadiantScore:                 pb.GetRadiantScore(),
-		DireTeamID:                   nspb.TeamID(pb.GetTourney().GetDireTeamId()),
+		DireTeamID:                   ID(pb.GetTourney().GetDireTeamId()),
 		DireTeamName:                 pb.GetTourney().GetDireTeamName(),
 		DireTeamLogo:                 nspb.SteamID(TruncateUint(pb.GetTourney().GetDireTeamLogo())),
 		DireTeamLogoURL:              pb.GetTourney().GetDireTeamLogoUrl(),

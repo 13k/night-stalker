@@ -6,23 +6,20 @@ import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-var ProPlayerModel Model = (*ProPlayer)(nil)
+var ProPlayerTable = NewTable("pro_players")
 
-type ProPlayerID uint64
-
-// ProPlayer ...
 type ProPlayer struct {
-	ID          ProPlayerID      `gorm:"column:id;primary_key"`
-	AccountID   nspb.AccountID   `gorm:"column:account_id;unique_index;not null"`
-	TeamID      nspb.TeamID      `gorm:"column:team_id"`
-	IsLocked    bool             `gorm:"column:is_locked"`
-	LockedUntil sql.NullTime     `gorm:"column:locked_until"`
-	FantasyRole nspb.FantasyRole `gorm:"column:fantasy_role"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	AccountID   nspb.AccountID   `db:"account_id"`
+	IsLocked    bool             `db:"is_locked"`
+	LockedUntil sql.NullTime     `db:"locked_until"`
+	FantasyRole nspb.FantasyRole `db:"fantasy_role"`
+
+	TeamID ID `db:"team_id"`
+
 	Timestamps
+	SoftDelete
 
-	Team *Team
-}
-
-func (*ProPlayer) TableName() string {
-	return "pro_players"
+	Team *Team `db:"-" model:"belongs_to"`
 }

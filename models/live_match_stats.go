@@ -8,54 +8,57 @@ import (
 	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
-var LiveMatchStatsModel Model = (*LiveMatchStats)(nil)
+var LiveMatchStatsTable = NewTable("live_match_stats")
 
-type LiveMatchStatsID uint64
-
-// LiveMatchStats ...
 type LiveMatchStats struct {
-	ID                         LiveMatchStatsID  `gorm:"column:id;primary_key"`
-	LiveMatchID                LiveMatchID       `gorm:"column:live_match_id;index;not null"`
-	MatchID                    nspb.MatchID      `gorm:"column:match_id;index;not null"`
-	ServerID                   nspb.SteamID      `gorm:"column:server_id;index;not null"`
-	LeagueID                   nspb.LeagueID     `gorm:"column:league_id"`
-	LeagueNodeID               nspb.LeagueNodeID `gorm:"column:league_node_id"`
-	GameTimestamp              uint32            `gorm:"column:game_timestamp"`
-	GameTime                   int32             `gorm:"column:game_time"`
-	GameMode                   nspb.GameMode     `gorm:"column:game_mode"`
-	GameState                  nspb.GameState    `gorm:"column:game_state"`
-	DeltaFrame                 bool              `gorm:"column:delta_frame"`
-	GraphGold                  pq.Int64Array     `gorm:"column:graph_gold"`
-	GraphXP                    pq.Int64Array     `gorm:"column:graph_xp"`
-	GraphKill                  pq.Int64Array     `gorm:"column:graph_kill"`
-	GraphTower                 pq.Int64Array     `gorm:"column:graph_tower"`
-	GraphRax                   pq.Int64Array     `gorm:"column:graph_rax"`
-	SteamBroadcasterAccountIDs nssql.AccountIDs  `gorm:"column:steam_broadcaster_account_ids"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	ServerID                   nspb.SteamID      `db:"server_id"`
+	LeagueNodeID               nspb.LeagueNodeID `db:"league_node_id"`
+	GameTimestamp              uint32            `db:"game_timestamp"`
+	GameTime                   int32             `db:"game_time"`
+	GameMode                   nspb.GameMode     `db:"game_mode"`
+	GameState                  nspb.GameState    `db:"game_state"`
+	DeltaFrame                 bool              `db:"delta_frame"`
+	GraphGold                  pq.Int64Array     `db:"graph_gold"`
+	GraphXP                    pq.Int64Array     `db:"graph_xp"`
+	GraphKill                  pq.Int64Array     `db:"graph_kill"`
+	GraphTower                 pq.Int64Array     `db:"graph_tower"`
+	GraphRax                   pq.Int64Array     `db:"graph_rax"`
+	SteamBroadcasterAccountIDs nssql.AccountIDs  `db:"steam_broadcaster_account_ids"`
+
+	LiveMatchID ID `db:"live_match_id"`
+	MatchID     ID `db:"match_id"`
+	LeagueID    ID `db:"league_id"`
+
 	Timestamps
+	SoftDelete
 
-	LiveMatch *LiveMatch
-	Match     *Match
-	Teams     []*LiveMatchStatsTeam
-	Players   []*LiveMatchStatsPlayer
-	Draft     []*LiveMatchStatsPickBan
-	Buildings []*LiveMatchStatsBuilding
+	LiveMatch *LiveMatch                `db:"-" model:"belongs_to"`
+	Match     *Match                    `db:"-" model:"belongs_to"`
+	League    *League                   `db:"-" model:"belongs_to"`
+	Teams     []*LiveMatchStatsTeam     `db:"-" model:"has_many"`
+	Players   []*LiveMatchStatsPlayer   `db:"-" model:"has_many"`
+	Draft     []*LiveMatchStatsPickBan  `db:"-" model:"has_many"`
+	Buildings []*LiveMatchStatsBuilding `db:"-" model:"has_many"`
 }
 
-func (*LiveMatchStats) TableName() string {
-	return "live_match_stats"
-}
-
-func NewLiveMatchStats(liveMatch *LiveMatch, pb *d2pb.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
-	m := LiveMatchStatsDotaProto(pb)
+func NewLiveMatchStatsAssocProto(
+	liveMatch *LiveMatch,
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse,
+) *LiveMatchStats {
+	m := NewLiveMatchStatsProto(pb)
+	m.LiveMatch = liveMatch
 	m.LiveMatchID = liveMatch.ID
+	m.MatchID = liveMatch.MatchID
 	return m
 }
 
-func LiveMatchStatsDotaProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
+func NewLiveMatchStatsProto(pb *d2pb.CMsgDOTARealtimeGameStatsTerse) *LiveMatchStats {
 	return &LiveMatchStats{
-		MatchID:                    nspb.MatchID(pb.GetMatch().GetMatchid()),
+		MatchID:                    ID(pb.GetMatch().GetMatchid()),
 		ServerID:                   nspb.SteamID(pb.GetMatch().GetServerSteamId()),
-		LeagueID:                   nspb.LeagueID(pb.GetMatch().GetLeagueId()),
+		LeagueID:                   ID(pb.GetMatch().GetLeagueId()),
 		LeagueNodeID:               nspb.LeagueNodeID(pb.GetMatch().GetLeagueNodeId()),
 		GameTimestamp:              pb.GetMatch().GetTimestamp(),
 		GameTime:                   pb.GetMatch().GetGameTime(),

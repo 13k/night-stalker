@@ -9,31 +9,28 @@ import (
 	nssql "github.com/13k/night-stalker/internal/sql"
 )
 
-var PlayerProfileCardModel Model = (*PlayerProfileCard)(nil)
-
-type PlayerProfileCardID uint64
+var PlayerProfileCardTable = NewTable("player_profile_cards")
 
 type PlayerProfileCard struct {
-	ID               PlayerProfileCardID `gorm:"column:id;primary_key"`
-	AccountID        nspb.AccountID      `gorm:"column:account_id;unique_index;not null"`
-	BadgePoints      uint32              `gorm:"column:badge_points"`
-	LeaderboardRank  uint32              `gorm:"column:leaderboard_rank"`
-	RankTier         uint32              `gorm:"column:rank_tier"`
-	RankTierScore    uint32              `gorm:"column:rank_tier_score"`
-	RankTierMMRType  uint32              `gorm:"column:rank_tier_mmr_type"`
-	PreviousRankTier uint32              `gorm:"column:previous_rank_tier"`
-	IsPlusSubscriber bool                `gorm:"column:is_plus_subscriber"`
-	PlusStartAt      sql.NullTime        `gorm:"column:plus_start_at"`
-	EventID          uint32              `gorm:"column:event_id"`
-	EventPoints      uint32              `gorm:"column:event_points"`
+	ID `db:"id" goqu:"defaultifempty"`
+
+	AccountID        nspb.AccountID `db:"account_id"`
+	BadgePoints      uint32         `db:"badge_points"`
+	LeaderboardRank  uint32         `db:"leaderboard_rank"`
+	RankTier         uint32         `db:"rank_tier"`
+	RankTierScore    uint32         `db:"rank_tier_score"`
+	RankTierMMRType  uint32         `db:"rank_tier_mmr_type"`
+	PreviousRankTier uint32         `db:"previous_rank_tier"`
+	IsPlusSubscriber bool           `db:"is_plus_subscriber"`
+	PlusStartAt      sql.NullTime   `db:"plus_start_at"`
+	EventID          uint32         `db:"event_id"`
+	EventPoints      uint32         `db:"event_points"`
+
 	Timestamps
+	SoftDelete
 }
 
-func (*PlayerProfileCard) TableName() string {
-	return "player_profile_cards"
-}
-
-func PlayerProfileCardProto(pb *d2pb.CMsgDOTAProfileCard) *PlayerProfileCard {
+func NewPlayerProfileCardProto(pb *d2pb.CMsgDOTAProfileCard) *PlayerProfileCard {
 	return &PlayerProfileCard{
 		AccountID:        nspb.AccountID(pb.GetAccountId()),
 		BadgePoints:      pb.GetBadgePoints(),
