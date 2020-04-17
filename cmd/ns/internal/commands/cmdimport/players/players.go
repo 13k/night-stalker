@@ -8,9 +8,9 @@ import (
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
-	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 const (
@@ -61,17 +61,15 @@ func run(cmd *cobra.Command, args []string) error {
 		return xerrors.Errorf("HTTP error: %s", res.Status())
 	}
 
-	dbs := nsdbda.NewSaver(db)
-
 	log.
 		WithField("count", len(result)).
 		Info("importing players ...")
 
 	for _, entry := range result {
-		r, err := dbs.ImportPlayer(cmd.Context(), &nsdbda.ImportPlayerData{
+		player := &nsm.Player{
 			AccountID:       entry.AccountID,
 			SteamID:         nspb.SteamID(entry.SteamID.Uint64()),
-			Label:           entry.Name,
+			TeamID:          nsm.ID(entry.TeamID),
 			Name:            entry.Name,
 			PersonaName:     entry.PersonaName,
 			AvatarURL:       entry.Avatar,
@@ -79,11 +77,17 @@ func run(cmd *cobra.Command, args []string) error {
 			AvatarFullURL:   entry.AvatarFull,
 			ProfileURL:      entry.ProfileURL,
 			CountryCode:     entry.CountryCode,
-			TeamID:          entry.TeamID,
 			IsLocked:        entry.IsLocked,
 			LockedUntil:     nssql.NullTimeFromUnixJSON(entry.LockedUntil),
 			FantasyRole:     entry.FantasyRole,
-		})
+		}
+
+		q := db.
+			Q().
+			Select().
+			Eq(nsm.PlayerTable.Col("account_id"), player.AccountID)
+
+		created, err := db.M().Upsert(cmd.Context(), player, q)
 
 		if err != nil {
 			return xerrors.Errorf("error importing player %d: %w", entry.AccountID, err)
@@ -91,13 +95,13 @@ func run(cmd *cobra.Command, args []string) error {
 
 		msg := "updated"
 
-		if r.Created {
+		if created {
 			msg = "imported"
 		}
 
 		log.WithOFields(
-			"account_id", r.FollowedPlayer.AccountID,
-			"label", r.FollowedPlayer.Label,
+			"account_id", player.AccountID,
+			"name", player.Name,
 		).Info(msg)
 	}
 
