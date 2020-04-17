@@ -2,13 +2,27 @@ package collections
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-type LiveMatches []*models.LiveMatch
+type LiveMatches []*nsm.LiveMatch
 
 func (s LiveMatches) Len() int      { return len(s) }
 func (s LiveMatches) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s LiveMatches) Records() []nsm.Record {
+	if s == nil {
+		return nil
+	}
+
+	records := make([]nsm.Record, len(s))
+
+	for i, m := range s {
+		records[i] = m
+	}
+
+	return records
+}
 
 func (s LiveMatches) MatchIDs() MatchIDs {
 	if s == nil {
@@ -18,27 +32,27 @@ func (s LiveMatches) MatchIDs() MatchIDs {
 	matchIDs := make(MatchIDs, len(s))
 
 	for i, liveMatch := range s {
-		matchIDs[i] = liveMatch.MatchID
+		matchIDs[i] = nspb.MatchID(liveMatch.MatchID)
 	}
 
 	return matchIDs
 }
 
-func (s LiveMatches) KeyByMatchID() map[nspb.MatchID]*models.LiveMatch {
+func (s LiveMatches) KeyByMatchID() map[nspb.MatchID]*nsm.LiveMatch {
 	if s == nil {
 		return nil
 	}
 
-	m := make(map[nspb.MatchID]*models.LiveMatch)
+	m := make(map[nspb.MatchID]*nsm.LiveMatch)
 
 	for _, liveMatch := range s {
-		m[liveMatch.MatchID] = liveMatch
+		m[nspb.MatchID(liveMatch.MatchID)] = liveMatch
 	}
 
 	return m
 }
 
-func (s *LiveMatches) Unshift(liveMatch *models.LiveMatch) {
+func (s *LiveMatches) Unshift(liveMatch *nsm.LiveMatch) {
 	if s == nil {
 		return
 	}
@@ -46,7 +60,7 @@ func (s *LiveMatches) Unshift(liveMatch *models.LiveMatch) {
 	*s = append(LiveMatches{liveMatch}, *s...)
 }
 
-func (s *LiveMatches) Push(liveMatch *models.LiveMatch) {
+func (s *LiveMatches) Push(liveMatch *nsm.LiveMatch) {
 	if s == nil {
 		return
 	}
@@ -54,7 +68,7 @@ func (s *LiveMatches) Push(liveMatch *models.LiveMatch) {
 	*s = append(*s, liveMatch)
 }
 
-func (s *LiveMatches) Insert(i int, liveMatch *models.LiveMatch) {
+func (s *LiveMatches) Insert(i int, liveMatch *nsm.LiveMatch) {
 	if s == nil {
 		return
 	}
@@ -78,7 +92,7 @@ func (s *LiveMatches) Insert(i int, liveMatch *models.LiveMatch) {
 	(*s)[i] = liveMatch
 }
 
-func (s *LiveMatches) Shift() (liveMatch *models.LiveMatch) {
+func (s *LiveMatches) Shift() (liveMatch *nsm.LiveMatch) {
 	if s == nil {
 		return
 	}
@@ -92,7 +106,7 @@ func (s *LiveMatches) Shift() (liveMatch *models.LiveMatch) {
 	return
 }
 
-func (s *LiveMatches) Pop() (liveMatch *models.LiveMatch) {
+func (s *LiveMatches) Pop() (liveMatch *nsm.LiveMatch) {
 	if s == nil {
 		return
 	}
@@ -106,7 +120,7 @@ func (s *LiveMatches) Pop() (liveMatch *models.LiveMatch) {
 	return
 }
 
-func (s *LiveMatches) Remove(i int) *models.LiveMatch {
+func (s *LiveMatches) Remove(i int) *nsm.LiveMatch {
 	if s == nil {
 		return nil
 	}

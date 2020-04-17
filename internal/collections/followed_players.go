@@ -2,10 +2,10 @@ package collections
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-type FollowedPlayers []*models.FollowedPlayer
+type FollowedPlayers []*nsm.FollowedPlayer
 
 func (s FollowedPlayers) AccountIDs() AccountIDs {
 	if s == nil {
@@ -21,12 +21,12 @@ func (s FollowedPlayers) AccountIDs() AccountIDs {
 	return ids
 }
 
-func (s FollowedPlayers) KeyByAccountID() map[nspb.AccountID]*models.FollowedPlayer {
+func (s FollowedPlayers) KeyByAccountID() map[nspb.AccountID]*nsm.FollowedPlayer {
 	if s == nil {
 		return nil
 	}
 
-	m := make(map[nspb.AccountID]*models.FollowedPlayer)
+	m := make(map[nspb.AccountID]*nsm.FollowedPlayer)
 
 	for _, p := range s {
 		m[p.AccountID] = p

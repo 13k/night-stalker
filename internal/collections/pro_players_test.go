@@ -5,7 +5,7 @@ import (
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 func TestProPlayers_AccountIDs(t *testing.T) {
@@ -165,7 +165,7 @@ func TestProPlayers_GroupByAccountID(t *testing.T) {
 func TestProPlayers_KeyByAccountID(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.ProPlayers
-		Expected map[nspb.AccountID]*models.ProPlayer
+		Expected map[nspb.AccountID]*nsm.ProPlayer
 	}{
 		{
 			Subject:  nil,
@@ -173,7 +173,7 @@ func TestProPlayers_KeyByAccountID(t *testing.T) {
 		},
 		{
 			Subject:  nscol.ProPlayers{},
-			Expected: map[nspb.AccountID]*models.ProPlayer{},
+			Expected: map[nspb.AccountID]*nsm.ProPlayer{},
 		},
 		{
 			Subject: nscol.ProPlayers{
@@ -183,7 +183,7 @@ func TestProPlayers_KeyByAccountID(t *testing.T) {
 				{ID: 4, AccountID: 3},
 				{ID: 5, AccountID: 4},
 			},
-			Expected: map[nspb.AccountID]*models.ProPlayer{
+			Expected: map[nspb.AccountID]*nsm.ProPlayer{
 				1: {ID: 1, AccountID: 1},
 				2: {ID: 2, AccountID: 2},
 				3: {ID: 4, AccountID: 3},

@@ -4,25 +4,25 @@ import (
 	"sort"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 type LiveMatchesByScore struct {
 	LiveMatches
 
-	index map[nspb.MatchID]*models.LiveMatch
+	index map[nspb.MatchID]*nsm.LiveMatch
 }
 
-func NewLiveMatchesByScore(matches ...*models.LiveMatch) *LiveMatchesByScore {
+func NewLiveMatchesByScore(matches ...*nsm.LiveMatch) *LiveMatchesByScore {
 	s := &LiveMatchesByScore{
 		LiveMatches: matches,
-		index:       make(map[nspb.MatchID]*models.LiveMatch),
+		index:       make(map[nspb.MatchID]*nsm.LiveMatch),
 	}
 
 	sort.Sort(s)
 
 	for _, m := range s.LiveMatches {
-		s.index[m.MatchID] = m
+		s.index[nspb.MatchID(m.MatchID)] = m
 	}
 
 	return s
@@ -32,7 +32,7 @@ func (s *LiveMatchesByScore) Less(i, j int) bool {
 	return s.At(i).SortScore > s.At(j).SortScore
 }
 
-func (s *LiveMatchesByScore) At(i int) *models.LiveMatch {
+func (s *LiveMatchesByScore) At(i int) *nsm.LiveMatch {
 	return s.LiveMatches[i]
 }
 
@@ -44,7 +44,7 @@ func (s *LiveMatchesByScore) All() LiveMatches {
 // in sorted order by SortScore.
 //
 // It returns Len() if the match was not found.
-func (s *LiveMatchesByScore) SearchIndex(match *models.LiveMatch) int {
+func (s *LiveMatchesByScore) SearchIndex(match *nsm.LiveMatch) int {
 	return sort.Search(s.Len(), func(i int) bool {
 		return s.At(i).SortScore <= match.SortScore
 	})
@@ -55,7 +55,7 @@ func (s *LiveMatchesByScore) SearchIndex(match *models.LiveMatch) int {
 // It returns -1 if the matchID was not found.
 func (s *LiveMatchesByScore) FindIndex(matchID nspb.MatchID) int {
 	for i, match := range s.All() {
-		if matchID == match.MatchID {
+		if matchID == nspb.MatchID(match.MatchID) {
 			return i
 		}
 	}
@@ -67,19 +67,21 @@ func (s *LiveMatchesByScore) FindIndex(matchID nspb.MatchID) int {
 // updates the match (including SortScore, which will reposition the match) if the match changed.
 //
 // It returns the match index if the match was added or updated, otherwise returns -1.
-func (s *LiveMatchesByScore) Add(match *models.LiveMatch) int {
-	if m, ok := s.index[match.MatchID]; ok {
+func (s *LiveMatchesByScore) Add(match *nsm.LiveMatch) int {
+	matchID := nspb.MatchID(match.MatchID)
+
+	if m, ok := s.index[matchID]; ok {
 		if m.Equal(match) {
 			return -1
 		}
 
-		s.Remove(m.MatchID)
+		s.Remove(matchID)
 	}
 
 	i := s.SearchIndex(match)
 
 	s.Insert(i, match)
-	s.index[match.MatchID] = match
+	s.index[matchID] = match
 
 	return i
 }
@@ -91,7 +93,7 @@ func (s *LiveMatchesByScore) Remove(matchID nspb.MatchID) nspb.MatchID {
 		return 0
 	}
 
-	i := s.FindIndex(match.MatchID)
+	i := s.FindIndex(nspb.MatchID(match.MatchID))
 
 	if i < 0 {
 		return 0
@@ -103,7 +105,9 @@ func (s *LiveMatchesByScore) Remove(matchID nspb.MatchID) nspb.MatchID {
 		return 0
 	}
 
-	delete(s.index, removed.MatchID)
+	removedMatchID := nspb.MatchID(removed.MatchID)
 
-	return removed.MatchID
+	delete(s.index, removedMatchID)
+
+	return removedMatchID
 }

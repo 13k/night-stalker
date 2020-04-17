@@ -7,7 +7,7 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 func TestLiveMatches_Swap(t *testing.T) {
@@ -122,7 +122,7 @@ func TestLiveMatches_MatchIDs(t *testing.T) {
 func TestLiveMatches_KeyByMatchID(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.LiveMatches
-		Expected map[nspb.MatchID]*models.LiveMatch
+		Expected map[nspb.MatchID]*nsm.LiveMatch
 	}{
 		{
 			Subject:  nil,
@@ -130,7 +130,7 @@ func TestLiveMatches_KeyByMatchID(t *testing.T) {
 		},
 		{
 			Subject:  nscol.LiveMatches{},
-			Expected: map[nspb.MatchID]*models.LiveMatch{},
+			Expected: map[nspb.MatchID]*nsm.LiveMatch{},
 		},
 		{
 			Subject: nscol.LiveMatches{
@@ -140,7 +140,7 @@ func TestLiveMatches_KeyByMatchID(t *testing.T) {
 				{ID: 4, MatchID: 3},
 				{ID: 5, MatchID: 4},
 			},
-			Expected: map[nspb.MatchID]*models.LiveMatch{
+			Expected: map[nspb.MatchID]*nsm.LiveMatch{
 				1: {ID: 1, MatchID: 1},
 				2: {ID: 2, MatchID: 2},
 				3: {ID: 4, MatchID: 3},
@@ -209,7 +209,7 @@ func TestLiveMatches_KeyByMatchID(t *testing.T) {
 func TestLiveMatches_Insert(t *testing.T) {
 	type insertCase struct {
 		Index int
-		Match *models.LiveMatch
+		Match *nsm.LiveMatch
 	}
 
 	testCases := []struct {
@@ -225,11 +225,11 @@ func TestLiveMatches_Insert(t *testing.T) {
 			Insert: []*insertCase{
 				{
 					Index: -1,
-					Match: &models.LiveMatch{MatchID: 2},
+					Match: &nsm.LiveMatch{MatchID: 2},
 				},
 				{
 					Index: 2,
-					Match: &models.LiveMatch{MatchID: 2},
+					Match: &nsm.LiveMatch{MatchID: 2},
 				},
 			},
 			Expected: nscol.LiveMatches{
@@ -245,7 +245,7 @@ func TestLiveMatches_Insert(t *testing.T) {
 			Insert: []*insertCase{
 				{
 					Index: 0,
-					Match: &models.LiveMatch{MatchID: 3},
+					Match: &nsm.LiveMatch{MatchID: 3},
 				},
 			},
 			Expected: nscol.LiveMatches{
@@ -263,7 +263,7 @@ func TestLiveMatches_Insert(t *testing.T) {
 			Insert: []*insertCase{
 				{
 					Index: 2,
-					Match: &models.LiveMatch{MatchID: 3},
+					Match: &nsm.LiveMatch{MatchID: 3},
 				},
 			},
 			Expected: nscol.LiveMatches{
@@ -281,7 +281,7 @@ func TestLiveMatches_Insert(t *testing.T) {
 			Insert: []*insertCase{
 				{
 					Index: 1,
-					Match: &models.LiveMatch{MatchID: 3},
+					Match: &nsm.LiveMatch{MatchID: 3},
 				},
 			},
 			Expected: nscol.LiveMatches{
@@ -326,7 +326,7 @@ func TestLiveMatches_Insert(t *testing.T) {
 func TestLiveMatches_Remove(t *testing.T) {
 	type removeCase struct {
 		Index    int
-		Expected *models.LiveMatch
+		Expected *nsm.LiveMatch
 	}
 
 	testCases := []struct {
@@ -361,7 +361,7 @@ func TestLiveMatches_Remove(t *testing.T) {
 			Remove: []*removeCase{
 				{
 					Index:    0,
-					Expected: &models.LiveMatch{MatchID: 1},
+					Expected: &nsm.LiveMatch{MatchID: 1},
 				},
 			},
 			Expected: nscol.LiveMatches{},
@@ -375,7 +375,7 @@ func TestLiveMatches_Remove(t *testing.T) {
 			Remove: []*removeCase{
 				{
 					Index:    0,
-					Expected: &models.LiveMatch{MatchID: 1},
+					Expected: &nsm.LiveMatch{MatchID: 1},
 				},
 			},
 			Expected: nscol.LiveMatches{
@@ -391,7 +391,7 @@ func TestLiveMatches_Remove(t *testing.T) {
 			Remove: []*removeCase{
 				{
 					Index:    1,
-					Expected: &models.LiveMatch{MatchID: 2},
+					Expected: &nsm.LiveMatch{MatchID: 2},
 				},
 			},
 			Expected: nscol.LiveMatches{
@@ -408,7 +408,7 @@ func TestLiveMatches_Remove(t *testing.T) {
 			Remove: []*removeCase{
 				{
 					Index:    1,
-					Expected: &models.LiveMatch{MatchID: 2},
+					Expected: &nsm.LiveMatch{MatchID: 2},
 				},
 			},
 			Expected: nscol.LiveMatches{

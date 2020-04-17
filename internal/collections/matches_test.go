@@ -5,7 +5,7 @@ import (
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 func TestMatches_MatchIDs(t *testing.T) {
@@ -67,7 +67,7 @@ func TestMatches_MatchIDs(t *testing.T) {
 func TestMatches_KeyByMatchID(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.Matches
-		Expected map[nspb.MatchID]*models.Match
+		Expected map[nspb.MatchID]*nsm.Match
 	}{
 		{
 			Subject:  nil,
@@ -75,7 +75,7 @@ func TestMatches_KeyByMatchID(t *testing.T) {
 		},
 		{
 			Subject:  nscol.Matches{},
-			Expected: map[nspb.MatchID]*models.Match{},
+			Expected: map[nspb.MatchID]*nsm.Match{},
 		},
 		{
 			Subject: nscol.Matches{
@@ -87,7 +87,7 @@ func TestMatches_KeyByMatchID(t *testing.T) {
 				{ID: 4},
 				{ID: 4},
 			},
-			Expected: map[nspb.MatchID]*models.Match{
+			Expected: map[nspb.MatchID]*nsm.Match{
 				1: {ID: 1},
 				2: {ID: 2},
 				3: {ID: 3},

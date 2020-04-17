@@ -5,18 +5,18 @@ import (
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.LiveMatches
-		Match    *models.LiveMatch
+		Match    *nsm.LiveMatch
 		Expected int
 	}{
 		{
 			Subject: nil,
-			Match: &models.LiveMatch{
+			Match: &nsm.LiveMatch{
 				MatchID:   1,
 				SortScore: float64(1.0),
 			},
@@ -38,7 +38,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 					SortScore: float64(1.0),
 				},
 			},
-			Match: &models.LiveMatch{
+			Match: &nsm.LiveMatch{
 				MatchID:   4,
 				SortScore: float64(4.0),
 			},
@@ -60,7 +60,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 					SortScore: float64(1.0),
 				},
 			},
-			Match: &models.LiveMatch{
+			Match: &nsm.LiveMatch{
 				MatchID:   4,
 				SortScore: float64(0.0),
 			},
@@ -82,7 +82,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 					SortScore: float64(1.0),
 				},
 			},
-			Match: &models.LiveMatch{
+			Match: &nsm.LiveMatch{
 				MatchID:   2,
 				SortScore: float64(2.0),
 			},
@@ -104,7 +104,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 					SortScore: float64(1.0),
 				},
 			},
-			Match: &models.LiveMatch{
+			Match: &nsm.LiveMatch{
 				MatchID:   4,
 				SortScore: float64(2.1),
 			},
@@ -126,7 +126,7 @@ func TestLiveMatchesByScore_SearchIndex(t *testing.T) {
 					SortScore: float64(1.0),
 				},
 			},
-			Match: &models.LiveMatch{
+			Match: &nsm.LiveMatch{
 				MatchID:   4,
 				SortScore: float64(1.9),
 			},
@@ -243,7 +243,7 @@ func TestLiveMatchesByScore_FindIndex(t *testing.T) {
 
 func TestLiveMatchesByScore_Add(t *testing.T) {
 	type addCase struct {
-		Match    *models.LiveMatch
+		Match    *nsm.LiveMatch
 		Expected int
 	}
 
@@ -262,7 +262,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 			},
 			Add: []*addCase{
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   2,
 						SortScore: float64(2.0),
 					},
@@ -294,7 +294,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 			},
 			Add: []*addCase{
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   1,
 						SortScore: float64(1.0),
 					},
@@ -326,7 +326,7 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 			},
 			Add: []*addCase{
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   1,
 						SortScore: float64(5.0),
 					},
@@ -349,49 +349,49 @@ func TestLiveMatchesByScore_Add(t *testing.T) {
 			Subject: nil,
 			Add: []*addCase{
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   1,
 						SortScore: float64(1.0),
 					},
 					Expected: 0,
 				},
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   2,
 						SortScore: float64(2.0),
 					},
 					Expected: 0,
 				},
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   1,
 						SortScore: float64(1.0),
 					},
 					Expected: -1,
 				},
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   3,
 						SortScore: float64(3.0),
 					},
 					Expected: 0,
 				},
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   1,
 						SortScore: float64(5.0),
 					},
 					Expected: 0,
 				},
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   2,
 						SortScore: float64(2.0),
 					},
 					Expected: -1,
 				},
 				{
-					Match: &models.LiveMatch{
+					Match: &nsm.LiveMatch{
 						MatchID:   3,
 						SortScore: float64(3.1),
 					},

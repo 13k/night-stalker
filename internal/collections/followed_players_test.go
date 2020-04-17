@@ -5,7 +5,7 @@ import (
 
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 func TestFollowedPlayers_AccountIDs(t *testing.T) {
@@ -67,7 +67,7 @@ func TestFollowedPlayers_AccountIDs(t *testing.T) {
 func TestFollowedPlayers_KeyByAccountID(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.FollowedPlayers
-		Expected map[nspb.AccountID]*models.FollowedPlayer
+		Expected map[nspb.AccountID]*nsm.FollowedPlayer
 	}{
 		{
 			Subject:  nil,
@@ -75,7 +75,7 @@ func TestFollowedPlayers_KeyByAccountID(t *testing.T) {
 		},
 		{
 			Subject:  nscol.FollowedPlayers{},
-			Expected: map[nspb.AccountID]*models.FollowedPlayer{},
+			Expected: map[nspb.AccountID]*nsm.FollowedPlayer{},
 		},
 		{
 			Subject: nscol.FollowedPlayers{
@@ -85,7 +85,7 @@ func TestFollowedPlayers_KeyByAccountID(t *testing.T) {
 				{ID: 4, AccountID: 3},
 				{ID: 5, AccountID: 4},
 			},
-			Expected: map[nspb.AccountID]*models.FollowedPlayer{
+			Expected: map[nspb.AccountID]*nsm.FollowedPlayer{
 				1: {ID: 1, AccountID: 1},
 				2: {ID: 2, AccountID: 2},
 				3: {ID: 4, AccountID: 3},

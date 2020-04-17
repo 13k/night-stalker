@@ -2,10 +2,10 @@ package collections
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-type MatchPlayers []*models.MatchPlayer
+type MatchPlayers []*nsm.MatchPlayer
 
 func (s MatchPlayers) MatchIDs() MatchIDs {
 	if s == nil {
@@ -15,7 +15,7 @@ func (s MatchPlayers) MatchIDs() MatchIDs {
 	matchIDs := make(MatchIDs, len(s))
 
 	for i, p := range s {
-		matchIDs[i] = p.MatchID
+		matchIDs[i] = nspb.MatchID(p.MatchID)
 	}
 
 	return matchIDs
@@ -46,7 +46,8 @@ func (s MatchPlayers) GroupByMatchID() map[nspb.MatchID]MatchPlayers {
 	m := make(map[nspb.MatchID]MatchPlayers)
 
 	for _, p := range s {
-		m[p.MatchID] = append(m[p.MatchID], p)
+		matchID := nspb.MatchID(p.MatchID)
+		m[matchID] = append(m[matchID], p)
 	}
 
 	return m

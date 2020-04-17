@@ -6,7 +6,7 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 )
 
-func TestNewMatchIDsFromString(t *testing.T) {
+func TestNewMatchIDsString(t *testing.T) {
 	testCases := []struct {
 		String   string
 		Sep      string
@@ -64,7 +64,7 @@ func TestNewMatchIDsFromString(t *testing.T) {
 	}
 
 	for testCaseIdx, testCase := range testCases {
-		actual, err := nscol.NewMatchIDsFromString(testCase.String, testCase.Sep)
+		actual, err := nscol.NewMatchIDsStrings(testCase.String, testCase.Sep)
 
 		if testCase.Err != "" {
 			if err == nil {

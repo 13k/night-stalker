@@ -2,10 +2,24 @@ package collections
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-type ProPlayers []*models.ProPlayer
+type ProPlayers []*nsm.ProPlayer
+
+func (s ProPlayers) Records() []nsm.Record {
+	if s == nil {
+		return nil
+	}
+
+	records := make([]nsm.Record, len(s))
+
+	for i, m := range s {
+		records[i] = m
+	}
+
+	return records
+}
 
 func (s ProPlayers) AccountIDs() AccountIDs {
 	if s == nil {
@@ -35,12 +49,12 @@ func (s ProPlayers) GroupByAccountID() map[nspb.AccountID]ProPlayers {
 	return m
 }
 
-func (s ProPlayers) KeyByAccountID() map[nspb.AccountID]*models.ProPlayer {
+func (s ProPlayers) KeyByAccountID() map[nspb.AccountID]*nsm.ProPlayer {
 	if s == nil {
 		return nil
 	}
 
-	m := make(map[nspb.AccountID]*models.ProPlayer)
+	m := make(map[nspb.AccountID]*nsm.ProPlayer)
 
 	for _, p := range s {
 		m[p.AccountID] = p

@@ -2,10 +2,24 @@ package collections
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-type LiveMatchStats []*models.LiveMatchStats
+type LiveMatchStats []*nsm.LiveMatchStats
+
+func (s LiveMatchStats) Records() []nsm.Record {
+	if s == nil {
+		return nil
+	}
+
+	records := make([]nsm.Record, len(s))
+
+	for i, m := range s {
+		records[i] = m
+	}
+
+	return records
+}
 
 func (s LiveMatchStats) MatchIDs() MatchIDs {
 	if s == nil {
@@ -14,8 +28,8 @@ func (s LiveMatchStats) MatchIDs() MatchIDs {
 
 	matchIDs := make(MatchIDs, len(s))
 
-	for i, stats := range s {
-		matchIDs[i] = stats.MatchID
+	for i, st := range s {
+		matchIDs[i] = nspb.MatchID(st.MatchID)
 	}
 
 	return matchIDs
@@ -28,22 +42,23 @@ func (s LiveMatchStats) GroupByMatchID() map[nspb.MatchID]LiveMatchStats {
 
 	m := make(map[nspb.MatchID]LiveMatchStats)
 
-	for _, stats := range s {
-		m[stats.MatchID] = append(m[stats.MatchID], stats)
+	for _, st := range s {
+		matchID := nspb.MatchID(st.MatchID)
+		m[matchID] = append(m[matchID], st)
 	}
 
 	return m
 }
 
-func (s LiveMatchStats) KeyByMatchID() map[nspb.MatchID]*models.LiveMatchStats {
+func (s LiveMatchStats) KeyByMatchID() map[nspb.MatchID]*nsm.LiveMatchStats {
 	if s == nil {
 		return nil
 	}
 
-	m := make(map[nspb.MatchID]*models.LiveMatchStats)
+	m := make(map[nspb.MatchID]*nsm.LiveMatchStats)
 
-	for _, stats := range s {
-		m[stats.MatchID] = stats
+	for _, st := range s {
+		m[nspb.MatchID(st.MatchID)] = st
 	}
 
 	return m

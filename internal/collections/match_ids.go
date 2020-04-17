@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 type MatchIDs []nspb.MatchID
@@ -23,7 +24,21 @@ func NewMatchIDs(s ...uint64) MatchIDs {
 	return matchIDs
 }
 
-func NewMatchIDsFromString(s, sep string) (MatchIDs, error) {
+func NewMatchIDsModelIDs(s ...nsm.ID) MatchIDs {
+	if s == nil {
+		return nil
+	}
+
+	matchIDs := make(MatchIDs, len(s))
+
+	for i, id := range s {
+		matchIDs[i] = nspb.MatchID(id)
+	}
+
+	return matchIDs
+}
+
+func NewMatchIDsStrings(s, sep string) (MatchIDs, error) {
 	if len(s) == 0 {
 		return nil, nil
 	}

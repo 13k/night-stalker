@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 type LiveMatchesContainer struct {
@@ -12,7 +12,7 @@ type LiveMatchesContainer struct {
 	matches *LiveMatchesByScore
 }
 
-func NewLiveMatchesContainer(matches ...*models.LiveMatch) *LiveMatchesContainer {
+func NewLiveMatchesContainer(matches ...*nsm.LiveMatch) *LiveMatchesContainer {
 	return &LiveMatchesContainer{matches: NewLiveMatchesByScore(matches...)}
 }
 
@@ -37,7 +37,7 @@ func (m *LiveMatchesContainer) All() LiveMatches {
 	return matches
 }
 
-func (m *LiveMatchesContainer) Add(matches ...*models.LiveMatch) LiveMatches {
+func (m *LiveMatchesContainer) Add(matches ...*nsm.LiveMatch) LiveMatches {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
