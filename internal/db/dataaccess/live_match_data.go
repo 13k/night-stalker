@@ -10,5 +10,4 @@ type LiveMatchData struct {
 	LiveMatchStats  *nsm.LiveMatchStats
 	FollowedPlayers map[nspb.AccountID]*nsm.FollowedPlayer
 	Players         map[nspb.AccountID]*nsm.Player
-	ProPlayers      map[nspb.AccountID]*nsm.ProPlayer
 }

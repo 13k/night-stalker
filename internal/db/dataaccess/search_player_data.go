@@ -7,5 +7,4 @@ import (
 type SearchPlayerData struct {
 	FollowedPlayer *nsm.FollowedPlayer
 	Player         *nsm.Player
-	ProPlayer      *nsm.ProPlayer
 }

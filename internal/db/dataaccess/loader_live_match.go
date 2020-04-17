@@ -108,22 +108,11 @@ func (l *Loader) LiveMatchesData(ctx context.Context, params *LiveMatchesParams)
 
 	playersByAccountID := players.KeyByAccountID()
 
-	proPlayers, err := l.ProPlayers(ctx, PlayerMetaFilters{
-		AccountIDs: accountIDs,
-	})
-
-	if err != nil {
-		return nil, xerrors.Errorf("error loading pro players: %w", err)
-	}
-
-	prosByAccountID := proPlayers.KeyByAccountID()
-
 	data := &LiveMatchesData{
 		LiveMatches:                liveMatches,
 		LiveMatchStatsByMatchID:    statsByMatchID,
 		FollowedPlayersByAccountID: followedByAccountID,
 		PlayersByAccountID:         playersByAccountID,
-		ProPlayersByAccountID:      prosByAccountID,
 	}
 
 	return data, nil

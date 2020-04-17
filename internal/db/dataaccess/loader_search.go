@@ -30,7 +30,6 @@ func (l *Loader) SearchData(ctx context.Context, params *SearchParams) (*SearchD
 	}
 
 	var players nscol.Players
-	var proPlayers nscol.ProPlayers
 
 	if len(followed) > 0 {
 		accountIDs := followed.AccountIDs()
@@ -42,21 +41,12 @@ func (l *Loader) SearchData(ctx context.Context, params *SearchParams) (*SearchD
 		if err != nil {
 			return nil, xerrors.Errorf("error loading players: %w", err)
 		}
-
-		proPlayers, err = l.ProPlayers(ctx, PlayerMetaFilters{
-			AccountIDs: accountIDs,
-		})
-
-		if err != nil {
-			return nil, xerrors.Errorf("error loading pro players: %w", err)
-		}
 	}
 
 	data := &SearchData{
-		Heroes:                heroes,
-		FollowedPlayers:       followed,
-		PlayersByAccountID:    players.KeyByAccountID(),
-		ProPlayersByAccountID: proPlayers.KeyByAccountID(),
+		Heroes:             heroes,
+		FollowedPlayers:    followed,
+		PlayersByAccountID: players.KeyByAccountID(),
 	}
 
 	return data, nil

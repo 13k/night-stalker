@@ -25,7 +25,6 @@ func NewLiveMatches(data *nsdbda.LiveMatchesData) (*nspb.LiveMatches, error) {
 			LiveMatchStats:  data.LiveMatchStatsByMatchID[nspb.MatchID(liveMatch.MatchID)],
 			FollowedPlayers: data.FollowedPlayersByAccountID,
 			Players:         data.PlayersByAccountID,
-			ProPlayers:      data.ProPlayersByAccountID,
 		})
 
 		if err != nil {

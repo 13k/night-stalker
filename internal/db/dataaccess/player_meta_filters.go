@@ -8,7 +8,7 @@ import (
 	nsm "github.com/13k/night-stalker/models"
 )
 
-// PlayerMetaFilters holds filters for `FollowedPlayer`, `Player` and `ProPlayer`.
+// PlayerMetaFilters holds filters for `FollowedPlayer` and `Player`.
 //
 // It cannot be used directly as a `QueryFilterer` but can be used by one.
 type PlayerMetaFilters struct {
@@ -51,8 +51,6 @@ func (f PlayerMetaFilters) Filter(q *nsdb.SelectQuery, m nsm.Model) *nsdb.Select
 			q = q.ILike(t.Col("label"), likePattern)
 		case nsm.PlayerTable:
 			q = q.ILike(t.Col("name"), likePattern)
-		case nsm.ProPlayerTable:
-			// not supported
 		}
 
 		q = q.Prepared(true)

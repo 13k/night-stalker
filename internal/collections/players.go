@@ -7,6 +7,20 @@ import (
 
 type Players []*nsm.Player
 
+func (s Players) Records() []nsm.Record {
+	if s == nil {
+		return nil
+	}
+
+	records := make([]nsm.Record, len(s))
+
+	for i, m := range s {
+		records[i] = m
+	}
+
+	return records
+}
+
 func (s Players) AccountIDs() AccountIDs {
 	if s == nil {
 		return nil

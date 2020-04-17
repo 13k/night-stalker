@@ -104,7 +104,6 @@ func NewLiveMatch(data *nsdbda.LiveMatchData) (*nspb.LiveMatch, error) {
 		pb.Players = append(pb.Players, NewLiveMatchPlayer(&nsdbda.LiveMatchPlayerData{
 			FollowedPlayer:       followedPlayer,
 			Player:               data.Players[livePlayer.AccountID],
-			ProPlayer:            data.ProPlayers[livePlayer.AccountID],
 			LiveMatchPlayer:      livePlayer,
 			LiveMatchStatsPlayer: statsPlayers[livePlayer.AccountID],
 		}))

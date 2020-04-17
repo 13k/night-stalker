@@ -30,13 +30,10 @@ func NewPlayer(data *nsdbda.PlayerData) (*nspb.Player, error) {
 		pb.AvatarUrl = data.Player.AvatarURL
 		pb.AvatarMediumUrl = data.Player.AvatarMediumURL
 		pb.AvatarFullUrl = data.Player.AvatarFullURL
-	}
+		pb.IsPro = data.Player.TeamID != 0
 
-	if data.ProPlayer != nil {
-		pb.IsPro = true
-
-		if data.ProPlayer.Team != nil {
-			pb.Team = NewTeam(data.ProPlayer.Team)
+		if data.Player.Team != nil {
+			pb.Team = NewTeam(data.Player.Team)
 		}
 	}
 

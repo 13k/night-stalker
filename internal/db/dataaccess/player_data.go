@@ -11,30 +11,23 @@ type PlayerData struct {
 	AccountID      nspb.AccountID
 	FollowedPlayer *nsm.FollowedPlayer
 	Player         *nsm.Player
-	ProPlayer      *nsm.ProPlayer
 }
 
 func NewPlayerData(
 	followedPlayer *nsm.FollowedPlayer,
 	player *nsm.Player,
-	proPlayer *nsm.ProPlayer,
 ) *PlayerData {
 	data := &PlayerData{
 		FollowedPlayer: followedPlayer,
 		Player:         player,
-		ProPlayer:      proPlayer,
 	}
 
 	if data.AccountID == 0 {
 		data.AccountID = followedPlayer.AccountID
 	}
 
-	if data.AccountID == 0 {
+	if data.AccountID == 0 && player != nil {
 		data.AccountID = player.AccountID
-	}
-
-	if data.AccountID == 0 {
-		data.AccountID = proPlayer.AccountID
 	}
 
 	return data
@@ -50,10 +43,6 @@ func (d *PlayerData) Validate() error {
 	}
 
 	if d.Player != nil && d.Player.AccountID != d.AccountID {
-		return xerrors.Errorf("invalid PlayerData: %w", ErrInconsistentAccountIDs)
-	}
-
-	if d.ProPlayer != nil && d.ProPlayer.AccountID != d.AccountID {
 		return xerrors.Errorf("invalid PlayerData: %w", ErrInconsistentAccountIDs)
 	}
 

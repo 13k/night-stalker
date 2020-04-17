@@ -42,22 +42,6 @@ func (l *Loader) Players(ctx context.Context, filters PlayerMetaFilters) (nscol.
 	return players, nil
 }
 
-func (l *Loader) ProPlayers(ctx context.Context, filters PlayerMetaFilters) (nscol.ProPlayers, error) {
-	f := &ProPlayerFilters{PlayerMetaFilters: filters}
-
-	if err := filters.Validate(); err != nil {
-		return nil, xerrors.Errorf("invalid filters: %w", err)
-	}
-
-	var players nscol.ProPlayers
-
-	if err := l.mq.M().Filter(ctx, nsm.ProPlayerModel, f, &players); err != nil {
-		return nil, xerrors.Errorf("error loading pro players: %w", err)
-	}
-
-	return players, nil
-}
-
 func (l *Loader) FilterFollowedPlayersAccountIDs(
 	ctx context.Context,
 	accountIDs ...nspb.AccountID,
@@ -91,7 +75,6 @@ func (l *Loader) PlayersData(ctx context.Context, accountIDs ...nspb.AccountID) 
 
 	tFollowedPlayer := nsm.FollowedPlayerTable
 	tPlayer := nsm.PlayerTable
-	tProPlayer := nsm.ProPlayerTable
 
 	var followedPlayers nscol.FollowedPlayers
 
@@ -130,27 +113,11 @@ func (l *Loader) PlayersData(ctx context.Context, accountIDs ...nspb.AccountID) 
 		return nil, xerrors.Errorf("error loading players: %w", err)
 	}
 
-	var proPlayers nscol.ProPlayers
-
-	q = l.mq.
-		Q().
-		Select().
-		In(tProPlayer.Col("account_id"), accountIDs).
-		Prepared(true).
-		Trace()
-
-	err = l.mq.M().FindAll(ctx, nsm.ProPlayerModel, q, &proPlayers)
-
-	if err != nil {
-		return nil, xerrors.Errorf("error loading pro players: %w", err)
-	}
-
-	if err = l.mq.M().Eagerload(ctx, "Team", proPlayers.Records()...); err != nil {
+	if err = l.mq.M().Eagerload(ctx, "Team", players.Records()...); err != nil {
 		return nil, xerrors.Errorf("error loading pro players' teams: %w", err)
 	}
 
 	playersByAccountID := players.KeyByAccountID()
-	proPlayersByAccountID := proPlayers.KeyByAccountID()
 	data := make([]*PlayerData, len(followedPlayers))
 
 	for i, followedPlayer := range followedPlayers {
@@ -159,7 +126,6 @@ func (l *Loader) PlayersData(ctx context.Context, accountIDs ...nspb.AccountID) 
 		data[i] = NewPlayerData(
 			followedPlayer,
 			playersByAccountID[accountID],
-			proPlayersByAccountID[accountID],
 		)
 	}
 

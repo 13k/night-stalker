@@ -10,7 +10,7 @@ func NewSearchPlayer(data *nsdbda.SearchPlayerData) *nspb.Search_Player {
 		AccountId: uint32(data.FollowedPlayer.AccountID),
 		Name:      data.FollowedPlayer.Label,
 		Slug:      data.FollowedPlayer.Slug,
-		IsPro:     data.ProPlayer != nil,
+		IsPro:     data.Player.TeamID != 0,
 	}
 
 	if player := data.Player; player != nil {

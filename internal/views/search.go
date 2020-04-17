@@ -19,7 +19,6 @@ func NewSearch(data *nsdbda.SearchData) *nspb.Search {
 		pb.Players[i] = NewSearchPlayer(&nsdbda.SearchPlayerData{
 			FollowedPlayer: followed,
 			Player:         data.PlayersByAccountID[followed.AccountID],
-			ProPlayer:      data.ProPlayersByAccountID[followed.AccountID],
 		})
 	}
 

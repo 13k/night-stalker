@@ -24,6 +24,7 @@ func NewLiveMatchPlayer(data *nsdbda.LiveMatchPlayerData) *nspb.LiveMatch_Player
 		pb.AvatarUrl = player.AvatarURL
 		pb.AvatarMediumUrl = player.AvatarMediumURL
 		pb.AvatarFullUrl = player.AvatarFullURL
+		pb.IsPro = player.TeamID != 0
 	}
 
 	if statsPlayer := data.LiveMatchStatsPlayer; statsPlayer != nil {
@@ -50,8 +51,6 @@ func NewLiveMatchPlayer(data *nsdbda.LiveMatchPlayerData) *nspb.LiveMatch_Player
 		pb.Gold = statsPlayer.Gold
 		pb.NetWorth = statsPlayer.NetWorth
 	}
-
-	pb.IsPro = data.ProPlayer != nil
 
 	return pb
 }
