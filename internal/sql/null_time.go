@@ -23,6 +23,14 @@ func NullTimeUnix(sec int64) sql.NullTime {
 	}
 }
 
+func NullTimeIsZero(t sql.NullTime) bool {
+	if !t.Valid {
+		return true
+	}
+
+	return t.Time.IsZero()
+}
+
 func NullTimeEqual(left, right sql.NullTime) bool {
 	if !left.Valid && !right.Valid {
 		return true

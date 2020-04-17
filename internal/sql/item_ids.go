@@ -11,7 +11,7 @@ type ItemIDs []nspb.ItemID
 var _ IntArrayScanner = (*ItemIDs)(nil)
 var _ IntArrayValuer = (ItemIDs)(nil)
 
-func NewItemIDsFromUint32s(ids []uint32) ItemIDs {
+func NewItemIDs(ids []uint32) ItemIDs {
 	if ids == nil {
 		return nil
 	}

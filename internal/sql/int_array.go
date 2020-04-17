@@ -29,3 +29,23 @@ func IntArrayScan(src interface{}, dst IntArrayScanner) error {
 func IntArrayValue(s IntArrayValuer) (driver.Value, error) {
 	return pq.Int64Array(s.ToInt64s()).Value()
 }
+
+func IntArrayEqual(left, right IntArrayValuer) bool {
+	if (left == nil && right != nil) || (left != nil && right == nil) {
+		return false
+	}
+
+	sLeft, sRight := left.ToInt64s(), right.ToInt64s()
+
+	if len(sLeft) != len(sRight) {
+		return false
+	}
+
+	for i, n := range sLeft {
+		if sRight[i] != n {
+			return false
+		}
+	}
+
+	return true
+}

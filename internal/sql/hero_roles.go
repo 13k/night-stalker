@@ -8,6 +8,9 @@ import (
 
 type HeroRoles []nspb.HeroRole
 
+var _ IntArrayScanner = (*HeroRoles)(nil)
+var _ IntArrayValuer = (HeroRoles)(nil)
+
 func (s HeroRoles) ToInt64s() []int64 {
 	if s == nil {
 		return nil
@@ -41,6 +44,6 @@ func (s *HeroRoles) Scan(src interface{}) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (s *HeroRoles) Value() (driver.Value, error) {
+func (s HeroRoles) Value() (driver.Value, error) {
 	return IntArrayValue(s)
 }
