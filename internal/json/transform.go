@@ -39,13 +39,13 @@ type Transform struct {
 
 func NewTransform(data []byte) (*Transform, error) {
 	if !jsoniter.Valid(data) {
-		return nil, xerrors.New("invalid response data")
+		return nil, xerrors.New("Transform: data is not valid JSON")
 	}
 
 	it := jsoniter.ParseBytes(jsoniter.ConfigDefault, data)
 
 	if it.Error != nil {
-		return nil, xerrors.Errorf("error parsing response data: %w", it.Error)
+		return nil, xerrors.Errorf("Transform: error parsing JSON: %w", it.Error)
 	}
 
 	t := &Transform{
@@ -58,7 +58,7 @@ func NewTransform(data []byte) (*Transform, error) {
 
 func (t *Transform) ValidateNext(expectedType jsoniter.ValueType) error {
 	if actualType := t.WhatIsNext(); actualType != expectedType {
-		return xerrors.Errorf("transform: parse error: %w", &ErrUnexpectedType{
+		return xerrors.Errorf("Transform: parse error: %w", &ErrUnexpectedType{
 			Expected: expectedType,
 			Actual:   actualType,
 		})
@@ -69,38 +69,38 @@ func (t *Transform) ValidateNext(expectedType jsoniter.ValueType) error {
 
 func (t *Transform) Array(cb func() ([]byte, error)) ([]byte, error) {
 	if err := t.ValidateNext(jsoniter.ArrayValue); err != nil {
-		return nil, xerrors.Errorf("transform: array transform error: %w", err)
+		return nil, xerrors.Errorf("Transform: Array transform error: %w", err)
 	}
 
-	buf := &bytes.Buffer{}
-	first := true
-	skip := false
-
-	buf.WriteByte('[')
+	var items [][]byte
 
 	for {
 		if !t.ReadArray() {
 			break
 		}
 
-		if !first && !skip {
-			buf.WriteByte(',')
-		}
-
-		first = false
-
 		b, err := cb()
 
 		if err != nil {
-			return nil, xerrors.Errorf("transform: array transform callback error: %w", err)
+			return nil, xerrors.Errorf("Transform: Array callback error: %w", err)
 		}
 
-		skip = b == nil
-
-		if skip {
+		if b == nil {
 			t.Skip()
 		} else {
-			buf.Write(b)
+			items = append(items, b)
+		}
+	}
+
+	var buf bytes.Buffer
+
+	buf.WriteByte('[')
+
+	for i, item := range items {
+		buf.Write(item)
+
+		if i < len(items)-1 {
+			buf.WriteByte(',')
 		}
 	}
 
@@ -111,14 +111,15 @@ func (t *Transform) Array(cb func() ([]byte, error)) ([]byte, error) {
 
 func (t *Transform) Object(cb func(string) ([]byte, error)) ([]byte, error) {
 	if err := t.ValidateNext(jsoniter.ObjectValue); err != nil {
-		return nil, xerrors.Errorf("transform: object transform error: %w", err)
+		return nil, xerrors.Errorf("Transform: Object transform error: %w", err)
 	}
 
-	buf := &bytes.Buffer{}
-	first := true
-	skip := false
+	type kv struct {
+		key   string
+		value []byte
+	}
 
-	buf.WriteByte('{')
+	var items []*kv
 
 	for {
 		key := t.ReadObject()
@@ -127,25 +128,32 @@ func (t *Transform) Object(cb func(string) ([]byte, error)) ([]byte, error) {
 			break
 		}
 
-		if !first && !skip {
-			buf.WriteByte(',')
-		}
-
-		first = false
-
 		b, err := cb(key)
 
 		if err != nil {
-			return nil, xerrors.Errorf("transform: object transform callback error: %w", err)
+			return nil, xerrors.Errorf("Transform: Object callback error: %w", err)
 		}
 
-		skip = b == nil
-
-		if skip {
+		if b == nil {
 			t.Skip()
 		} else {
-			fmt.Fprintf(buf, `"%s":`, key)
-			buf.Write(b)
+			items = append(items, &kv{
+				key:   key,
+				value: b,
+			})
+		}
+	}
+
+	var buf bytes.Buffer
+
+	buf.WriteByte('{')
+
+	for i, kv := range items {
+		fmt.Fprintf(&buf, `"%s":`, kv.key)
+		buf.Write(kv.value)
+
+		if i < len(items)-1 {
+			buf.WriteByte(',')
 		}
 	}
 
