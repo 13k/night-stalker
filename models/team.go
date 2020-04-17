@@ -19,4 +19,6 @@ type Team struct {
 
 	Timestamps
 	SoftDelete
+
+	Players []*Player `db:"-" model:"has_many"`
 }

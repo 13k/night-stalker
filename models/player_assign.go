@@ -63,6 +63,26 @@ func (m *Player) Assign(other *Player) (dirty bool) {
 		dirty = true
 	}
 
+	if m.IsLocked != other.IsLocked {
+		m.IsLocked = other.IsLocked
+		dirty = true
+	}
+
+	if !nssql.NullTimeEqual(m.LockedUntil, other.LockedUntil) {
+		m.LockedUntil = other.LockedUntil
+		dirty = true
+	}
+
+	if m.FantasyRole != other.FantasyRole {
+		m.FantasyRole = other.FantasyRole
+		dirty = true
+	}
+
+	if m.TeamID != other.TeamID {
+		m.TeamID = other.TeamID
+		dirty = true
+	}
+
 	if !m.CreatedAt.Equal(other.CreatedAt) {
 		m.CreatedAt = other.CreatedAt
 		dirty = true
@@ -135,6 +155,26 @@ func (m *Player) AssignPartial(other *Player) (dirty bool) {
 
 	if other.CountryCode != "" && m.CountryCode != other.CountryCode {
 		m.CountryCode = other.CountryCode
+		dirty = true
+	}
+
+	if other.IsLocked && m.IsLocked != other.IsLocked {
+		m.IsLocked = other.IsLocked
+		dirty = true
+	}
+
+	if !nssql.NullTimeIsZero(other.LockedUntil) && !nssql.NullTimeEqual(m.LockedUntil, other.LockedUntil) {
+		m.LockedUntil = other.LockedUntil
+		dirty = true
+	}
+
+	if other.FantasyRole != 0 && m.FantasyRole != other.FantasyRole {
+		m.FantasyRole = other.FantasyRole
+		dirty = true
+	}
+
+	if other.TeamID != 0 && m.TeamID != other.TeamID {
+		m.TeamID = other.TeamID
 		dirty = true
 	}
 

@@ -6,6 +6,17 @@ var _ Record = (*Player)(nil)
 
 var PlayerModel Model = (*modelPlayer)(nil)
 
+// uses an anonymous struct to have compile-time checks when using associations
+var assocPlayer = struct {
+	Team Association
+}{
+	Team: NewAssociation(
+		BelongsTo,
+		&ModelAssociation{Model: PlayerModel, Name: "Team", PK: "id", FK: "team_id"},
+		&ModelAssociation{Model: TeamModel, Name: "Player", PK: "id", FK: ""},
+	),
+}
+
 type modelPlayer struct{}
 
 func (*modelPlayer) Name() string             { return "Player" }
@@ -34,10 +45,17 @@ func (*modelPlayer) AsRecordSlice(v interface{}) ([]Record, error) {
 }
 
 func (*modelPlayer) Associations() []Association {
-	return nil
+	return []Association{
+		assocPlayer.Team,
+	}
 }
 
 func (*modelPlayer) Association(name string) (Association, error) {
+	switch name {
+	case "Team":
+		return assocPlayer.Team, nil
+	}
+
 	return nil, &ErrNotAssociated{Model: PlayerModel, Assoc: name}
 }
 
@@ -66,9 +84,30 @@ func (m *Player) GetAssocPK(assoc string) (ID, error) {
 }
 
 func (m *Player) GetAssocFK(assoc string) (ID, error) {
+	switch assoc {
+	case "Team":
+		return m.TeamID, nil
+	}
+
 	return 0, &ErrNotAssociated{Model: PlayerModel, Assoc: assoc}
 }
 
 func (m *Player) SetAssociated(assoc string, records ...Record) error {
+	if len(records) == 0 {
+		return nil
+	}
+
+	switch assoc {
+	case "Team":
+		r := records[0]
+
+		if mr, ok := r.(*Team); ok {
+			m.Team = mr
+			return nil
+		}
+
+		return &ErrInvalidAssociationRecord{Assoc: assocPlayer.Team, Record: r}
+	}
+
 	return &ErrNotAssociated{Model: PlayerModel, Assoc: assoc}
 }
