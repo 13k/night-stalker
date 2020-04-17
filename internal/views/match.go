@@ -3,15 +3,15 @@ package views
 import (
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-func NewMatch(data *MatchData) (*nspb.Match, error) {
+func NewMatch(data *nsdbda.MatchData) (*nspb.Match, error) {
 	if err := data.Validate(); err != nil {
-		err = xerrors.Errorf("invalid MatchData: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("invalid MatchData: %w", err)
 	}
 
 	var err error
@@ -31,8 +31,7 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 		pb.DireScore = data.Match.DireScore
 
 		if pb.StartTime, err = nssql.NullTimeProto(data.Match.StartTime); err != nil {
-			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		}
 	}
 
@@ -53,18 +52,15 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 		pb.DireTeamLogo = uint64(data.LiveMatch.DireTeamLogo)
 
 		if pb.ActivateTime, err = nssql.NullTimeProto(data.LiveMatch.ActivateTime); err != nil {
-			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		}
 
 		if pb.DeactivateTime, err = nssql.NullTimeProto(data.LiveMatch.DeactivateTime); err != nil {
-			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		}
 
 		if pb.LastUpdateTime, err = nssql.NullTimeProto(data.LiveMatch.LastUpdateTime); err != nil {
-			err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 		}
 	}
 
@@ -77,8 +73,8 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 			pb.GameMode = stats.GameMode
 		}
 
-		var radiantTeam *models.LiveMatchStatsTeam
-		var direTeam *models.LiveMatchStatsTeam
+		var radiantTeam *nsm.LiveMatchStatsTeam
+		var direTeam *nsm.LiveMatchStatsTeam
 
 		for _, team := range stats.Teams {
 			switch team.GameTeam {
@@ -138,8 +134,7 @@ func NewMatch(data *MatchData) (*nspb.Match, error) {
 		pbMatchPlayer, err := NewMatchPlayer(playerData)
 
 		if err != nil {
-			err = xerrors.Errorf("error creating Match_Player view: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error creating Match_Player view: %w", err)
 		}
 
 		pb.Players = append(pb.Players, pbMatchPlayer)

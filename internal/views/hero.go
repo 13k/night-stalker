@@ -2,10 +2,10 @@ package views
 
 import (
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-func NewHero(h *models.Hero) *nspb.Hero {
+func NewHero(h *nsm.Hero) *nspb.Hero {
 	return &nspb.Hero{
 		Id:                 uint64(h.ID),
 		Name:               h.Name,

@@ -1,23 +1,19 @@
 package views
 
 import (
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
-func NewSearchPlayer(
-	followed *models.FollowedPlayer,
-	player *models.Player,
-	proPlayer *models.ProPlayer,
-) *nspb.Search_Player {
+func NewSearchPlayer(data *nsdbda.SearchPlayerData) *nspb.Search_Player {
 	pb := &nspb.Search_Player{
-		AccountId: uint32(followed.AccountID),
-		Name:      followed.Label,
-		Slug:      followed.Slug,
-		IsPro:     proPlayer != nil,
+		AccountId: uint32(data.FollowedPlayer.AccountID),
+		Name:      data.FollowedPlayer.Label,
+		Slug:      data.FollowedPlayer.Slug,
+		IsPro:     data.ProPlayer != nil,
 	}
 
-	if player != nil {
+	if player := data.Player; player != nil {
 		if pb.AccountId == 0 {
 			pb.AccountId = uint32(player.AccountID)
 		}

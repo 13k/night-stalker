@@ -1,26 +1,20 @@
 package views
 
 import (
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
-func NewLiveMatchPlayer(
-	followed *models.FollowedPlayer,
-	player *models.Player,
-	proPlayer *models.ProPlayer,
-	livePlayer *models.LiveMatchPlayer,
-	statsPlayer *models.LiveMatchStatsPlayer,
-) *nspb.LiveMatch_Player {
+func NewLiveMatchPlayer(data *nsdbda.LiveMatchPlayerData) *nspb.LiveMatch_Player {
 	pb := &nspb.LiveMatch_Player{
-		AccountId: uint32(followed.AccountID),
-		Name:      followed.Label,
-		Label:     followed.Label,
-		Slug:      followed.Slug,
-		HeroId:    uint64(livePlayer.HeroID),
+		AccountId: uint32(data.FollowedPlayer.AccountID),
+		Name:      data.FollowedPlayer.Label,
+		Label:     data.FollowedPlayer.Label,
+		Slug:      data.FollowedPlayer.Slug,
+		HeroId:    uint64(data.LiveMatchPlayer.HeroID),
 	}
 
-	if player != nil {
+	if player := data.Player; player != nil {
 		if pb.AccountId == 0 {
 			pb.AccountId = uint32(player.AccountID)
 		}
@@ -32,7 +26,7 @@ func NewLiveMatchPlayer(
 		pb.AvatarFullUrl = player.AvatarFullURL
 	}
 
-	if statsPlayer != nil {
+	if statsPlayer := data.LiveMatchStatsPlayer; statsPlayer != nil {
 		if pb.AccountId == 0 {
 			pb.AccountId = uint32(statsPlayer.AccountID)
 		}
@@ -57,7 +51,7 @@ func NewLiveMatchPlayer(
 		pb.NetWorth = statsPlayer.NetWorth
 	}
 
-	pb.IsPro = proPlayer != nil
+	pb.IsPro = data.ProPlayer != nil
 
 	return pb
 }

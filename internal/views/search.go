@@ -1,43 +1,26 @@
 package views
 
 import (
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
-func NewSearch(
-	heroes []*models.Hero,
-	followed []*models.FollowedPlayer,
-	players []*models.Player,
-	proPlayers []*models.ProPlayer,
-) *nspb.Search {
+func NewSearch(data *nsdbda.SearchData) *nspb.Search {
 	pb := &nspb.Search{
-		HeroIds: make([]uint64, len(heroes)),
-		Players: make([]*nspb.Search_Player, len(followed)),
+		HeroIds: make([]uint64, len(data.Heroes)),
+		Players: make([]*nspb.Search_Player, len(data.FollowedPlayers)),
 	}
 
-	for i, hero := range heroes {
+	for i, hero := range data.Heroes {
 		pb.HeroIds[i] = uint64(hero.ID)
 	}
 
-	playersByAccountID := make(map[nspb.AccountID]*models.Player)
-
-	for _, player := range players {
-		playersByAccountID[player.AccountID] = player
-	}
-
-	proPlayersByAccountID := make(map[nspb.AccountID]*models.ProPlayer)
-
-	for _, proPlayer := range proPlayers {
-		proPlayersByAccountID[proPlayer.AccountID] = proPlayer
-	}
-
-	for i, fp := range followed {
-		pb.Players[i] = NewSearchPlayer(
-			fp,
-			playersByAccountID[fp.AccountID],
-			proPlayersByAccountID[fp.AccountID],
-		)
+	for i, followed := range data.FollowedPlayers {
+		pb.Players[i] = NewSearchPlayer(&nsdbda.SearchPlayerData{
+			FollowedPlayer: followed,
+			Player:         data.PlayersByAccountID[followed.AccountID],
+			ProPlayer:      data.ProPlayersByAccountID[followed.AccountID],
+		})
 	}
 
 	return pb

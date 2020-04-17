@@ -5,10 +5,11 @@ import (
 
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-func NewMatches(data MatchesData) ([]*nspb.Match, error) {
+func NewMatches(data nsdbda.MatchesData) ([]*nspb.Match, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -19,8 +20,7 @@ func NewMatches(data MatchesData) ([]*nspb.Match, error) {
 		match, err := NewMatch(matchData)
 
 		if err != nil {
-			err = xerrors.Errorf("error creating Match view: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error creating Match view: %w", err)
 		}
 
 		matches = append(matches, match)
@@ -29,12 +29,11 @@ func NewMatches(data MatchesData) ([]*nspb.Match, error) {
 	return matches, nil
 }
 
-func NewSortedMatches(data MatchesData) ([]*nspb.Match, error) {
+func NewSortedMatches(data nsdbda.MatchesData) ([]*nspb.Match, error) {
 	matches, err := NewMatches(data)
 
 	if err != nil {
-		err = xerrors.Errorf("error creating Match views: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating Match views: %w", err)
 	}
 
 	sort.Slice(matches, func(i, j int) bool {

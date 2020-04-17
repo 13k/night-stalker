@@ -3,33 +3,31 @@ package views
 import (
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
-func NewHeroMatches(
-	hero *models.Hero,
-	knownPlayers PlayersData,
-	matchesData MatchesData,
-) (*nspb.HeroMatches, error) {
+func NewHeroMatches(data *nsdbda.HeroMatchesData) (*nspb.HeroMatches, error) {
+	if data == nil {
+		return nil, nil
+	}
+
 	pb := &nspb.HeroMatches{
-		Hero: NewHero(hero),
+		Hero: NewHero(data.Hero),
 	}
 
 	var err error
 
-	pb.KnownPlayers, err = NewSortedPlayers(knownPlayers)
+	pb.KnownPlayers, err = NewSortedPlayers(data.KnownPlayers)
 
 	if err != nil {
-		err = xerrors.Errorf("error creating Player views: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating Player views: %w", err)
 	}
 
-	pb.Matches, err = NewSortedMatches(matchesData)
+	pb.Matches, err = NewSortedMatches(data.MatchesData)
 
 	if err != nil {
-		err = xerrors.Errorf("error creating Match views: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating Match views: %w", err)
 	}
 
 	return pb, nil

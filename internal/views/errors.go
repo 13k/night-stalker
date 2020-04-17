@@ -1,16 +1,7 @@
 package views
 
 import (
-	"errors"
 	"fmt"
-)
-
-var (
-	ErrMissingMatchID         = errors.New("missing match ID")
-	ErrInconsistentMatchIDs   = errors.New("inconsistent match IDs")
-	ErrMissingAccountID       = errors.New("missing account ID")
-	ErrInconsistentAccountIDs = errors.New("inconsistent account IDs")
-	ErrMissingHeroID          = errors.New("missing hero ID")
 )
 
 type ErrAssociationNotEagerLoaded struct {

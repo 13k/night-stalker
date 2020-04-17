@@ -3,13 +3,13 @@ package views
 import (
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-func NewMatchPlayer(data *MatchPlayerData) (*nspb.Match_Player, error) {
+func NewMatchPlayer(data *nsdbda.MatchPlayerData) (*nspb.Match_Player, error) {
 	if err := data.Validate(); err != nil {
-		err = xerrors.Errorf("invalid MatchPlayerData: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("invalid MatchPlayerData: %w", err)
 	}
 
 	pb := &nspb.Match_Player{

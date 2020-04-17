@@ -1,11 +1,11 @@
 package views
 
 import (
+	nscol "github.com/13k/night-stalker/internal/collections"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
-func NewHeroes(heroes []*models.Hero) *nspb.Heroes {
+func NewHeroes(heroes nscol.Heroes) *nspb.Heroes {
 	if len(heroes) == 0 {
 		return nil
 	}

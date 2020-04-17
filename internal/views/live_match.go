@@ -3,34 +3,28 @@ package views
 import (
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
-func NewLiveMatch(
-	liveMatch *models.LiveMatch,
-	stats *models.LiveMatchStats,
-	followed map[nspb.AccountID]*models.FollowedPlayer,
-	players map[nspb.AccountID]*models.Player,
-	proPlayers map[nspb.AccountID]*models.ProPlayer,
-) (*nspb.LiveMatch, error) {
-	pb, err := LiveMatchFromModel(liveMatch)
+func NewLiveMatch(data *nsdbda.LiveMatchData) (*nspb.LiveMatch, error) {
+	pb, err := LiveMatchFromModel(data.LiveMatch)
 
 	if err != nil {
-		err = xerrors.Errorf("error creating LiveMatch view: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating LiveMatch view: %w", err)
 	}
 
-	statsPlayers := make(map[nspb.AccountID]*models.LiveMatchStatsPlayer)
+	statsPlayers := make(map[nspb.AccountID]*nsm.LiveMatchStatsPlayer)
 
-	if stats != nil {
+	if stats := data.LiveMatchStats; stats != nil {
 		pb.GameState = stats.GameState
 		pb.GameTimestamp = stats.GameTimestamp
 		pb.GameTime = stats.GameTime
 
-		var radiantTeam *models.LiveMatchStatsTeam
-		var direTeam *models.LiveMatchStatsTeam
+		var radiantTeam *nsm.LiveMatchStatsTeam
+		var direTeam *nsm.LiveMatchStatsTeam
 
 		for _, team := range stats.Teams {
 			switch team.GameTeam {
@@ -100,26 +94,26 @@ func NewLiveMatch(
 		}
 	}
 
-	for _, livePlayer := range liveMatch.Players {
-		followedPlayer, ok := followed[livePlayer.AccountID]
+	for _, livePlayer := range data.LiveMatch.Players {
+		followedPlayer, ok := data.FollowedPlayers[livePlayer.AccountID]
 
 		if !ok {
 			continue
 		}
 
-		pb.Players = append(pb.Players, NewLiveMatchPlayer(
-			followedPlayer,
-			players[livePlayer.AccountID],
-			proPlayers[livePlayer.AccountID],
-			livePlayer,
-			statsPlayers[livePlayer.AccountID],
-		))
+		pb.Players = append(pb.Players, NewLiveMatchPlayer(&nsdbda.LiveMatchPlayerData{
+			FollowedPlayer:       followedPlayer,
+			Player:               data.Players[livePlayer.AccountID],
+			ProPlayer:            data.ProPlayers[livePlayer.AccountID],
+			LiveMatchPlayer:      livePlayer,
+			LiveMatchStatsPlayer: statsPlayers[livePlayer.AccountID],
+		}))
 	}
 
 	return pb, nil
 }
 
-func LiveMatchFromModel(m *models.LiveMatch) (*nspb.LiveMatch, error) {
+func LiveMatchFromModel(m *nsm.LiveMatch) (*nspb.LiveMatch, error) {
 	pb := &nspb.LiveMatch{
 		MatchId:                    uint64(m.MatchID),
 		ServerId:                   uint64(m.ServerID),
@@ -152,18 +146,15 @@ func LiveMatchFromModel(m *models.LiveMatch) (*nspb.LiveMatch, error) {
 	var err error
 
 	if pb.ActivateTime, err = nssql.NullTimeProto(m.ActivateTime); err != nil {
-		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 	}
 
 	if pb.DeactivateTime, err = nssql.NullTimeProto(m.DeactivateTime); err != nil {
-		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 	}
 
 	if pb.LastUpdateTime, err = nssql.NullTimeProto(m.LastUpdateTime); err != nil {
-		err = xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error converting Time to protobuf Timestamp: %w", err)
 	}
 
 	return pb, nil

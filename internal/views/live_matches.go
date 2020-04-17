@@ -3,31 +3,33 @@ package views
 import (
 	"golang.org/x/xerrors"
 
+	nscol "github.com/13k/night-stalker/internal/collections"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
 )
 
-func NewLiveMatches(
-	liveMatches []*models.LiveMatch,
-	stats map[nspb.MatchID]*models.LiveMatchStats,
-	followed map[nspb.AccountID]*models.FollowedPlayer,
-	players map[nspb.AccountID]*models.Player,
-	proPlayers map[nspb.AccountID]*models.ProPlayer,
-) (*nspb.LiveMatches, error) {
-	pbLiveMatches := make([]*nspb.LiveMatch, len(liveMatches))
+func NewLiveMatches(data *nsdbda.LiveMatchesData) (*nspb.LiveMatches, error) {
+	if data == nil {
+		return nil, nil
+	}
 
-	for i, liveMatch := range liveMatches {
-		pbLiveMatch, err := NewLiveMatch(
-			liveMatch,
-			stats[liveMatch.MatchID],
-			followed,
-			players,
-			proPlayers,
-		)
+	if len(data.LiveMatches) == 0 {
+		return nil, nil
+	}
+
+	pbLiveMatches := make([]*nspb.LiveMatch, len(data.LiveMatches))
+
+	for i, liveMatch := range data.LiveMatches {
+		pbLiveMatch, err := NewLiveMatch(&nsdbda.LiveMatchData{
+			LiveMatch:       liveMatch,
+			LiveMatchStats:  data.LiveMatchStatsByMatchID[nspb.MatchID(liveMatch.MatchID)],
+			FollowedPlayers: data.FollowedPlayersByAccountID,
+			Players:         data.PlayersByAccountID,
+			ProPlayers:      data.ProPlayersByAccountID,
+		})
 
 		if err != nil {
-			err = xerrors.Errorf("error creating LiveMatch view: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error creating LiveMatch view: %w", err)
 		}
 
 		pbLiveMatches[i] = pbLiveMatch
@@ -38,4 +40,22 @@ func NewLiveMatches(
 	}
 
 	return view, nil
+}
+
+func NewShallowLiveMatches(matchIDs nscol.MatchIDs) *nspb.LiveMatches {
+	if len(matchIDs) == 0 {
+		return nil
+	}
+
+	pbLiveMatches := make([]*nspb.LiveMatch, len(matchIDs))
+
+	for i, matchID := range matchIDs {
+		pbLiveMatches[i] = &nspb.LiveMatch{
+			MatchId: uint64(matchID),
+		}
+	}
+
+	return &nspb.LiveMatches{
+		Matches: pbLiveMatches,
+	}
 }

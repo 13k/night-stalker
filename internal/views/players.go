@@ -5,10 +5,11 @@ import (
 
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 )
 
-func NewPlayers(data PlayersData) ([]*nspb.Player, error) {
+func NewPlayers(data nsdbda.PlayersData) ([]*nspb.Player, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -19,8 +20,7 @@ func NewPlayers(data PlayersData) ([]*nspb.Player, error) {
 		player, err := NewPlayer(playerData)
 
 		if err != nil {
-			err = xerrors.Errorf("error creating Player view: %w", err)
-			return nil, err
+			return nil, xerrors.Errorf("error creating Player view: %w", err)
 		}
 
 		players = append(players, player)
@@ -29,12 +29,11 @@ func NewPlayers(data PlayersData) ([]*nspb.Player, error) {
 	return players, nil
 }
 
-func NewSortedPlayers(data PlayersData) ([]*nspb.Player, error) {
+func NewSortedPlayers(data nsdbda.PlayersData) ([]*nspb.Player, error) {
 	players, err := NewPlayers(data)
 
 	if err != nil {
-		err = xerrors.Errorf("error creating Player views: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating Player views: %w", err)
 	}
 
 	sort.Slice(players, func(i, j int) bool {
