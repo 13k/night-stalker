@@ -1,6 +1,6 @@
 module github.com/13k/night-stalker
 
-go 1.13
+go 1.14
 
 require (
 	cirello.io/oversight v1.0.3
@@ -19,13 +19,13 @@ require (
 	github.com/golang/protobuf v1.4.0-rc.4
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.2
-	github.com/jinzhu/gorm v1.9.12
 	github.com/json-iterator/go v1.1.9
 	github.com/labstack/echo/v4 v4.1.15
 	github.com/labstack/gommon v0.3.0
 	github.com/lib/pq v1.3.0
 	github.com/markbates/pkger v0.15.0
 	github.com/mattn/go-isatty v0.0.12
+	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/panjf2000/ants/v2 v2.3.1
 	github.com/paralin/go-dota2 v0.0.0-20191126225751-cae5acd7b08d
