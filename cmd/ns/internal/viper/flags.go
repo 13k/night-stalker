@@ -9,7 +9,7 @@ import (
 )
 
 func MustBindFlag(key Key, cmd *cobra.Command, flag *pflag.Flag) {
-	if err := viper.BindPFlag(string(key), flag); err != nil {
+	if err := viper.BindPFlag(getkey(key), flag); err != nil {
 		panic(err)
 	}
 }

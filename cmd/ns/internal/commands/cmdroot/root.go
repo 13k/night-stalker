@@ -1,8 +1,8 @@
 package cmdroot
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -20,34 +20,43 @@ import (
 const (
 	cfgEnvPrefix      = "ns"
 	cfgBaseName       = "config"
-	cfgDefaultLogFile = "-"
+	cfgDefaultLogPath = "-"
+
+	flagHelpLogPath = `log file or directory
+* with "-", logs to stdout
+* with directory, it will create a log with the command name and timestamp
+`
 )
 
 var Cmd = &cobra.Command{
-	Use:              "ns <command>",
-	Short:            "Stalk dota2 players",
-	Run:              run,
-	PersistentPreRun: preRun,
+	Use:               "ns <command>",
+	Short:             "Stalk dota2 players",
+	RunE:              run,
+	PersistentPreRunE: preRun,
+	SilenceErrors:     true,
+	SilenceUsage:      true,
 }
 
 var (
-	cfgFile string
+	ErrCommandFailureLogged = errors.New("command error")
+
+	flagConfigFile string
 )
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	Cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default automatic detection)")
+	Cmd.PersistentFlags().StringVarP(&flagConfigFile, "config", "c", "", "config file (default automatic detection)")
 	Cmd.PersistentFlags().StringP("db", "d", "", "database URL")
-	Cmd.PersistentFlags().StringP("log", "l", cfgDefaultLogFile, `log file. "-" logs to stdout`)
-	Cmd.PersistentFlags().BoolP("debug", "D", false, "enable debug logging")
+	Cmd.PersistentFlags().StringP("log", "l", cfgDefaultLogPath, flagHelpLogPath)
 	Cmd.PersistentFlags().BoolP("tee", "t", false, "when logging to a file, also log to stdout")
-	Cmd.PersistentFlags().BoolP("trace", "T", false, "enable tracing logging")
+	Cmd.PersistentFlags().BoolP("debug", "D", false, "enable debug logging")
+	Cmd.PersistentFlags().BoolP("trace", "T", false, "enable trace logging")
 
-	v.MustBindPersistentFlagLookup(v.KeyLogFile, Cmd, "log")
-	v.MustBindPersistentFlagLookup(v.KeyLogDebug, Cmd, "debug")
-	v.MustBindPersistentFlagLookup(v.KeyLogDebug, Cmd, "trace")
+	v.MustBindPersistentFlagLookup(v.KeyLogPath, Cmd, "log")
 	v.MustBindPersistentFlagLookup(v.KeyLogTee, Cmd, "tee")
+	v.MustBindPersistentFlagLookup(v.KeyLogDebug, Cmd, "debug")
+	v.MustBindPersistentFlagLookup(v.KeyLogTrace, Cmd, "trace")
 	v.MustBindPersistentFlagLookup(v.KeyDbURL, Cmd, "db")
 
 	Cmd.AddCommand(cmddebug.Cmd)
@@ -59,39 +68,42 @@ func init() {
 }
 
 func initConfig() {
-	v.AutoConfig(cfgBaseName, cfgEnvPrefix, cfgFile)
+	v.AutoConfig(cfgBaseName, cfgEnvPrefix, flagConfigFile)
 }
 
-func run(cmd *cobra.Command, args []string) {
-	if err := cmd.Usage(); err != nil {
-		panic(err)
-	}
+func run(cmd *cobra.Command, args []string) error {
+	return cmd.Usage()
 }
 
-func preRun(cmd *cobra.Command, args []string) {
-	flagLog := cmd.Flags().Lookup("log")
-
-	if flagLog == nil {
-		return
+func preRun(cmd *cobra.Command, args []string) error {
+	if err := nscmdlog.Init(cmdNamePath(cmd)); err != nil {
+		return err
 	}
 
-	var cmdNames []string
-	c := cmd
+	return nil
+}
 
-	for c != nil {
-		cmdNames = append([]string{c.Name()}, cmdNames...)
-		c = c.Parent()
+func cmdNamePath(cmd *cobra.Command) []string {
+	var path []string
+
+	for c := cmd; c != nil; c = c.Parent() {
+		path = append([]string{c.Name()}, path...)
 	}
 
-	cmdName := strings.Join(cmdNames, "-")
-	lpath := nscmdlog.ParseLogfilePath(flagLog.Value.String(), cmdName)
-
-	if err := flagLog.Value.Set(lpath); err != nil {
-		panic(err)
-	}
+	return path
 }
 
 func Execute(meta *nscmdmeta.Meta) error {
 	Cmd.Version = fmt.Sprintf("%s (rev %s)", meta.Version, meta.Revision)
-	return Cmd.Execute()
+
+	if err := Cmd.Execute(); err != nil {
+		if log := nscmdlog.Instance(); log != nil {
+			log.WithError(err).Error("command error")
+			return ErrCommandFailureLogged
+		}
+
+		return err
+	}
+
+	return nil
 }

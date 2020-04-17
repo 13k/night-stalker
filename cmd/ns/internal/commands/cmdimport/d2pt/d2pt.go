@@ -12,12 +12,13 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/panjf2000/ants/v2"
 	"github.com/spf13/cobra"
+	"golang.org/x/xerrors"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
-	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 const (
@@ -33,7 +34,7 @@ var (
 var Cmd = &cobra.Command{
 	Use:   "d2pt",
 	Short: "Import players from dota2protracker",
-	Run:   run,
+	RunE:  run,
 }
 
 var (
@@ -68,19 +69,15 @@ type player struct {
 	accountID nspb.AccountID
 }
 
-func run(cmd *cobra.Command, args []string) {
-	log, err := nscmdlog.New()
-
-	if err != nil {
-		panic(err)
-	}
+func run(cmd *cobra.Command, args []string) error {
+	log := nscmdlog.Instance()
 
 	defer log.Close()
 
-	db, err := nscmddb.Connect()
+	db, err := nscmddb.Connect(log)
 
 	if err != nil {
-		log.WithError(err).Fatal("error connecting to database")
+		return xerrors.Errorf("error connecting to database: %w", err)
 	}
 
 	defer db.Close()
@@ -89,16 +86,18 @@ func run(cmd *cobra.Command, args []string) {
 	result, err := loadData(client, inputFile)
 
 	if err != nil {
-		log.WithError(err).Fatal("error loading d2pt data")
+		return xerrors.Errorf("error loading d2pt data: %w", err)
 	}
 
 	workerPool, err := ants.NewPool(10)
 
 	if err != nil {
-		log.WithError(err).Fatal("error starting worker pool")
+		return xerrors.Errorf("error starting worker pool: %w", err)
 	}
 
 	defer workerPool.Release()
+
+	dbs := nsdbda.NewSaver(db)
 
 	var wg sync.WaitGroup
 
@@ -115,15 +114,17 @@ func run(cmd *cobra.Command, args []string) {
 				return
 			}
 
-			followed := &models.FollowedPlayer{
+			followed := &nsm.FollowedPlayer{
 				AccountID: p.accountID,
 				Label:     p.label,
 			}
 
-			followed, err := nscmdutil.FollowPlayer(db, followed, false)
+			created, err := dbs.FollowPlayer(cmd.Context(), followed, &nsdbda.FollowPlayerOptions{
+				Update: false,
+			})
 
 			if err != nil {
-				if err == nscmdutil.ErrFollowedPlayerAlreadyExists {
+				if xerrors.Is(err, nsdbda.ErrPlayerAlreadyFollowed) {
 					l.Warn(err.Error())
 					return
 				}
@@ -132,19 +133,24 @@ func run(cmd *cobra.Command, args []string) {
 				return
 			}
 
-			l.WithField("account_id", followed.AccountID).Info("following player")
+			msg := "updated followed player"
+
+			if created {
+				msg = "following player"
+			}
+
+			l.WithField("account_id", followed.AccountID).Info(msg)
 		})
 
 		if err != nil {
-			log.
-				WithError(err).
-				WithField("label", label).
-				Error("error queueing task")
+			return xerrors.Errorf("error enqueueing task for label %q: %w", label, err)
 		}
 	}
 
 	wg.Wait()
 	log.Info("done")
+
+	return nil
 }
 
 func fetchAccountID(client *resty.Client, label string) (*player, *fetchError) {

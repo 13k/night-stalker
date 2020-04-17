@@ -3,14 +3,14 @@ package players
 import (
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/cobra"
+	"golang.org/x/xerrors"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
-	nscmdutil "github.com/13k/night-stalker/cmd/ns/internal/util"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
 )
 
 const (
@@ -21,29 +21,25 @@ const (
 var Cmd = &cobra.Command{
 	Use:   "players",
 	Short: "Import players from OpenDota API",
-	Run:   run,
+	RunE:  run,
 }
 
-func run(cmd *cobra.Command, args []string) {
-	log, err := nscmdlog.New()
-
-	if err != nil {
-		panic(err)
-	}
+func run(cmd *cobra.Command, args []string) error {
+	log := nscmdlog.Instance()
 
 	defer log.Close()
 
-	db, err := nscmddb.Connect()
+	db, err := nscmddb.Connect(log)
 
 	if err != nil {
-		log.WithError(err).Fatal("error connecting to database")
+		return xerrors.Errorf("error connecting to database: %w", err)
 	}
 
 	defer db.Close()
 
 	apiKey := v.GetString(v.KeyOpendotaAPIKey)
 
-	log.Info("fetching pro players ...")
+	log.Info("fetching players ...")
 
 	client := resty.New().SetHostURL(apiURL)
 
@@ -58,41 +54,24 @@ func run(cmd *cobra.Command, args []string) {
 		Get(apiPath)
 
 	if err != nil {
-		log.WithError(err).Fatal("error")
+		return xerrors.Errorf("error fetching players: %w", err)
 	}
 
 	if !res.IsSuccess() {
-		log.WithField("status", res.Status()).Fatal("HTTP error")
+		return xerrors.Errorf("HTTP error: %s", res.Status())
 	}
 
-	log.WithField("count", len(result)).Info("importing pro players ...")
+	dbs := nsdbda.NewSaver(db)
+
+	log.
+		WithField("count", len(result)).
+		Info("importing players ...")
 
 	for _, entry := range result {
-		l := log.WithField("account_id", entry.AccountID)
-		tx := db.Begin()
-
-		followed := &models.FollowedPlayer{
-			AccountID: entry.AccountID,
-			Label:     entry.Name,
-		}
-
-		followed, err = nscmdutil.FollowPlayer(db, followed, false)
-
-		if err != nil {
-			if err != nscmdutil.ErrFollowedPlayerAlreadyExists {
-				tx.Rollback()
-				l.WithError(err).Fatal("error")
-			}
-
-			tx.Rollback()
-			l.Warn(err.Error())
-
-			continue
-		}
-
-		player := &models.Player{
+		r, err := dbs.ImportPlayer(cmd.Context(), &nsdbda.ImportPlayerData{
 			AccountID:       entry.AccountID,
 			SteamID:         nspb.SteamID(entry.SteamID.Uint64()),
+			Label:           entry.Name,
 			Name:            entry.Name,
 			PersonaName:     entry.PersonaName,
 			AvatarURL:       entry.Avatar,
@@ -100,42 +79,29 @@ func run(cmd *cobra.Command, args []string) {
 			AvatarFullURL:   entry.AvatarFull,
 			ProfileURL:      entry.ProfileURL,
 			CountryCode:     entry.CountryCode,
+			TeamID:          entry.TeamID,
+			IsLocked:        entry.IsLocked,
+			LockedUntil:     nssql.NullTimeFromUnixJSON(entry.LockedUntil),
+			FantasyRole:     entry.FantasyRole,
+		})
+
+		if err != nil {
+			return xerrors.Errorf("error importing player %d: %w", entry.AccountID, err)
 		}
 
-		dbres := tx.
-			Where(models.Player{AccountID: entry.AccountID}).
-			Assign(player).
-			FirstOrCreate(player)
+		msg := "updated"
 
-		if err = dbres.Error; err != nil {
-			tx.Rollback()
-			l.WithError(err).Fatal("error")
+		if r.Created {
+			msg = "imported"
 		}
 
-		pro := &models.ProPlayer{
-			AccountID:   entry.AccountID,
-			TeamID:      entry.TeamID,
-			IsLocked:    entry.IsLocked,
-			FantasyRole: entry.FantasyRole,
-			LockedUntil: nssql.NullTimeFromUnixJSON(entry.LockedUntil),
-		}
-
-		dbres = tx.
-			Where(models.ProPlayer{AccountID: entry.AccountID}).
-			Assign(pro).
-			FirstOrCreate(pro)
-
-		if err = dbres.Error; err != nil {
-			tx.Rollback()
-			l.WithError(err).Fatal("error")
-		}
-
-		if err = tx.Commit().Error; err != nil {
-			log.WithError(err).Fatal("error")
-		}
-
-		l.WithField("label", followed.Label).Info("imported")
+		log.WithOFields(
+			"account_id", r.FollowedPlayer.AccountID,
+			"label", r.FollowedPlayer.Label,
+		).Info(msg)
 	}
 
 	log.Info("done")
+
+	return nil
 }

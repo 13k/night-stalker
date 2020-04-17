@@ -1,13 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/13k/night-stalker/cmd/ns/internal/commands/cmdroot"
 	nscmdmeta "github.com/13k/night-stalker/cmd/ns/internal/meta"
 
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 )
 
 func main() {
@@ -17,7 +18,10 @@ func main() {
 	}
 
 	if err := cmdroot.Execute(meta); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %+v\n", err)
+		if !errors.Is(err, cmdroot.ErrCommandFailureLogged) {
+			fmt.Fprintf(os.Stderr, "ERROR: %+v\n", err)
+		}
+
 		os.Exit(1)
 	}
 }

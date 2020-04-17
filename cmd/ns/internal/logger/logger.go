@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
@@ -15,25 +16,37 @@ const (
 	FilenameTimeFormat = "2006-01-02T15-04-05"
 )
 
-func ParseLogfilePath(lpath, name string) string {
-	if lpath == "-" {
-		return lpath
-	}
+var (
+	log *nslog.Logger
 
-	if fi, err := os.Stat(lpath); err == nil && fi.IsDir() {
-		fname := fmt.Sprintf("%s.%s.log", name, time.Now().Format(FilenameTimeFormat))
-		lpath = filepath.Join(lpath, fname)
-	}
+	baseName = "ns"
+)
 
-	return lpath
+func Init(cmdPath []string) (err error) {
+	baseName = strings.Join(cmdPath, "-")
+	log, err = New()
+	return err
+}
+
+func Instance() *nslog.Logger {
+	return log
+}
+
+func GenerateFilename(name string) string {
+	ts := time.Now().Format(FilenameTimeFormat)
+	return fmt.Sprintf("%s.%s.log", name, ts)
 }
 
 func New() (*nslog.Logger, error) {
 	var outputs []io.Writer
 
-	lpath := v.GetString(v.KeyLogFile)
+	lpath := v.GetString(v.KeyLogPath)
 
 	if lpath != "" && lpath != "-" {
+		if fi, err := os.Stat(lpath); err == nil && fi.IsDir() {
+			lpath = filepath.Join(lpath, GenerateFilename(baseName))
+		}
+
 		f, err := os.OpenFile(lpath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 
 		if err != nil {

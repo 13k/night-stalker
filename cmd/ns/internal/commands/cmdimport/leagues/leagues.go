@@ -3,52 +3,47 @@ package leagues
 import (
 	d2pb "github.com/paralin/go-dota2/protocol"
 	"github.com/spf13/cobra"
+	"golang.org/x/xerrors"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdgeyser "github.com/13k/night-stalker/cmd/ns/internal/geyser"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
-	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 )
 
 var Cmd = &cobra.Command{
 	Use:   "leagues",
 	Short: "Import leagues from Dota2 WebAPI",
-	Run:   run,
+	RunE:  run,
 }
 
-func run(cmd *cobra.Command, args []string) {
-	log, err := nscmdlog.New()
-
-	if err != nil {
-		panic(err)
-	}
+func run(cmd *cobra.Command, args []string) error {
+	log := nscmdlog.Instance()
 
 	defer log.Close()
 
 	api, err := nscmdgeyser.NewDota2()
 
 	if err != nil {
-		log.WithError(err).Fatal("error creating API client")
+		return xerrors.Errorf("error creating API client: %w", err)
 	}
 
 	apiLeague, err := api.DOTA2League()
 
 	if err != nil {
-		log.WithError(err).Fatal("error creating API client")
+		return xerrors.Errorf("error creating API client: %w", err)
 	}
 
 	req, err := apiLeague.GetLeagueInfoList()
 
 	if err != nil {
-		log.WithError(err).Fatal("error creating API request")
+		return xerrors.Errorf("error creating API request: %w", err)
 	}
 
-	db, err := nscmddb.Connect()
+	db, err := nscmddb.Connect(log)
 
 	if err != nil {
-		log.WithError(err).Fatal("error connecting to database")
+		return xerrors.Errorf("error connecting to database: %w", err)
 	}
 
 	defer db.Close()
@@ -61,43 +56,39 @@ func run(cmd *cobra.Command, args []string) {
 	res, err := req.Execute()
 
 	if err != nil {
-		log.WithError(err).Fatal("error requesting leagues")
+		return xerrors.Errorf("error requesting leagues: %w", err)
 	}
 
 	if !res.IsSuccess() {
-		log.WithField("status", res.Status()).Fatal("error requesting leagues")
+		return xerrors.Errorf("HTTP error: %s", res.Status())
 	}
+
+	dbs := nsdbda.NewSaver(db)
 
 	log.
 		WithField("count", len(result.GetInfos())).
 		Info("importing leagues ...")
 
-	for _, info := range result.GetInfos() {
-		l := log.WithField("league_id", info.GetLeagueId())
+	for _, pb := range result.GetInfos() {
+		league, created, err := dbs.UpsertLeagueProto(cmd.Context(), pb)
 
-		league := &models.League{
-			ID:             nspb.LeagueID(info.GetLeagueId()),
-			Name:           info.GetName(),
-			Tier:           nspb.LeagueTier(info.GetTier()),
-			Region:         nspb.LeagueRegion(info.GetRegion()),
-			Status:         nspb.LeagueStatus(info.GetStatus()),
-			TotalPrizePool: info.GetTotalPrizePool(),
-			LastActivityAt: nssql.NullTimeUnix(int64(info.GetMostRecentActivity())),
-			StartAt:        nssql.NullTimeUnix(int64(info.GetStartTimestamp())),
-			FinishAt:       nssql.NullTimeUnix(int64(info.GetEndTimestamp())),
+		if err != nil {
+			return xerrors.Errorf("error saving league %d: %w", league.ID, err)
 		}
 
-		result := db.
-			Where(&models.League{ID: league.ID}).
-			Assign(league).
-			FirstOrCreate(league)
+		msg := "updated"
 
-		if err = result.Error; err != nil {
-			l.WithError(err).Fatal("error")
+		if created {
+			msg = "imported"
 		}
 
-		l.WithField("name", league.Name).Info("imported")
+		log.WithOFields(
+			"id", league.ID,
+			"name", league.Name,
+		).Info(msg)
 	}
 
 	log.Info("done")
+
+	return nil
 }

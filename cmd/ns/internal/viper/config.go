@@ -26,7 +26,7 @@ func AutoConfig(basename, envPrefix, file string) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading configuration: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error reading configuration: %s\n", err)
 		os.Exit(1)
 	}
 }

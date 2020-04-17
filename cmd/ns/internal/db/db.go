@@ -1,13 +1,14 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
 
-	"github.com/jinzhu/gorm"
-
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
+	nsdb "github.com/13k/night-stalker/internal/db"
+	nslog "github.com/13k/night-stalker/internal/logger"
 )
 
 var (
@@ -42,28 +43,31 @@ func ParseURL() error {
 	return nil
 }
 
-func Connect() (*gorm.DB, error) {
+func Connect(l *nslog.Logger) (*nsdb.DB, error) {
 	if err := ParseURL(); err != nil {
 		return nil, err
 	}
 
-	db, err := gorm.Open(v.GetString(v.KeyDbDriver), v.GetString(v.KeyDbURL))
+	driver := v.GetString(v.KeyDbDriver)
+	sqldb, err := sql.Open(driver, v.GetString(v.KeyDbURL))
 
 	if err != nil {
 		return nil, err
 	}
 
 	if n := v.GetInt(v.KeyDbConnMaxTotal); n > 0 {
-		db.DB().SetMaxOpenConns(n)
+		sqldb.SetMaxOpenConns(n)
 	}
 
 	if n := v.GetInt(v.KeyDbConnMaxIdle); n > 0 {
-		db.DB().SetMaxIdleConns(n)
+		sqldb.SetMaxIdleConns(n)
 	}
 
 	if d := v.GetDuration(v.KeyDbConnMaxLifetime); d > 0 {
-		db.DB().SetConnMaxLifetime(d)
+		sqldb.SetConnMaxLifetime(d)
 	}
+
+	db := nsdb.New(sqldb, driver, l)
 
 	return db, nil
 }

@@ -3,12 +3,13 @@ package teams
 import (
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/cobra"
+	"golang.org/x/xerrors"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
 	v "github.com/13k/night-stalker/cmd/ns/internal/viper"
 	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 const (
@@ -19,22 +20,18 @@ const (
 var Cmd = &cobra.Command{
 	Use:   "teams",
 	Short: "Import teams from OpenDota API",
-	Run:   run,
+	RunE:  run,
 }
 
-func run(cmd *cobra.Command, args []string) {
-	log, err := nscmdlog.New()
-
-	if err != nil {
-		panic(err)
-	}
+func run(cmd *cobra.Command, args []string) error {
+	log := nscmdlog.Instance()
 
 	defer log.Close()
 
-	db, err := nscmddb.Connect()
+	db, err := nscmddb.Connect(log)
 
 	if err != nil {
-		log.WithError(err).Fatal("error connecting to database")
+		return xerrors.Errorf("error connecting to database: %w", err)
 	}
 
 	defer db.Close()
@@ -49,27 +46,27 @@ func run(cmd *cobra.Command, args []string) {
 		client.SetQueryParam("api_key", apiKey)
 	}
 
-	result := apiResult{}
+	result := make(apiResult, 0)
 
 	res, err := client.R().
 		SetResult(&result).
 		Get(apiPath)
 
 	if err != nil {
-		log.WithError(err).Fatal("error")
+		return xerrors.Errorf("error fetching teams: %w", err)
 	}
 
 	if !res.IsSuccess() {
-		log.WithField("status", res.Status()).Fatal("HTTP error")
+		return xerrors.Errorf("HTTP error: %s", res.Status())
 	}
 
-	log.WithField("count", len(result)).Info("importing teams ...")
+	log.
+		WithField("count", len(result)).
+		Info("importing teams ...")
 
 	for _, entry := range result {
-		l := log.WithField("team_id", entry.TeamID)
-
-		team := &models.Team{
-			ID:            entry.TeamID,
+		team := &nsm.Team{
+			ID:            nsm.ID(entry.TeamID),
 			Name:          entry.Name,
 			Tag:           entry.Tag,
 			Rating:        entry.Rating,
@@ -79,17 +76,30 @@ func run(cmd *cobra.Command, args []string) {
 			LastMatchTime: nssql.NullTimeFromUnixJSON(entry.LastMatchTime),
 		}
 
-		dbres := db.
-			Where(&models.Team{ID: entry.TeamID}).
-			Assign(team).
-			FirstOrCreate(team)
+		q := db.
+			Q().
+			Select().
+			Eq(nsm.TeamTable.PK(), entry.TeamID)
 
-		if err = dbres.Error; err != nil {
-			l.WithError(err).Fatal("error")
+		created, err := db.M().Upsert(cmd.Context(), team, q)
+
+		if err != nil {
+			return xerrors.Errorf("error saving team %d: %w", entry.TeamID, err)
 		}
 
-		l.Info("imported")
+		msg := "updated"
+
+		if created {
+			msg = "imported"
+		}
+
+		log.WithOFields(
+			"id", entry.TeamID,
+			"tag", entry.Tag,
+		).Info(msg)
 	}
 
 	log.Info("done")
+
+	return nil
 }

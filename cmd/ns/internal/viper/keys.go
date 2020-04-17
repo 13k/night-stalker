@@ -1,58 +1,106 @@
 package viper
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
-type Key string
+// Key is a numeric type to ensure only known keys are used.
+//
+// All Set and Get* functions will panic if an unknown key is given.
+type Key uint
 
 const (
-	KeyLogFile                 Key = "log.file"
-	KeyLogDebug                Key = "log.debug"
-	KeyLogTrace                Key = "log.trace"
-	KeyLogTee                  Key = "log.tee"
-	KeyDbURL                   Key = "db.url"
-	KeyDbDriver                Key = "db.driver"
-	KeyDbConnMaxTotal          Key = "db.conn.max_total"
-	KeyDbConnMaxIdle           Key = "db.conn.max_idle"
-	KeyDbConnMaxLifetime       Key = "db.conn.max_lifetime"
-	KeyRedisURL                Key = "redis.url"
-	KeyRedisMaxRetries         Key = "redis.max_retries"
-	KeyRedisMinRetryBackoff    Key = "redis.min_retry_backoff"
-	KeyRedisMaxRetryBackoff    Key = "redis.max_retry_backoff"
-	KeyRedisDialTimeout        Key = "redis.dial_timeout"
-	KeyRedisReadTimeout        Key = "redis.read_timeout"
-	KeyRedisWriteTimeout       Key = "redis.write_timeout"
-	KeyRedisPoolSize           Key = "redis.pool_size"
-	KeyRedisMinIdleConns       Key = "redis.min_idle_conns"
-	KeyRedisMaxConnAge         Key = "redis.max_conn_age"
-	KeyRedisPoolTimeout        Key = "redis.pool_timeout"
-	KeyRedisIdleTimeout        Key = "redis.idle_timeout"
-	KeyRedisIdleCheckFrequency Key = "redis.idle_check_freq"
-	KeySteamUser               Key = "steam.user"
-	KeySteamPassword           Key = "steam.password"
-	KeySteamAPIKey             Key = "steam.api_key"
-	KeyOpendotaAPIKey          Key = "opendota.api_key"
+	keyInvalid Key = iota
+	KeyLogPath
+	KeyLogDebug
+	KeyLogTrace
+	KeyLogTee
+	KeyDbURL
+	KeyDbDriver
+	KeyDbConnMaxTotal
+	KeyDbConnMaxIdle
+	KeyDbConnMaxLifetime
+	KeyRedisURL
+	KeyRedisMaxRetries
+	KeyRedisMinRetryBackoff
+	KeyRedisMaxRetryBackoff
+	KeyRedisDialTimeout
+	KeyRedisReadTimeout
+	KeyRedisWriteTimeout
+	KeyRedisPoolSize
+	KeyRedisMinIdleConns
+	KeyRedisMaxConnAge
+	KeyRedisPoolTimeout
+	KeyRedisIdleTimeout
+	KeyRedisIdleCheckFrequency
+	KeySteamUser
+	KeySteamPassword
+	KeySteamAPIKey
+	KeyOpendotaAPIKey
 )
 
-func Set(key Key, value interface{}) {
-	viper.Set(string(key), value)
+var _ = keyInvalid
+
+var keys = map[Key]string{
+	KeyLogPath:                 "log.path",
+	KeyLogDebug:                "log.debug",
+	KeyLogTrace:                "log.trace",
+	KeyLogTee:                  "log.tee",
+	KeyDbURL:                   "db.url",
+	KeyDbDriver:                "db.driver",
+	KeyDbConnMaxTotal:          "db.conn.max_total",
+	KeyDbConnMaxIdle:           "db.conn.max_idle",
+	KeyDbConnMaxLifetime:       "db.conn.max_lifetime",
+	KeyRedisURL:                "redis.url",
+	KeyRedisMaxRetries:         "redis.max_retries",
+	KeyRedisMinRetryBackoff:    "redis.min_retry_backoff",
+	KeyRedisMaxRetryBackoff:    "redis.max_retry_backoff",
+	KeyRedisDialTimeout:        "redis.dial_timeout",
+	KeyRedisReadTimeout:        "redis.read_timeout",
+	KeyRedisWriteTimeout:       "redis.write_timeout",
+	KeyRedisPoolSize:           "redis.pool_size",
+	KeyRedisMinIdleConns:       "redis.min_idle_conns",
+	KeyRedisMaxConnAge:         "redis.max_conn_age",
+	KeyRedisPoolTimeout:        "redis.pool_timeout",
+	KeyRedisIdleTimeout:        "redis.idle_timeout",
+	KeyRedisIdleCheckFrequency: "redis.idle_check_freq",
+	KeySteamUser:               "steam.user",
+	KeySteamPassword:           "steam.password",
+	KeySteamAPIKey:             "steam.api_key",
+	KeyOpendotaAPIKey:          "opendota.api_key",
 }
 
-func GetString(key Key) string {
-	return viper.GetString(string(key))
+func getkey(key Key) string {
+	if s, ok := keys[key]; ok {
+		return s
+	}
+
+	panic(fmt.Errorf("Invalid key %+v", key))
+}
+
+func Set(key Key, value interface{}) {
+	viper.Set(getkey(key), value)
 }
 
 func GetBool(key Key) bool {
-	return viper.GetBool(string(key))
-}
-
-func GetInt(key Key) int {
-	return viper.GetInt(string(key))
+	return viper.GetBool(getkey(key))
 }
 
 func GetDuration(key Key) time.Duration {
-	return viper.GetDuration(string(key))
+	return viper.GetDuration(getkey(key))
+}
+
+func GetInt(key Key) int {
+	return viper.GetInt(getkey(key))
+}
+
+func GetString(key Key) string {
+	return viper.GetString(getkey(key))
+}
+
+func GetStringSlice(key Key) []string {
+	return viper.GetStringSlice(getkey(key))
 }

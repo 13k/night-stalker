@@ -1,18 +1,19 @@
 package heroes
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/xerrors"
 
 	nscmddb "github.com/13k/night-stalker/cmd/ns/internal/db"
 	nscmdlog "github.com/13k/night-stalker/cmd/ns/internal/logger"
+	nscol "github.com/13k/night-stalker/internal/collections"
 	nskv "github.com/13k/night-stalker/internal/kv"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nssql "github.com/13k/night-stalker/internal/sql"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 var (
@@ -24,20 +25,16 @@ var (
 var Cmd = &cobra.Command{
 	Use:   "heroes <npc_heroes.txt>",
 	Short: "Import heroes from KeyValues file",
-	Run:   run,
+	RunE:  run,
 }
 
-func run(cmd *cobra.Command, args []string) {
-	log, err := nscmdlog.New()
-
-	if err != nil {
-		panic(err)
-	}
+func run(cmd *cobra.Command, args []string) error {
+	log := nscmdlog.Instance()
 
 	defer log.Close()
 
 	if len(args) < 1 {
-		log.Fatal("KeyValues file argument is required")
+		return cmd.Usage()
 	}
 
 	log.Info("parsing KeyValues file ...")
@@ -45,53 +42,29 @@ func run(cmd *cobra.Command, args []string) {
 	kvRoot, err := nskv.ParseFile(args[0])
 
 	if err != nil {
-		log.WithError(err).Fatal("error parsing KeyValues file")
+		return xerrors.Errorf("error parsing KeyValues file: %w", err)
 	}
 
 	if kvRoot.Key() != "DOTAHeroes" {
-		log.WithField("root", kvRoot.Key()).Fatal("invalid KeyValues file: wrong root node key")
+		return xerrors.Errorf("invalid KeyValues file: wrong root node key %q", kvRoot.Key())
 	}
 
 	kvHeroes, err := kvRoot.Children()
 
 	if err != nil {
-		log.WithError(err).Fatal("invalid KeyValues file")
+		return xerrors.Errorf("error parsing KeyValues file: %w", err)
 	}
 
-	var heroes []*models.Hero
-
-	for _, node := range kvHeroes {
-		l := log.WithField("key", node.Key())
-
-		var enabled bool
-
-		enabled, err = kvIsEnabledHeroNode(node)
-
-		if err != nil {
-			l.WithError(err).Fatal("error parsing hero KeyValues")
-		}
-
-		if !enabled {
-			continue
-		}
-
-		var hero *models.Hero
-
-		hero, err = kvParseHeroNode(node)
-
-		if err != nil {
-			l.WithError(err).Fatal("error parsing hero KeyValues")
-		}
-
-		if hero != nil {
-			heroes = append(heroes, hero)
-		}
-	}
-
-	db, err := nscmddb.Connect()
+	heroes, err := kvParseHeroesNodes(kvHeroes)
 
 	if err != nil {
-		log.WithError(err).Fatal("error connecting to database")
+		return xerrors.Errorf("error parsing KeyValues file: %w", err)
+	}
+
+	db, err := nscmddb.Connect(log)
+
+	if err != nil {
+		return xerrors.Errorf("error connecting to database: %w", err)
 	}
 
 	defer db.Close()
@@ -99,17 +72,32 @@ func run(cmd *cobra.Command, args []string) {
 	log.Info("importing heroes ...")
 
 	for _, hero := range heroes {
-		l := log.WithField("name", hero.Name)
-		result := db.Where(&models.Hero{ID: hero.ID}).Assign(hero).FirstOrCreate(hero)
+		q := db.
+			Q().
+			Select().
+			Eq(nsm.HeroTable.PK(), hero.ID)
 
-		if err := result.Error; err != nil {
-			l.WithError(err).Fatal("error creating or updating hero")
+		created, err := db.M().Upsert(cmd.Context(), hero, q)
+
+		if err != nil {
+			return xerrors.Errorf("error upserting hero: %w", err)
 		}
 
-		l.Info("imported")
+		msg := "updated"
+
+		if created {
+			msg = "imported"
+		}
+
+		log.WithOFields(
+			"id", hero.ID,
+			"name", hero.Name,
+		).Info(msg)
 	}
 
 	log.Info("done")
+
+	return nil
 }
 
 func kvIsHeroNode(node *nskv.Node) bool {
@@ -124,37 +112,67 @@ func kvIsEnabledHeroNode(node *nskv.Node) (bool, error) {
 	enabled, err := node.ChildAsInt64("Enabled", true)
 
 	if err != nil {
-		return false, err
+		return false, xerrors.Errorf("invalid child %q: %w", "Enabled", err)
 	}
 
 	return enabled == 1, nil
 }
 
-func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
-	if !kvIsHeroNode(node) {
-		return nil, fmt.Errorf("node '%s' is not a hero node", node.Key())
+func kvParseHeroesNodes(nodes []*nskv.Node) (nscol.Heroes, error) {
+	var heroes nscol.Heroes
+
+	for _, node := range nodes {
+		enabled, err := kvIsEnabledHeroNode(node)
+
+		if err != nil {
+			return nil, xerrors.Errorf("error parsing node %s: %w", node.Key(), err)
+		}
+
+		if !enabled {
+			continue
+		}
+
+		hero, err := kvParseHeroNode(node)
+
+		if err != nil {
+			return nil, xerrors.Errorf("error parsing node %q: %w", node.Key(), err)
+		}
+
+		if hero != nil {
+			heroes = append(heroes, hero)
+		}
 	}
 
-	hero := &models.Hero{Name: node.Key()}
+	return heroes, nil
+}
+
+func kvParseHeroNode(node *nskv.Node) (*nsm.Hero, error) {
+	if !kvIsHeroNode(node) {
+		return nil, xerrors.New("not a hero node")
+	}
+
+	hero := &nsm.Hero{
+		Name: node.Key(),
+	}
 
 	id, err := node.ChildAsInt64("HeroID", false)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "HeroID", err)
 	}
 
-	hero.ID = nspb.HeroID(id)
+	hero.ID = nsm.ID(id)
 
 	hero.LocalizedName, err = node.ChildAsString("workshop_guide_name", false, true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "workshop_guide_name", err)
 	}
 
 	aliases, err := node.ChildAsStringArray("NameAliases", kvNameAliasesSepRE, true, true, true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "NameAliases", err)
 	}
 
 	if len(aliases) > 0 {
@@ -164,7 +182,7 @@ func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
 	roles, err := node.ChildAsStringArray("Role", kvRoleSepRE, true, true, false)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "Role", err)
 	}
 
 	if len(roles) > 0 {
@@ -175,7 +193,7 @@ func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
 			roleInt, ok := nspb.HeroRole_value[roleEnumKey]
 
 			if !ok {
-				return nil, fmt.Errorf("invalid Role item value '%s' in node '%s'", roleStr, node.Key())
+				return nil, xerrors.Errorf("unknown Role item value %q", roleStr)
 			}
 
 			rolesPb[i] = nspb.HeroRole(roleInt)
@@ -187,7 +205,7 @@ func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
 	roleLevels, err := node.ChildAsInt64Array("Rolelevels", kvRoleLevelsSepRE, true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("error parsing child %q: %w", "Rolelevels", err)
 	}
 
 	if len(roleLevels) > 0 {
@@ -197,25 +215,25 @@ func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
 	hero.Complexity, err = node.ChildAsInt("Complexity", true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "Complexity", err)
 	}
 
 	hero.Legs, err = node.ChildAsInt("Legs", true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "Legs", err)
 	}
 
 	attackCapStr, err := node.ChildAsString("AttackCapabilities", false, true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "AttackCapabilities", err)
 	}
 
 	attackCapInt, ok := nspb.DotaUnitCap_value[attackCapStr]
 
 	if !ok {
-		return nil, fmt.Errorf("invalid AttackCapabilities property value '%s' in node '%s'", attackCapStr, node.Key())
+		return nil, xerrors.Errorf("invalid child %q: unknown value %q", "AttackCapabilities", attackCapStr)
 	}
 
 	hero.AttackCapabilities = nspb.DotaUnitCap(attackCapInt)
@@ -223,13 +241,13 @@ func kvParseHeroNode(node *nskv.Node) (*models.Hero, error) {
 	attrPrimaryStr, err := node.ChildAsString("AttributePrimary", false, true)
 
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("invalid child %q: %w", "AttributePrimary", err)
 	}
 
 	attrPrimaryInt, ok := nspb.DotaAttribute_value[attrPrimaryStr]
 
 	if !ok {
-		return nil, fmt.Errorf("invalid AttributePrimary property value '%s' in node '%s'", attrPrimaryStr, node.Key())
+		return nil, xerrors.Errorf("invalid child %q: unknown value %q", "AttributePrimary", attrPrimaryStr)
 	}
 
 	hero.AttributePrimary = nspb.DotaAttribute(attrPrimaryInt)
