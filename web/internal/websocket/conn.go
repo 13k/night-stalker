@@ -14,7 +14,6 @@ import (
 )
 
 type ConnOptions struct {
-	Ctx    context.Context
 	ReqCtx *nswebctx.Context
 	Log    *nslog.Logger
 	Bus    *nsbus.Bus
@@ -25,6 +24,7 @@ type Conn struct {
 
 	options ConnOptions
 	ctx     context.Context
+	cancel  context.CancelFunc
 	c       *nswebctx.Context
 	log     *nslog.Logger
 	bus     *nsbus.Bus
@@ -34,62 +34,60 @@ func NewConn(conn *ws.Conn, options ConnOptions) *Conn {
 	return &Conn{
 		Conn:    conn,
 		options: options,
-		ctx:     options.Ctx,
 		c:       options.ReqCtx,
-		log:     options.Log.WithField("id", options.ReqCtx.ID()),
+		log:     options.Log.WithPackage("ws").WithField("id", options.ReqCtx.ID()),
 		bus:     options.Bus,
 	}
 }
 
-func (c *Conn) Serve() {
+func (c *Conn) Serve(ctx context.Context) {
+	c.ctx, c.cancel = context.WithCancel(ctx)
+
+	go c.rx()
+	go c.tx()
+}
+
+func (c *Conn) rx() {
+	defer c.cancel()
+
+	for {
+		if _, _, err := c.NextReader(); err != nil {
+			return
+		}
+	}
+}
+
+func (c *Conn) tx() {
 	busSubLiveMatches := c.bus.Sub(nsbus.TopicWebPatternLiveMatchesAll)
-	connClosed := make(chan bool)
 
 	defer func() {
 		c.bus.Unsub(busSubLiveMatches)
 		c.Close()
-		c.log.Debug("stop")
-	}()
-
-	c.log.Debug("client connected")
-
-	go func() {
-		for {
-			if _, _, err := c.NextReader(); err != nil {
-				close(connClosed)
-				return
-			}
-		}
 	}()
 
 	for {
 		select {
-		case <-connClosed:
-			c.log.Debug("connection closed")
-			return
 		case <-c.ctx.Done():
-			c.log.Debug("canceled")
 			return
 		case busmsg, ok := <-busSubLiveMatches.C:
 			if !ok {
-				c.log.Debug("live matches channel closed")
+				c.log.Warn("live matches channel closed")
 				return
 			}
 
 			if msg, ok := busmsg.Payload.(*nspb.LiveMatchesChange); ok {
-				c.pushWSLiveMatches(msg)
+				c.handleLiveMatchesChange(msg)
 			}
 		}
 	}
 }
 
-func (c *Conn) pushWSLiveMatches(msg *nspb.LiveMatchesChange) {
+func (c *Conn) handleLiveMatchesChange(msg *nspb.LiveMatchesChange) {
 	l := c.log.WithOFields(
 		"op", msg.Op.String(),
 		"count", len(msg.Change.Matches),
 	)
 
-	// wsmsg, err := json.Marshal(msg)
 	wsmsg, err := proto.Marshal(msg)
 
 	if err != nil {

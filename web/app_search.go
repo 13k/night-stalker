@@ -6,16 +6,18 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	nsviews "github.com/13k/night-stalker/internal/views"
-	"github.com/13k/night-stalker/models"
+	nsvs "github.com/13k/night-stalker/internal/views"
 	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
 func (app *App) serveSearch(c echo.Context) error {
 	cc := c.(*nswebctx.Context)
 
-	view, err := app.loadSearchView(c.QueryParam("q"))
+	view, err := app.loadSearchView(&nsdbda.SearchParams{
+		Query: c.QueryParam("q"),
+	})
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading Search view")
@@ -30,64 +32,14 @@ func (app *App) serveSearch(c echo.Context) error {
 	return cc.RespondWith(http.StatusOK, view)
 }
 
-func (app *App) loadSearchView(query string) (*nspb.Search, error) {
-	var heroes []*models.Hero
-
-	likePattern := "%" + query + "%"
-
-	err := app.db.
-		Where("localized_name ILIKE ? OR ? = ANY(aliases)", likePattern, query).
-		Find(&heroes).
-		Error
+func (app *App) loadSearchView(params *nsdbda.SearchParams) (*nspb.Search, error) {
+	data, err := app.dbl.SearchData(app.ctx, params)
 
 	if err != nil {
-		err = xerrors.Errorf("error loading heroes: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error loading Search data: %w", err)
 	}
 
-	var followed []*models.FollowedPlayer
-
-	err = app.db.
-		Where("label ILIKE ?", likePattern).
-		Find(&followed).
-		Error
-
-	if err != nil {
-		err = xerrors.Errorf("error loading followed players: %w", err)
-		return nil, err
-	}
-
-	accountIDs := make([]nspb.AccountID, len(followed))
-
-	for i, fp := range followed {
-		accountIDs[i] = fp.AccountID
-	}
-
-	var players []*models.Player
-
-	err = app.db.
-		Where("account_id IN (?)", accountIDs).
-		Find(&players).
-		Error
-
-	if err != nil {
-		err = xerrors.Errorf("error loading players: %w", err)
-		return nil, err
-	}
-
-	var proPlayers []*models.ProPlayer
-
-	err = app.db.
-		Where("account_id IN (?)", accountIDs).
-		Find(&proPlayers).
-		Error
-
-	if err != nil {
-		err = xerrors.Errorf("error loading pro players: %w", err)
-		return nil, err
-	}
-
-	view := nsviews.NewSearch(heroes, followed, players, proPlayers)
+	view := nsvs.NewSearch(data)
 
 	return view, nil
 }

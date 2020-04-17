@@ -6,9 +6,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
-	nscol "github.com/13k/night-stalker/internal/collections"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	nsviews "github.com/13k/night-stalker/internal/views"
+	nsvs "github.com/13k/night-stalker/internal/views"
 	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
@@ -29,7 +29,7 @@ func (app *App) servePlayerMatches(c echo.Context) error {
 		}
 	}
 
-	view, err := app.loadPlayerMatchesView(pathParams.AccountID)
+	view, err := app.loadPlayerMatchesView((*nsdbda.PlayerMatchesParams)(pathParams))
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading PlayerMatches view")
@@ -48,64 +48,17 @@ func (app *App) servePlayerMatches(c echo.Context) error {
 	return cc.RespondWith(http.StatusOK, view)
 }
 
-func (app *App) loadPlayerMatchesView(accountID nspb.AccountID) (*nspb.PlayerMatches, error) {
-	playersData, err := app.loadPlayersData(accountID)
+func (app *App) loadPlayerMatchesView(params *nsdbda.PlayerMatchesParams) (*nspb.PlayerMatches, error) {
+	data, err := app.dbl.PlayerMatchesData(app.ctx, params)
 
 	if err != nil {
-		err = xerrors.Errorf("error loading players data: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error loading PlayerMatches data: %w", err)
 	}
 
-	if playersData == nil {
-		return nil, nil
-	}
-
-	playerData := playersData[accountID]
-
-	if playerData == nil {
-		return nil, nil
-	}
-
-	matchesData, err := app.loadPlayerMatchesData(accountID)
+	view, err := nsvs.NewPlayerMatches(data)
 
 	if err != nil {
-		err = xerrors.Errorf("error loading player matches data: %w", err)
-		return nil, err
-	}
-
-	playersAccountIDs := matchesData.AccountIDs()
-
-	var followedAccountIDs nscol.AccountIDs
-
-	if len(playersAccountIDs) > 0 {
-		followedAccountIDs, err = app.filterFollowedPlayersAccountIDs(playersAccountIDs...)
-
-		if err != nil {
-			err = xerrors.Errorf("error filtering followed players account IDs: %w", err)
-			return nil, err
-		}
-	}
-
-	var knownPlayersData nsviews.PlayersData
-
-	if len(followedAccountIDs) > 0 {
-		knownPlayersData, err = app.loadPlayersData(followedAccountIDs...)
-
-		if err != nil {
-			err = xerrors.Errorf("error loading players data: %w", err)
-			return nil, err
-		}
-	}
-
-	view, err := nsviews.NewPlayerMatches(
-		playerData,
-		knownPlayersData,
-		matchesData,
-	)
-
-	if err != nil {
-		err = xerrors.Errorf("error creating PlayerMatches view: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating PlayerMatches view: %w", err)
 	}
 
 	return view, nil

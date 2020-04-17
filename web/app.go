@@ -6,16 +6,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/acme/autocert"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
-	nscol "github.com/13k/night-stalker/internal/collections"
+	nsdb "github.com/13k/night-stalker/internal/db"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsrds "github.com/13k/night-stalker/internal/redis"
 	nswebhdl "github.com/13k/night-stalker/web/internal/handlers"
 	nswebmw "github.com/13k/night-stalker/web/internal/middleware"
+	nswebrds "github.com/13k/night-stalker/web/internal/redis"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 
 type AppOptions struct {
 	Log             *nslog.Logger
-	DB              *gorm.DB
+	DB              *nsdb.DB
 	Redis           *nsrds.Redis
 	StaticFS        http.FileSystem
 	Address         string
@@ -38,15 +39,15 @@ type AppOptions struct {
 type App struct {
 	options AppOptions
 	log     *nslog.Logger
-	wslog   *nslog.Logger
-	db      *gorm.DB
+	db      *nsdb.DB
+	dbl     *nsdbda.Loader
 	bus     *nsbus.Bus
+	rds     *nsrds.Redis
+	pubsub  *nswebrds.PubSub
 	engine  *echo.Echo
 	sv      *http.Server
 	ctx     context.Context
 	cancel  context.CancelFunc
-	rds     *nsrds.Redis
-	matches *nscol.LiveMatchesContainer
 }
 
 func New(options AppOptions) (*App, error) {
@@ -60,12 +61,13 @@ func New(options AppOptions) (*App, error) {
 		engine:  echo.New(),
 		sv:      &http.Server{},
 		log:     options.Log,
-		wslog:   options.Log.WithPackage("ws"),
-		db:      options.DB,
-		rds:     options.Redis,
 		bus:     bus,
+		db:      options.DB,
+		dbl:     nsdbda.NewLoader(options.DB),
+		rds:     options.Redis,
 	}
 
+	app.configurePubSub()
 	app.configureEngine()
 
 	if err := app.configureServer(); err != nil {
@@ -73,6 +75,15 @@ func New(options AppOptions) (*App, error) {
 	}
 
 	return app, nil
+}
+
+func (app *App) configurePubSub() {
+	app.pubsub = nswebrds.NewPubSub(&nswebrds.PubSubOptions{
+		Log:        app.log,
+		Bus:        app.bus,
+		Redis:      app.rds,
+		DataLoader: app.dbl,
+	})
 }
 
 func (app *App) configureEngine() {
@@ -137,15 +148,7 @@ func (app *App) configureServer() error {
 func (app *App) Start() error {
 	app.ctx, app.cancel = context.WithCancel(context.Background())
 
-	if err := app.seedLiveMatches(); err != nil {
-		return err
-	}
-
-	if err := app.watchLiveMatches(); err != nil {
-		return err
-	}
-
-	if err := app.watchLiveMatchStats(); err != nil {
+	if err := app.pubsub.Start(app.ctx); err != nil {
 		return err
 	}
 

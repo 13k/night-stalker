@@ -6,8 +6,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
+	nscol "github.com/13k/night-stalker/internal/collections"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	nsviews "github.com/13k/night-stalker/internal/views"
+	nsvs "github.com/13k/night-stalker/internal/views"
 	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
@@ -15,7 +17,7 @@ func (app *App) serveLeagues(c echo.Context) error {
 	cc := c.(*nswebctx.Context)
 
 	params := &struct {
-		LeagueIDs []nspb.LeagueID `query:"id"`
+		LeagueIDs nscol.LeagueIDs `query:"id"`
 	}{}
 
 	if err := cc.Bind(params); err != nil {
@@ -26,7 +28,7 @@ func (app *App) serveLeagues(c echo.Context) error {
 		}
 	}
 
-	view, err := app.loadLeaguesView(params.LeagueIDs...)
+	view, err := app.loadLeaguesView(params.LeagueIDs)
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading Leagues view")
@@ -45,23 +47,23 @@ func (app *App) serveLeagues(c echo.Context) error {
 	return cc.RespondWith(http.StatusOK, view)
 }
 
-func (app *App) loadLeaguesView(leagueIDs ...nspb.LeagueID) (*nspb.Leagues, error) {
-	data, err := app.loadLeaguesData(leagueIDs...)
+func (app *App) loadLeaguesView(leagueIDs nscol.LeagueIDs) (*nspb.Leagues, error) {
+	leagues, err := app.dbl.Leagues(app.ctx, nsdbda.LeagueFilters{
+		LeagueIDs: leagueIDs,
+	})
 
 	if err != nil {
-		err = xerrors.Errorf("error loading leagues data: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error loading leagues data: %w", err)
 	}
 
-	if len(data) == 0 {
+	if len(leagues) == 0 {
 		return nil, nil
 	}
 
-	view, err := nsviews.NewLeagues(data)
+	view, err := nsvs.NewLeagues(leagues)
 
 	if err != nil {
-		err = xerrors.Errorf("error creating leagues views: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating leagues views: %w", err)
 	}
 
 	return view, nil

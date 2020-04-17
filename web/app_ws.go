@@ -22,18 +22,17 @@ func (app *App) serveWS(c echo.Context) error {
 	conn, err := wsUpgrader.Upgrade(cc.Response(), cc.Request(), nil)
 
 	if err != nil {
-		app.wslog.WithError(err).Error("error accepting connection")
+		app.log.WithError(err).Error("error accepting connection")
 		return err
 	}
 
 	cconn := nswebws.NewConn(conn, nswebws.ConnOptions{
-		Ctx:    app.ctx,
 		ReqCtx: cc,
-		Log:    app.wslog,
+		Log:    app.log,
 		Bus:    app.bus,
 	})
 
-	go cconn.Serve()
+	cconn.Serve(app.ctx)
 
 	return nil
 }

@@ -6,9 +6,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
-	nscol "github.com/13k/night-stalker/internal/collections"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	nsviews "github.com/13k/night-stalker/internal/views"
+	nsvs "github.com/13k/night-stalker/internal/views"
 	nswebctx "github.com/13k/night-stalker/web/internal/context"
 )
 
@@ -28,7 +28,7 @@ func (app *App) serveHeroes(c echo.Context) error {
 	}
 
 	if view == nil {
-		return cc.NoContent(http.StatusNotFound)
+		return cc.NoContent(http.StatusNoContent)
 	}
 
 	return cc.RespondWith(http.StatusOK, view)
@@ -38,7 +38,7 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 	cc := c.(*nswebctx.Context)
 
 	type PathParams struct {
-		ID nspb.HeroID `param:"id"`
+		HeroID nspb.HeroID `param:"id"`
 	}
 
 	pathParams := &PathParams{}
@@ -51,7 +51,7 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 		}
 	}
 
-	view, err := app.loadHeroMatchesView(pathParams.ID)
+	view, err := app.loadHeroMatchesView((*nsdbda.HeroMatchesParams)(pathParams))
 
 	if err != nil {
 		app.log.WithError(err).Error("error loading HeroMatches view")
@@ -71,75 +71,32 @@ func (app *App) serveHeroMatches(c echo.Context) error {
 }
 
 func (app *App) loadHeroesView() (*nspb.Heroes, error) {
-	data, err := app.loadHeroesData()
+	heroes, err := app.dbl.Heroes(app.ctx, nsdbda.EmptyHeroFilters)
 
 	if err != nil {
-		err = xerrors.Errorf("error loading heroes data: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error loading heroes data: %w", err)
 	}
 
-	if len(data) == 0 {
+	if len(heroes) == 0 {
 		return nil, nil
 	}
 
-	view := nsviews.NewHeroes(data)
+	view := nsvs.NewHeroes(heroes)
 
 	return view, nil
 }
 
-func (app *App) loadHeroMatchesView(id nspb.HeroID) (*nspb.HeroMatches, error) {
-	heroesData, err := app.loadHeroesData(id)
+func (app *App) loadHeroMatchesView(params *nsdbda.HeroMatchesParams) (*nspb.HeroMatches, error) {
+	data, err := app.dbl.HeroMatchesData(app.ctx, params)
 
 	if err != nil {
-		err = xerrors.Errorf("error loading heroes data: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error loading HeroMatches data: %w", err)
 	}
 
-	if len(heroesData) == 0 {
-		return nil, nil
-	}
-
-	heroData := heroesData[0]
-	matchesData, err := app.loadHeroMatchesData(id)
+	view, err := nsvs.NewHeroMatches(data)
 
 	if err != nil {
-		err = xerrors.Errorf("error loading hero matches data: %w", err)
-		return nil, err
-	}
-
-	playersAccountIDs := matchesData.AccountIDs()
-
-	var followedAccountIDs nscol.AccountIDs
-
-	if len(playersAccountIDs) > 0 {
-		followedAccountIDs, err = app.filterFollowedPlayersAccountIDs(playersAccountIDs...)
-
-		if err != nil {
-			err = xerrors.Errorf("error filtering followed players account IDs: %w", err)
-			return nil, err
-		}
-	}
-
-	var knownPlayersData nsviews.PlayersData
-
-	if len(followedAccountIDs) > 0 {
-		knownPlayersData, err = app.loadPlayersData(followedAccountIDs...)
-
-		if err != nil {
-			err = xerrors.Errorf("error loading players data: %w", err)
-			return nil, err
-		}
-	}
-
-	view, err := nsviews.NewHeroMatches(
-		heroData,
-		knownPlayersData,
-		matchesData,
-	)
-
-	if err != nil {
-		err = xerrors.Errorf("error creating HeroMatches view: %w", err)
-		return nil, err
+		return nil, xerrors.Errorf("error creating HeroMatches view: %w", err)
 	}
 
 	return view, nil
