@@ -5,9 +5,9 @@ import (
 
 	"github.com/13k/geyser"
 	gsdota2 "github.com/13k/geyser/dota2"
-	"github.com/jinzhu/gorm"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nsdb "github.com/13k/night-stalker/internal/db"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsrds "github.com/13k/night-stalker/internal/redis"
@@ -57,13 +57,13 @@ func GetBus(ctx context.Context) *nsbus.Bus {
 	return v
 }
 
-func WithDB(ctx context.Context, db *gorm.DB) context.Context {
+func WithDB(ctx context.Context, db *nsdb.DB) context.Context {
 	return context.WithValue(ctx, ctxKeyDB, db)
 }
 
-func GetDB(ctx context.Context) *gorm.DB {
+func GetDB(ctx context.Context) *nsdb.DB {
 	i := ctx.Value(ctxKeyDB)
-	v, ok := i.(*gorm.DB)
+	v, ok := i.(*nsdb.DB)
 
 	if !ok {
 		return nil

@@ -8,11 +8,11 @@ import (
 	"github.com/13k/geyser"
 	gsdota2 "github.com/13k/geyser/dota2"
 	"github.com/faceit/go-steam"
-	"github.com/jinzhu/gorm"
 	"github.com/paralin/go-dota2"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdb "github.com/13k/night-stalker/internal/db"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsrds "github.com/13k/night-stalker/internal/redis"
@@ -31,7 +31,7 @@ const (
 
 type AppOptions struct {
 	Log             *nslog.Logger
-	DB              *gorm.DB
+	DB              *nsdb.DB
 	Redis           *nsrds.Redis
 	Credentials     *SteamCredentials
 	ShutdownTimeout time.Duration
@@ -41,7 +41,7 @@ type App struct {
 	options    AppOptions
 	log        *nslog.Logger
 	bus        *nsbus.Bus
-	db         *gorm.DB
+	db         *nsdb.DB
 	rds        *nsrds.Redis
 	steam      *nssteam.Client
 	dota       *nsdota2.Client
