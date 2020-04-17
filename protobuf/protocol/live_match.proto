@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 import "protocol/collections.proto";
 import "protocol/enums.proto";
+import "protocol/league.proto";
 
 message LiveMatch {
   message Player {
@@ -75,7 +76,8 @@ message LiveMatch {
 }
 
 message LiveMatches {
-  repeated ns.protocol.LiveMatch matches = 1;
+  repeated ns.protocol.LiveMatch matches = 100;
+  repeated ns.protocol.League leagues = 101;
 }
 
 message LiveMatchesChange {

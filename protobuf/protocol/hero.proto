@@ -5,6 +5,7 @@ package ns.protocol;
 option go_package = "github.com/13k/night-stalker/internal/protobuf/protocol";
 
 import "protocol/enums.proto";
+import "protocol/league.proto";
 import "protocol/match.proto";
 import "protocol/player.proto";
 
@@ -30,4 +31,5 @@ message HeroMatches {
   ns.protocol.Hero hero = 100;
   repeated ns.protocol.Match matches = 101;
   repeated ns.protocol.Player known_players = 102;
+  repeated ns.protocol.League leagues = 103;
 }
