@@ -2854,6 +2854,7 @@ export const ns = $root.ns = (() => {
              * @memberof ns.protocol
              * @interface ILiveMatches
              * @property {Array.<ns.protocol.ILiveMatch>|null} [matches] LiveMatches matches
+             * @property {Array.<ns.protocol.ILeague>|null} [leagues] LiveMatches leagues
              */
 
             /**
@@ -2866,6 +2867,7 @@ export const ns = $root.ns = (() => {
              */
             function LiveMatches(properties) {
                 this.matches = [];
+                this.leagues = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -2879,6 +2881,14 @@ export const ns = $root.ns = (() => {
              * @instance
              */
             LiveMatches.prototype.matches = $util.emptyArray;
+
+            /**
+             * LiveMatches leagues.
+             * @member {Array.<ns.protocol.ILeague>} leagues
+             * @memberof ns.protocol.LiveMatches
+             * @instance
+             */
+            LiveMatches.prototype.leagues = $util.emptyArray;
 
             /**
              * Creates a new LiveMatches instance using the specified properties.
@@ -2906,7 +2916,10 @@ export const ns = $root.ns = (() => {
                     writer = $Writer.create();
                 if (message.matches != null && message.matches.length)
                     for (let i = 0; i < message.matches.length; ++i)
-                        $root.ns.protocol.LiveMatch.encode(message.matches[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                        $root.ns.protocol.LiveMatch.encode(message.matches[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+                if (message.leagues != null && message.leagues.length)
+                    for (let i = 0; i < message.leagues.length; ++i)
+                        $root.ns.protocol.League.encode(message.leagues[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
                 return writer;
             };
 
@@ -2941,10 +2954,15 @@ export const ns = $root.ns = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 1:
+                    case 100:
                         if (!(message.matches && message.matches.length))
                             message.matches = [];
                         message.matches.push($root.ns.protocol.LiveMatch.decode(reader, reader.uint32()));
+                        break;
+                    case 101:
+                        if (!(message.leagues && message.leagues.length))
+                            message.leagues = [];
+                        message.leagues.push($root.ns.protocol.League.decode(reader, reader.uint32()));
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -2990,6 +3008,15 @@ export const ns = $root.ns = (() => {
                             return "matches." + error;
                     }
                 }
+                if (message.leagues != null && message.hasOwnProperty("leagues")) {
+                    if (!Array.isArray(message.leagues))
+                        return "leagues: array expected";
+                    for (let i = 0; i < message.leagues.length; ++i) {
+                        let error = $root.ns.protocol.League.verify(message.leagues[i]);
+                        if (error)
+                            return "leagues." + error;
+                    }
+                }
                 return null;
             };
 
@@ -3015,6 +3042,16 @@ export const ns = $root.ns = (() => {
                         message.matches[i] = $root.ns.protocol.LiveMatch.fromObject(object.matches[i]);
                     }
                 }
+                if (object.leagues) {
+                    if (!Array.isArray(object.leagues))
+                        throw TypeError(".ns.protocol.LiveMatches.leagues: array expected");
+                    message.leagues = [];
+                    for (let i = 0; i < object.leagues.length; ++i) {
+                        if (typeof object.leagues[i] !== "object")
+                            throw TypeError(".ns.protocol.LiveMatches.leagues: object expected");
+                        message.leagues[i] = $root.ns.protocol.League.fromObject(object.leagues[i]);
+                    }
+                }
                 return message;
             };
 
@@ -3031,12 +3068,19 @@ export const ns = $root.ns = (() => {
                 if (!options)
                     options = {};
                 let object = {};
-                if (options.arrays || options.defaults)
+                if (options.arrays || options.defaults) {
                     object.matches = [];
+                    object.leagues = [];
+                }
                 if (message.matches && message.matches.length) {
                     object.matches = [];
                     for (let j = 0; j < message.matches.length; ++j)
                         object.matches[j] = $root.ns.protocol.LiveMatch.toObject(message.matches[j], options);
+                }
+                if (message.leagues && message.leagues.length) {
+                    object.leagues = [];
+                    for (let j = 0; j < message.leagues.length; ++j)
+                        object.leagues[j] = $root.ns.protocol.League.toObject(message.leagues[j], options);
                 }
                 return object;
             };
@@ -4987,6 +5031,7 @@ export const ns = $root.ns = (() => {
              * @property {ns.protocol.IPlayer|null} [player] PlayerMatches player
              * @property {Array.<ns.protocol.IMatch>|null} [matches] PlayerMatches matches
              * @property {Array.<ns.protocol.IPlayer>|null} [known_players] PlayerMatches known_players
+             * @property {Array.<ns.protocol.ILeague>|null} [leagues] PlayerMatches leagues
              */
 
             /**
@@ -5000,6 +5045,7 @@ export const ns = $root.ns = (() => {
             function PlayerMatches(properties) {
                 this.matches = [];
                 this.known_players = [];
+                this.leagues = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -5029,6 +5075,14 @@ export const ns = $root.ns = (() => {
              * @instance
              */
             PlayerMatches.prototype.known_players = $util.emptyArray;
+
+            /**
+             * PlayerMatches leagues.
+             * @member {Array.<ns.protocol.ILeague>} leagues
+             * @memberof ns.protocol.PlayerMatches
+             * @instance
+             */
+            PlayerMatches.prototype.leagues = $util.emptyArray;
 
             /**
              * Creates a new PlayerMatches instance using the specified properties.
@@ -5062,6 +5116,9 @@ export const ns = $root.ns = (() => {
                 if (message.known_players != null && message.known_players.length)
                     for (let i = 0; i < message.known_players.length; ++i)
                         $root.ns.protocol.Player.encode(message.known_players[i], writer.uint32(/* id 102, wireType 2 =*/818).fork()).ldelim();
+                if (message.leagues != null && message.leagues.length)
+                    for (let i = 0; i < message.leagues.length; ++i)
+                        $root.ns.protocol.League.encode(message.leagues[i], writer.uint32(/* id 103, wireType 2 =*/826).fork()).ldelim();
                 return writer;
             };
 
@@ -5108,6 +5165,11 @@ export const ns = $root.ns = (() => {
                         if (!(message.known_players && message.known_players.length))
                             message.known_players = [];
                         message.known_players.push($root.ns.protocol.Player.decode(reader, reader.uint32()));
+                        break;
+                    case 103:
+                        if (!(message.leagues && message.leagues.length))
+                            message.leagues = [];
+                        message.leagues.push($root.ns.protocol.League.decode(reader, reader.uint32()));
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -5167,6 +5229,15 @@ export const ns = $root.ns = (() => {
                             return "known_players." + error;
                     }
                 }
+                if (message.leagues != null && message.hasOwnProperty("leagues")) {
+                    if (!Array.isArray(message.leagues))
+                        return "leagues: array expected";
+                    for (let i = 0; i < message.leagues.length; ++i) {
+                        let error = $root.ns.protocol.League.verify(message.leagues[i]);
+                        if (error)
+                            return "leagues." + error;
+                    }
+                }
                 return null;
             };
 
@@ -5207,6 +5278,16 @@ export const ns = $root.ns = (() => {
                         message.known_players[i] = $root.ns.protocol.Player.fromObject(object.known_players[i]);
                     }
                 }
+                if (object.leagues) {
+                    if (!Array.isArray(object.leagues))
+                        throw TypeError(".ns.protocol.PlayerMatches.leagues: array expected");
+                    message.leagues = [];
+                    for (let i = 0; i < object.leagues.length; ++i) {
+                        if (typeof object.leagues[i] !== "object")
+                            throw TypeError(".ns.protocol.PlayerMatches.leagues: object expected");
+                        message.leagues[i] = $root.ns.protocol.League.fromObject(object.leagues[i]);
+                    }
+                }
                 return message;
             };
 
@@ -5226,6 +5307,7 @@ export const ns = $root.ns = (() => {
                 if (options.arrays || options.defaults) {
                     object.matches = [];
                     object.known_players = [];
+                    object.leagues = [];
                 }
                 if (options.defaults)
                     object.player = null;
@@ -5240,6 +5322,11 @@ export const ns = $root.ns = (() => {
                     object.known_players = [];
                     for (let j = 0; j < message.known_players.length; ++j)
                         object.known_players[j] = $root.ns.protocol.Player.toObject(message.known_players[j], options);
+                }
+                if (message.leagues && message.leagues.length) {
+                    object.leagues = [];
+                    for (let j = 0; j < message.leagues.length; ++j)
+                        object.leagues[j] = $root.ns.protocol.League.toObject(message.leagues[j], options);
                 }
                 return object;
             };
@@ -6117,6 +6204,7 @@ export const ns = $root.ns = (() => {
              * @property {ns.protocol.IHero|null} [hero] HeroMatches hero
              * @property {Array.<ns.protocol.IMatch>|null} [matches] HeroMatches matches
              * @property {Array.<ns.protocol.IPlayer>|null} [known_players] HeroMatches known_players
+             * @property {Array.<ns.protocol.ILeague>|null} [leagues] HeroMatches leagues
              */
 
             /**
@@ -6130,6 +6218,7 @@ export const ns = $root.ns = (() => {
             function HeroMatches(properties) {
                 this.matches = [];
                 this.known_players = [];
+                this.leagues = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -6159,6 +6248,14 @@ export const ns = $root.ns = (() => {
              * @instance
              */
             HeroMatches.prototype.known_players = $util.emptyArray;
+
+            /**
+             * HeroMatches leagues.
+             * @member {Array.<ns.protocol.ILeague>} leagues
+             * @memberof ns.protocol.HeroMatches
+             * @instance
+             */
+            HeroMatches.prototype.leagues = $util.emptyArray;
 
             /**
              * Creates a new HeroMatches instance using the specified properties.
@@ -6192,6 +6289,9 @@ export const ns = $root.ns = (() => {
                 if (message.known_players != null && message.known_players.length)
                     for (let i = 0; i < message.known_players.length; ++i)
                         $root.ns.protocol.Player.encode(message.known_players[i], writer.uint32(/* id 102, wireType 2 =*/818).fork()).ldelim();
+                if (message.leagues != null && message.leagues.length)
+                    for (let i = 0; i < message.leagues.length; ++i)
+                        $root.ns.protocol.League.encode(message.leagues[i], writer.uint32(/* id 103, wireType 2 =*/826).fork()).ldelim();
                 return writer;
             };
 
@@ -6238,6 +6338,11 @@ export const ns = $root.ns = (() => {
                         if (!(message.known_players && message.known_players.length))
                             message.known_players = [];
                         message.known_players.push($root.ns.protocol.Player.decode(reader, reader.uint32()));
+                        break;
+                    case 103:
+                        if (!(message.leagues && message.leagues.length))
+                            message.leagues = [];
+                        message.leagues.push($root.ns.protocol.League.decode(reader, reader.uint32()));
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -6297,6 +6402,15 @@ export const ns = $root.ns = (() => {
                             return "known_players." + error;
                     }
                 }
+                if (message.leagues != null && message.hasOwnProperty("leagues")) {
+                    if (!Array.isArray(message.leagues))
+                        return "leagues: array expected";
+                    for (let i = 0; i < message.leagues.length; ++i) {
+                        let error = $root.ns.protocol.League.verify(message.leagues[i]);
+                        if (error)
+                            return "leagues." + error;
+                    }
+                }
                 return null;
             };
 
@@ -6337,6 +6451,16 @@ export const ns = $root.ns = (() => {
                         message.known_players[i] = $root.ns.protocol.Player.fromObject(object.known_players[i]);
                     }
                 }
+                if (object.leagues) {
+                    if (!Array.isArray(object.leagues))
+                        throw TypeError(".ns.protocol.HeroMatches.leagues: array expected");
+                    message.leagues = [];
+                    for (let i = 0; i < object.leagues.length; ++i) {
+                        if (typeof object.leagues[i] !== "object")
+                            throw TypeError(".ns.protocol.HeroMatches.leagues: object expected");
+                        message.leagues[i] = $root.ns.protocol.League.fromObject(object.leagues[i]);
+                    }
+                }
                 return message;
             };
 
@@ -6356,6 +6480,7 @@ export const ns = $root.ns = (() => {
                 if (options.arrays || options.defaults) {
                     object.matches = [];
                     object.known_players = [];
+                    object.leagues = [];
                 }
                 if (options.defaults)
                     object.hero = null;
@@ -6370,6 +6495,11 @@ export const ns = $root.ns = (() => {
                     object.known_players = [];
                     for (let j = 0; j < message.known_players.length; ++j)
                         object.known_players[j] = $root.ns.protocol.Player.toObject(message.known_players[j], options);
+                }
+                if (message.leagues && message.leagues.length) {
+                    object.leagues = [];
+                    for (let j = 0; j < message.leagues.length; ++j)
+                        object.leagues[j] = $root.ns.protocol.League.toObject(message.leagues[j], options);
                 }
                 return object;
             };
