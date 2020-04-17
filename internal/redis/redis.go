@@ -50,7 +50,7 @@ func (r *Redis) LiveMatchIDs() (nscol.MatchIDs, error) {
 		}
 	}
 
-	matchIDs := make([]uint64, len(rcmd.Val()))
+	matchIDs := make([]uint64, 0, len(rcmd.Val()))
 
 	if err := rcmd.ScanSlice(&matchIDs); err != nil {
 		return nil, &ErrCommandFailure{
