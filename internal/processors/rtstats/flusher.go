@@ -11,7 +11,7 @@ import (
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 type flusherOptions struct {
@@ -28,7 +28,7 @@ type flusher struct {
 	buf     nscol.LiveMatchStats
 	mtx     *sync.Mutex
 	ctx     context.Context
-	values  chan *models.LiveMatchStats
+	values  chan *nsm.LiveMatchStats
 	errors  chan error
 }
 
@@ -47,7 +47,7 @@ func (f *flusher) Errors() <-chan error {
 
 func (f *flusher) Start(ctx context.Context) {
 	f.ctx = ctx
-	f.values = make(chan *models.LiveMatchStats)
+	f.values = make(chan *nsm.LiveMatchStats)
 	f.errors = make(chan error)
 
 	go f.loop()
@@ -89,11 +89,11 @@ func (f *flusher) loop() {
 	}
 }
 
-func (f *flusher) Add(stats *models.LiveMatchStats) {
+func (f *flusher) Add(stats *nsm.LiveMatchStats) {
 	f.values <- stats
 }
 
-func (f *flusher) add(stats *models.LiveMatchStats) {
+func (f *flusher) add(stats *nsm.LiveMatchStats) {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 

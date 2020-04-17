@@ -8,16 +8,16 @@ import (
 	d2pb "github.com/paralin/go-dota2/protocol"
 
 	nserr "github.com/13k/night-stalker/internal/errors"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 type errWorkerSubmitFailure struct {
 	*nserr.Err
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 }
 
 type errWorkerPanic struct {
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 	Value     interface{}
 }
 
@@ -26,7 +26,7 @@ func (*errWorkerPanic) Error() string {
 }
 
 type errRequestInProgress struct {
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 }
 
 func (*errRequestInProgress) Error() string {
@@ -35,13 +35,13 @@ func (*errRequestInProgress) Error() string {
 
 type errRequestFailure struct {
 	*nserr.Err
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 	Request   *geyser.Request
 	Response  *resty.Response
 }
 
 type errInvalidResponseStatus struct {
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 	Request   *geyser.Request
 	Response  *resty.Response
 }
@@ -51,7 +51,7 @@ func (err *errInvalidResponseStatus) Error() string {
 }
 
 type errInvalidResponse struct {
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 	Result    *d2pb.CMsgDOTARealtimeGameStatsTerse
 }
 
@@ -61,5 +61,5 @@ func (*errInvalidResponse) Error() string {
 
 type errStatsSaveFailure struct {
 	*nserr.Err
-	LiveMatch *models.LiveMatch
+	LiveMatch *nsm.LiveMatch
 }

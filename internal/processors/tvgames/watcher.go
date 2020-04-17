@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/jinzhu/gorm"
 	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 	"google.golang.org/protobuf/proto"
@@ -14,13 +13,14 @@ import (
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdb "github.com/13k/night-stalker/internal/db"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
-	"github.com/13k/night-stalker/models"
 )
 
 const (
@@ -43,7 +43,7 @@ type Watcher struct {
 	discoveryPage     *discoveryPage
 	ctx               context.Context
 	log               *nslog.Logger
-	db                *gorm.DB
+	db                *nsdb.DB
 	dota              *nsdota2.Client
 	bus               *nsbus.Bus
 	busSubTVGamesResp *nsbus.Subscription
@@ -306,83 +306,33 @@ func (p *Watcher) handleResponse(page *queryPage) error {
 }
 
 func (p *Watcher) saveGames(games nscol.TVGames) (nscol.LiveMatches, error) {
-	liveMatches := make(nscol.LiveMatches, 0, len(games))
+	dbs := nsdbda.NewSaver(p.db)
+	liveMatches := make(nscol.LiveMatches, len(games))
 
-	for _, game := range games {
-		liveMatch := models.LiveMatchDotaProto(game)
-		errSave := &errSaveGameFailure{
-			MatchID:  liveMatch.MatchID,
-			ServerID: liveMatch.ServerID,
-			LobbyID:  liveMatch.LobbyID,
-		}
+	for i, game := range games {
+		liveMatch, err := dbs.UpsertLiveMatchProto(p.ctx, game)
 
-		if p.ctx.Err() != nil {
-			errSave.Err = nserr.Wrap("error saving game", p.ctx.Err())
-			return nil, errSave
-		}
-
-		tx := p.db.Begin()
-
-		dbres := tx.
-			Where(models.LiveMatch{MatchID: liveMatch.MatchID}).
-			Assign(liveMatch).
-			FirstOrCreate(liveMatch)
-
-		if dbres.Error != nil {
-			tx.Rollback()
-
-			errSave.Err = nserr.Wrap("error saving game", dbres.Error)
-			return nil, errSave
-		}
-
-		for _, gamePlayer := range game.GetPlayers() {
-			if p.ctx.Err() != nil {
-				tx.Rollback()
-
-				errSave.Err = nserr.Wrap("error saving game", p.ctx.Err())
-				return nil, errSave
-			}
-
-			livePlayer := models.NewLiveMatchPlayer(liveMatch, gamePlayer)
-
-			criteria := &models.LiveMatchPlayer{
-				LiveMatchID: livePlayer.LiveMatchID,
-				AccountID:   livePlayer.AccountID,
-			}
-
-			dbres = tx.
-				Where(criteria).
-				Assign(livePlayer).
-				FirstOrCreate(livePlayer)
-
-			if dbres.Error != nil {
-				tx.Rollback()
-
-				errSave.Err = nserr.Wrap("error saving game", dbres.Error)
-				return nil, errSave
+		if err != nil {
+			return nil, &errSaveGameFailure{
+				MatchID:  nspb.MatchID(game.GetMatchId()),
+				ServerID: nspb.SteamID(game.GetServerSteamId()),
+				LobbyID:  nspb.LobbyID(game.GetLobbyId()),
+				Err:      nserr.Wrap("error saving live match", err),
 			}
 		}
 
-		if err := tx.Commit().Error; err != nil {
-			errSave.Err = nserr.Wrap("error saving game", err)
-			return nil, errSave
-		}
-
-		liveMatches = append(liveMatches, liveMatch)
+		liveMatches[i] = liveMatch
 	}
 
 	return liveMatches, nil
 }
 
 func (p *Watcher) filterFinished(tvGames nscol.TVGames) (nscol.TVGames, error) {
-	matchIDs := tvGames.MatchIDs()
-	var finishedMatchIDs nscol.MatchIDs
+	dbl := nsdbda.NewLoader(p.db)
 
-	err := p.db.
-		Model(models.MatchModel).
-		Where("id IN (?)", matchIDs).
-		Pluck("id", &finishedMatchIDs).
-		Error
+	finishedMatchIDs, err := dbl.FindMatchIDs(p.ctx, nsdbda.MatchFilters{
+		MatchIDs: tvGames.MatchIDs(),
+	})
 
 	if err != nil {
 		return nil, xerrors.Errorf("error filtering finished games: %w", err)

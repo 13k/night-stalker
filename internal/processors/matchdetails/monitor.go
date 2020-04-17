@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/jinzhu/gorm"
 	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
@@ -14,13 +13,14 @@ import (
 	nsbussub "github.com/13k/night-stalker/internal/bus/subscribers"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdb "github.com/13k/night-stalker/internal/db"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
-	"github.com/13k/night-stalker/models"
 )
 
 const (
@@ -44,7 +44,7 @@ type Monitor struct {
 	options                  MonitorOptions
 	ctx                      context.Context
 	log                      *nslog.Logger
-	db                       *gorm.DB
+	db                       *nsdb.DB
 	bus                      *nsbus.Bus
 	dota                     *nsdota2.Client
 	liveMatches              *nsbussub.LiveMatches
@@ -210,68 +210,13 @@ func (p *Monitor) handleMatchesMinimalResponse(msg *d2pb.CMsgClientToGCMatchesMi
 }
 
 func (p *Monitor) saveMatches(minMatches []*d2pb.CMsgDOTAMatchMinimal) (nscol.Matches, error) {
+	dbs := nsdbda.NewSaver(p.db)
 	matches := make(nscol.Matches, len(minMatches))
 
 	for i, pbMatch := range minMatches {
-		if p.ctx.Err() != nil {
-			return nil, &errMatchSave{
-				MatchID: pbMatch.GetMatchId(),
-				Err:     nserr.Wrap("error saving match", p.ctx.Err()),
-			}
-		}
+		match, err := dbs.UpsertMatchProto(p.ctx, pbMatch)
 
-		match := models.MatchDotaProto(pbMatch)
-
-		tx := p.db.Begin()
-
-		result := tx.
-			Where(models.Match{ID: match.ID}).
-			Assign(match).
-			FirstOrCreate(match)
-
-		if err := result.Error; err != nil {
-			tx.Rollback()
-
-			return nil, &errMatchSave{
-				MatchID: pbMatch.GetMatchId(),
-				Err:     nserr.Wrap("error saving match", err),
-			}
-		}
-
-		for _, pbPlayer := range pbMatch.GetPlayers() {
-			if p.ctx.Err() != nil {
-				tx.Rollback()
-
-				return nil, &errMatchSave{
-					MatchID: pbMatch.GetMatchId(),
-					Err:     nserr.Wrap("error saving match", p.ctx.Err()),
-				}
-			}
-
-			matchPlayer := models.MatchPlayerDotaProto(pbPlayer)
-			matchPlayer.MatchID = match.ID
-
-			criteria := &models.MatchPlayer{
-				MatchID:   matchPlayer.MatchID,
-				AccountID: matchPlayer.AccountID,
-			}
-
-			result = tx.
-				Where(criteria).
-				Assign(matchPlayer).
-				FirstOrCreate(matchPlayer)
-
-			if err := result.Error; err != nil {
-				tx.Rollback()
-
-				return nil, &errMatchSave{
-					MatchID: pbMatch.GetMatchId(),
-					Err:     nserr.Wrap("error saving match", err),
-				}
-			}
-		}
-
-		if err := tx.Commit().Error; err != nil {
+		if err != nil {
 			return nil, &errMatchSave{
 				MatchID: pbMatch.GetMatchId(),
 				Err:     nserr.Wrap("error saving match", err),

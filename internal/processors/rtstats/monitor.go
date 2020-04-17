@@ -14,18 +14,18 @@ import (
 
 	"cirello.io/oversight"
 	gsdota2 "github.com/13k/geyser/dota2"
-	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants/v2"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nsbussub "github.com/13k/night-stalker/internal/bus/subscribers"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdb "github.com/13k/night-stalker/internal/db"
 	nserr "github.com/13k/night-stalker/internal/errors"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 const (
@@ -48,7 +48,7 @@ type Monitor struct {
 	options       MonitorOptions
 	ctx           context.Context
 	log           *nslog.Logger
-	db            *gorm.DB
+	db            *nsdb.DB
 	workerPool    *ants.Pool
 	api           *gsdota2.Client
 	apiMatchStats *gsdota2.DOTA2MatchStats
@@ -232,7 +232,7 @@ func (p *Monitor) tick() {
 	}
 }
 
-func (p *Monitor) enqueueWorker(liveMatch *models.LiveMatch) error {
+func (p *Monitor) enqueueWorker(liveMatch *nsm.LiveMatch) error {
 	if p.ctx.Err() != nil {
 		return &errWorkerSubmitFailure{
 			LiveMatch: liveMatch,

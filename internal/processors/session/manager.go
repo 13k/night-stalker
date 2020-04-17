@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/jinzhu/gorm"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
+	nsdb "github.com/13k/night-stalker/internal/db"
 	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nsrt "github.com/13k/night-stalker/internal/runtime"
 	nssteam "github.com/13k/night-stalker/internal/steam"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 const (
@@ -33,10 +33,10 @@ var _ nsproc.Processor = (*Manager)(nil)
 
 type Manager struct {
 	options            ManagerOptions
-	login              *models.SteamLogin
+	login              *nsm.SteamLogin
 	log                *nslog.Logger
 	bus                *nsbus.Bus
-	db                 *gorm.DB
+	db                 *nsdb.DB
 	steam              *nssteam.Client
 	dota               *nsdota2.Client
 	ctx                context.Context
@@ -53,7 +53,7 @@ func NewManager(options ManagerOptions) *Manager {
 		options: options,
 		log:     options.Log.WithPackage(processorName),
 		bus:     options.Bus,
-		login:   &models.SteamLogin{},
+		login:   &nsm.SteamLogin{},
 	}
 }
 

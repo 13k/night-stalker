@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"cirello.io/oversight"
-	"github.com/jinzhu/gorm"
 	"golang.org/x/xerrors"
 
 	nsbus "github.com/13k/night-stalker/internal/bus"
 	nscol "github.com/13k/night-stalker/internal/collections"
 	nsctx "github.com/13k/night-stalker/internal/context"
+	nsdb "github.com/13k/night-stalker/internal/db"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nslog "github.com/13k/night-stalker/internal/logger"
 	nsproc "github.com/13k/night-stalker/internal/processors"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
@@ -36,7 +37,8 @@ type Collector struct {
 	options                 CollectorOptions
 	matches                 *nscol.LiveMatchesContainer
 	log                     *nslog.Logger
-	db                      *gorm.DB
+	db                      *nsdb.DB
+	dbl                     *nsdbda.Loader
 	rds                     *nsrds.Redis
 	bus                     *nsbus.Bus
 	busSubLiveMatchesAll    *nsbus.Subscription
@@ -127,6 +129,8 @@ func (p *Collector) setupContext(ctx context.Context) error {
 		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextDatabase)
 	}
 
+	p.dbl = nsdbda.NewLoader(p.db)
+
 	if p.rds = nsctx.GetRedis(ctx); p.rds == nil {
 		return xerrors.Errorf("processor context error: %w", nsproc.ErrProcessorContextRedis)
 	}
@@ -166,19 +170,16 @@ func (p *Collector) seedLiveMatches() error {
 }
 
 func (p *Collector) loadLiveMatches(matchIDs nscol.MatchIDs) (nscol.LiveMatches, error) {
-	var matches nscol.LiveMatches
-
-	err := p.db.
-		Where("match_id IN (?)", matchIDs).
-		Order("sort_score DESC").
-		Find(&matches).
-		Error
+	liveMatches, err := p.dbl.LiveMatches(p.ctx, nsdbda.LiveMatchFilters{
+		MatchIDs: matchIDs,
+		OrderBy:  nsdb.OrderFields.Desc("sort_score"),
+	})
 
 	if err != nil {
 		return nil, xerrors.Errorf("error loading live matches: %w", err)
 	}
 
-	return matches, nil
+	return liveMatches, nil
 }
 
 func (p *Collector) loop() error {

@@ -6,21 +6,21 @@ import (
 
 	"github.com/faceit/go-steam"
 	"github.com/faceit/go-steam/netutil"
-	"github.com/jinzhu/gorm"
 	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
 	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 func (p *Manager) loadLogin() error {
-	dbres := p.db.
-		Where(&models.SteamLogin{Username: p.options.Credentials.Username}).
-		FirstOrInit(p.login)
+	p.login.Username = p.options.Credentials.Username
 
-	if dbres.Error != nil {
-		return xerrors.Errorf("error loading login: %w", dbres.Error)
+	_, err := p.db.M().FindBy(p.ctx, p.login, "username", p.options.Credentials.Username)
+
+	if err != nil && !xerrors.Is(err, sql.ErrNoRows) {
+		return xerrors.Errorf("error loading login: %w", err)
 	}
 
 	return nil
@@ -30,23 +30,25 @@ func (p *Manager) isSuspended() bool {
 	return p.login.SuspendedUntil.Valid && time.Now().Before(p.login.SuspendedUntil.Time)
 }
 
-func (p *Manager) updateLogin(update *models.SteamLogin) error {
+func (p *Manager) updateLogin(update *nsm.SteamLogin) error {
 	p.log.Trace("update login")
 
-	dbres := p.db.
-		Where(&models.SteamLogin{Username: p.login.Username}).
-		Assign(update).
-		FirstOrCreate(p.login)
+	if p.login.AssignPartial(update) {
+		q := p.db.
+			Q().
+			Select().
+			Eq(nsm.SteamLoginTable.Col("username"), p.login.Username)
 
-	if dbres.Error != nil {
-		return xerrors.Errorf("error updating login: %w", dbres.Error)
+		if _, err := p.db.M().Upsert(p.ctx, p.login, q); err != nil {
+			return xerrors.Errorf("error updating login: %w", err)
+		}
 	}
 
 	return nil
 }
 
 func (p *Manager) saveLoginKey(uniqueID uint32, loginKey string) error {
-	update := &models.SteamLogin{
+	update := &nsm.SteamLogin{
 		UniqueID: uniqueID,
 		LoginKey: loginKey,
 	}
@@ -59,7 +61,7 @@ func (p *Manager) saveLoginKey(uniqueID uint32, loginKey string) error {
 }
 
 func (p *Manager) saveMachineAuthToken(hash []byte) error {
-	update := &models.SteamLogin{MachineHash: hash}
+	update := &nsm.SteamLogin{MachineHash: hash}
 
 	if err := p.updateLogin(update); err != nil {
 		return xerrors.Errorf("error saving steam machine auth token: %w", err)
@@ -69,7 +71,7 @@ func (p *Manager) saveMachineAuthToken(hash []byte) error {
 }
 
 func (p *Manager) saveWebSessionID(sessionID string) error {
-	update := &models.SteamLogin{WebSessionID: sessionID}
+	update := &nsm.SteamLogin{WebSessionID: sessionID}
 
 	if err := p.updateLogin(update); err != nil {
 		return xerrors.Errorf("error saving steam web session: %w", err)
@@ -79,7 +81,7 @@ func (p *Manager) saveWebSessionID(sessionID string) error {
 }
 
 func (p *Manager) saveWebAuth(authToken, authSecret string) error {
-	update := &models.SteamLogin{
+	update := &nsm.SteamLogin{
 		WebAuthToken:       authToken,
 		WebAuthTokenSecure: authSecret,
 	}
@@ -92,7 +94,7 @@ func (p *Manager) saveWebAuth(authToken, authSecret string) error {
 }
 
 func (p *Manager) saveAccountDetails(ev *steam.LoggedOnEvent) error {
-	update := &models.SteamLogin{
+	update := &nsm.SteamLogin{
 		SteamID:                   ev.ClientSteamId,
 		AccountFlags:              nspb.SteamAccountFlags(ev.AccountFlags),
 		WebAuthNonce:              ev.Body.GetWebapiAuthenticateUserNonce(),
@@ -124,7 +126,7 @@ func (p *Manager) saveAccountDetails(ev *steam.LoggedOnEvent) error {
 }
 
 func (p *Manager) saveDotaWelcome(welcome *d2pb.CMsgClientWelcome) error {
-	update := &models.SteamLogin{
+	update := &nsm.SteamLogin{
 		GameVersion:       welcome.GetVersion(),
 		LocationCountry:   welcome.GetLocation().GetCountry(),
 		LocationLatitude:  welcome.GetLocation().GetLatitude(),
@@ -140,7 +142,7 @@ func (p *Manager) saveDotaWelcome(welcome *d2pb.CMsgClientWelcome) error {
 
 func (p *Manager) saveDotaClientSuspended(until time.Time) error {
 	t := sql.NullTime{Time: until, Valid: !until.IsZero()}
-	update := &models.SteamLogin{SuspendedUntil: t}
+	update := &nsm.SteamLogin{SuspendedUntil: t}
 
 	if err := p.updateLogin(update); err != nil {
 		return xerrors.Errorf("error saving dota client suspended info: %w", err)
@@ -149,16 +151,16 @@ func (p *Manager) saveDotaClientSuspended(until time.Time) error {
 	return nil
 }
 
-func (p *Manager) randomServer() (*models.SteamServer, error) {
-	server := &models.SteamServer{}
-	result := p.db.Order("random()").Take(&server)
+func (p *Manager) randomServer() (*nsm.SteamServer, error) {
+	server := &nsm.SteamServer{}
+	exists, err := p.db.M().Random(p.ctx, server)
 
-	if err := result.Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-
+	if err != nil {
 		return nil, xerrors.Errorf("error loading random server: %w", err)
+	}
+
+	if !exists {
+		return nil, nil
 	}
 
 	return server, nil
@@ -171,42 +173,27 @@ func (p *Manager) randomServerAddr() (*netutil.PortAddr, error) {
 		return nil, xerrors.Errorf("error loading random steam server: %w", err)
 	}
 
-	var addr *netutil.PortAddr
+	if server == nil {
+		return nil, nil
+	}
 
-	if server != nil {
-		addr = netutil.ParsePortAddr(server.Address)
+	addr := netutil.ParsePortAddr(server.Address)
 
-		if addr == nil {
-			return nil, xerrors.Errorf("error parsing server address: %w", &ErrInvalidServerAddress{
-				Address: server.Address,
-			})
-		}
+	if addr == nil {
+		return nil, xerrors.Errorf("error parsing server address: %w", &ErrInvalidServerAddress{
+			Address: server.Address,
+		})
 	}
 
 	return addr, nil
 }
 
 func (p *Manager) saveServers(addresses []*netutil.PortAddr) error {
-	var err error
+	dbs := nsdbda.NewSaver(p.db)
 
-	tx := p.db.Begin()
-
-	for _, addr := range addresses {
-		server := &models.SteamServer{}
-		err = tx.
-			Where(&models.SteamServer{Address: addr.String()}).
-			FirstOrCreate(server).
-			Error
-
-		if err != nil {
-			break
-		}
-	}
-
-	if err != nil {
-		tx.Rollback()
+	if _, err := dbs.UpsertSteamServersAddresses(p.ctx, addresses); err != nil {
 		return xerrors.Errorf("error saving servers: %w", err)
 	}
 
-	return tx.Commit().Error
+	return nil
 }

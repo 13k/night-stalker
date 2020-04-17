@@ -8,29 +8,29 @@ import (
 
 	"github.com/13k/geyser"
 	gsdota2 "github.com/13k/geyser/dota2"
-	"github.com/jinzhu/gorm"
 	d2pb "github.com/paralin/go-dota2/protocol"
 	"golang.org/x/xerrors"
 
-	nsd2 "github.com/13k/night-stalker/internal/dota2"
+	nsdb "github.com/13k/night-stalker/internal/db"
+	nsdbda "github.com/13k/night-stalker/internal/db/dataaccess"
+	nsdota2 "github.com/13k/night-stalker/internal/dota2"
 	nserr "github.com/13k/night-stalker/internal/errors"
-	nspb "github.com/13k/night-stalker/internal/protobuf/protocol"
-	"github.com/13k/night-stalker/models"
+	nsm "github.com/13k/night-stalker/models"
 )
 
 type worker struct {
 	ctx          context.Context
-	db           *gorm.DB
+	db           *nsdb.DB
 	api          *gsdota2.DOTA2MatchStats
 	activeReqs   *sync.Map
-	liveMatch    *models.LiveMatch
+	liveMatch    *nsm.LiveMatch
 	results      *flusher
 	errorHandler func(error)
 }
 
 func (w *worker) Run() {
 	var err error
-	var stats *models.LiveMatchStats
+	var stats *nsm.LiveMatchStats
 
 	defer func() {
 		if v := recover(); v != nil {
@@ -52,7 +52,7 @@ func (w *worker) Run() {
 	}
 }
 
-func (w *worker) run() (*models.LiveMatchStats, error) {
+func (w *worker) run() (*nsm.LiveMatchStats, error) {
 	if w.ctx.Err() != nil {
 		return nil, xerrors.Errorf("worker error: %w", w.ctx.Err())
 	}
@@ -73,7 +73,7 @@ func (w *worker) run() (*models.LiveMatchStats, error) {
 		return nil, xerrors.Errorf("error requesting API: %w", err)
 	}
 
-	if nspb.MatchID(pbmsg.GetMatch().GetMatchid()) != w.liveMatch.MatchID {
+	if nsm.ID(pbmsg.GetMatch().GetMatchid()) != w.liveMatch.MatchID {
 		return nil, xerrors.Errorf("invalid response: %w", &errInvalidResponse{
 			LiveMatch: w.liveMatch,
 			Result:    pbmsg,
@@ -105,7 +105,7 @@ func (w *worker) requestMatchStats() (*d2pb.CMsgDOTARealtimeGameStatsTerse, erro
 
 	headers := map[string]string{
 		"Connection": "keep-alive",
-		"User-Agent": nsd2.UserAgent,
+		"User-Agent": nsdota2.UserAgent,
 	}
 
 	params := url.Values{}
@@ -155,36 +155,13 @@ func (w *worker) requestMatchStats() (*d2pb.CMsgDOTARealtimeGameStatsTerse, erro
 }
 
 func (w *worker) createLiveMatchStats(
-	liveMatch *models.LiveMatch,
-	result *d2pb.CMsgDOTARealtimeGameStatsTerse,
-) (*models.LiveMatchStats, error) {
-	if w.ctx.Err() != nil {
-		return nil, xerrors.Errorf("worker error: %w", w.ctx.Err())
-	}
+	liveMatch *nsm.LiveMatch,
+	pb *d2pb.CMsgDOTARealtimeGameStatsTerse,
+) (*nsm.LiveMatchStats, error) {
+	dbs := nsdbda.NewSaver(w.db)
+	stats, err := dbs.CreateLiveMatchStatsAssocProto(w.ctx, liveMatch, pb)
 
-	stats := models.NewLiveMatchStats(liveMatch, result)
-
-	for _, team := range result.GetTeams() {
-		stats.Teams = append(stats.Teams, models.LiveMatchStatsTeamDotaProto(team))
-
-		for _, player := range team.GetPlayers() {
-			stats.Players = append(stats.Players, models.NewLiveMatchStatsPlayer(stats, player))
-		}
-	}
-
-	for _, pickban := range result.GetMatch().GetPicks() {
-		stats.Draft = append(stats.Draft, models.LiveMatchStatsPickBanDotaProto(false, pickban))
-	}
-
-	for _, pickban := range result.GetMatch().GetBans() {
-		stats.Draft = append(stats.Draft, models.LiveMatchStatsPickBanDotaProto(true, pickban))
-	}
-
-	for _, building := range result.GetBuildings() {
-		stats.Buildings = append(stats.Buildings, models.LiveMatchStatsBuildingDotaProto(building))
-	}
-
-	if err := w.db.Save(stats).Error; err != nil {
+	if err != nil {
 		return nil, &errStatsSaveFailure{
 			LiveMatch: liveMatch,
 			Err:       nserr.Wrap("error creating live match stats", err),
