@@ -62,75 +62,7 @@ func (s *PubSub) watchLiveMatches() error {
 		return xerrors.Errorf("error subscribing to live matches: %w", err)
 	}
 
-	go pubsub.Watch(s.ctx, s.handleLiveMatchesChange)
-
-	return nil
-}
-
-func (s *PubSub) handleLiveMatchesChange(rmsg *redis.Message) {
-	l := s.log.WithOFields(
-		"channel", rmsg.Channel,
-		"pattern", rmsg.Pattern,
-		"payload", rmsg.Payload,
-	)
-
-	matchIDs, err := nscol.NewMatchIDsStrings(rmsg.Payload, ",")
-
-	if err != nil {
-		l.WithError(err).Error("error parsing payload")
-		return
-	}
-
-	if len(matchIDs) == 0 {
-		l.Trace("ignored empty live matches change")
-		return
-	}
-
-	l.Trace("received live matches change")
-
-	switch rmsg.Channel {
-	case nsrds.TopicLiveMatchesAdd:
-		err = s.handleLiveMatchesAdd(matchIDs)
-	case nsrds.TopicLiveMatchesRemove:
-		err = s.handleLiveMatchesRemove(matchIDs)
-	default:
-		return
-	}
-
-	if err != nil {
-		l.WithError(err).Error("error handling live matches change")
-		return
-	}
-}
-
-func (s *PubSub) handleLiveMatchesAdd(matchIDs nscol.MatchIDs) error {
-	view, err := s.loadLiveMatchesView(matchIDs)
-
-	if err != nil {
-		return xerrors.Errorf("error adding live matches: %w", err)
-	}
-
-	if view == nil {
-		return nil
-	}
-
-	if err := s.busPubWebLiveMatchesAdd(view); err != nil {
-		return xerrors.Errorf("error publishing live matches add: %w", err)
-	}
-
-	return nil
-}
-
-func (s *PubSub) handleLiveMatchesRemove(matchIDs nscol.MatchIDs) error {
-	view := nsvs.NewShallowLiveMatches(matchIDs)
-
-	if view == nil {
-		return nil
-	}
-
-	if err := s.busPubWebLiveMatchesRemove(view); err != nil {
-		return xerrors.Errorf("error publishing live matches remove: %w", err)
-	}
+	go pubsub.Watch(s.ctx, s.handleMessage)
 
 	return nil
 }
@@ -142,61 +74,123 @@ func (s *PubSub) watchLiveMatchStats() error {
 		return xerrors.Errorf("error subscribing to live matches: %w", err)
 	}
 
-	go pubsub.Watch(s.ctx, s.handleLiveMatchStatsChange)
+	go pubsub.Watch(s.ctx, s.handleMessage)
 
 	return nil
 }
 
-func (s *PubSub) handleLiveMatchStatsChange(rmsg *redis.Message) {
+func (s *PubSub) handleMessage(rmsg *redis.Message) {
 	l := s.log.WithOFields(
 		"channel", rmsg.Channel,
 		"pattern", rmsg.Pattern,
-		"payload", rmsg.Payload,
 	)
+
+	var op nspb.CollectionOp
+
+	switch rmsg.Channel {
+	case nsrds.TopicLiveMatchesAdd:
+		op = nspb.CollectionOp_COLLECTION_OP_ADD
+	case nsrds.TopicLiveMatchesUpdate:
+		op = nspb.CollectionOp_COLLECTION_OP_UPDATE
+	case nsrds.TopicLiveMatchesRemove:
+		op = nspb.CollectionOp_COLLECTION_OP_REMOVE
+	case nsrds.TopicLiveMatchStatsAdd:
+		op = nspb.CollectionOp_COLLECTION_OP_UPDATE
+	default:
+		l.Trace("ignored message from unknown channel")
+		return
+	}
 
 	matchIDs, err := nscol.NewMatchIDsStrings(rmsg.Payload, ",")
 
 	if err != nil {
-		l.WithError(err).Error("error parsing payload")
+		l.WithField("payload", rmsg.Payload).WithError(err).Error("error parsing payload")
 		return
+	}
+
+	matchIDs = matchIDs.Unique()
+	lenBefore := len(matchIDs)
+
+	if op != nspb.CollectionOp_COLLECTION_OP_REMOVE {
+		// messages may arrive out of order (for example, a delayed stats add after a match finished)
+		matchIDs, err = s.filterFinished(matchIDs)
+
+		if err != nil {
+			l.WithError(err).Error("error filtering finished match IDs")
+			return
+		}
+	}
+
+	lenAfter := len(matchIDs)
+
+	if lenAfter != lenBefore {
+		l.WithOFields(
+			"before", lenBefore,
+			"after", lenAfter,
+		).Trace("filtered match IDs")
 	}
 
 	if len(matchIDs) == 0 {
-		l.Trace("ignored empty live match stats change")
+		l.Trace("ignored empty live matches change")
 		return
 	}
 
-	l.Trace("received live match stats change")
+	l.WithField("count", lenAfter).Trace("received live matches change")
+
+	var liveMatchesView *nspb.LiveMatches
 
 	switch rmsg.Channel {
+	case nsrds.TopicLiveMatchesAdd:
+		liveMatchesView, err = s.loadLiveMatchesView(matchIDs)
+	case nsrds.TopicLiveMatchesUpdate:
+		liveMatchesView, err = s.loadLiveMatchesView(matchIDs)
+	case nsrds.TopicLiveMatchesRemove:
+		liveMatchesView = nsvs.NewShallowLiveMatches(matchIDs)
 	case nsrds.TopicLiveMatchStatsAdd:
-		err = s.handleLiveMatchStatsAdd(matchIDs)
-	default:
-		return
+		liveMatchesView, err = s.loadLiveMatchesView(matchIDs)
 	}
 
 	if err != nil {
-		l.WithError(err).Error("error handling live match stats change")
+		l.WithError(err).Error("error handling live matches change")
 		return
 	}
+
+	if liveMatchesView == nil {
+		l.Trace("ignored empty live matches view")
+		return
+	}
+
+	view := &nspb.LiveMatchesChange{Op: op, Change: liveMatchesView}
+
+	if err := s.busPubWebLiveMatchesChange(view); err != nil {
+		l.WithError(err).Error("error publishing live matches change")
+		return
+	}
+
+	l.WithOFields(
+		"op", view.Op.String(),
+		"match_ids", matchIDs.Join(","),
+	).Trace("bus published live matches change")
 }
 
-func (s *PubSub) handleLiveMatchStatsAdd(matchIDs nscol.MatchIDs) error {
-	view, err := s.loadLiveMatchesView(matchIDs)
+func (s *PubSub) filterFinished(matchIDs nscol.MatchIDs) (nscol.MatchIDs, error) {
+	if len(matchIDs) == 0 {
+		return nil, nil
+	}
+
+	finishedMatchIDs, err := s.dbl.FindMatchIDs(s.ctx, nsdbda.MatchFilters{
+		MatchIDs: matchIDs,
+	})
 
 	if err != nil {
-		return xerrors.Errorf("error loading live matches view: %w", err)
+		return nil, xerrors.Errorf("error finding match IDs: %w", err)
 	}
 
-	if view == nil {
-		return nil
+	if len(finishedMatchIDs) == 0 {
+		return matchIDs, nil
 	}
 
-	if err := s.busPubWebLiveMatchesUpdate(view); err != nil {
-		return xerrors.Errorf("error publishing live matches update: %w", err)
-	}
-
-	return nil
+	return matchIDs.Sub(finishedMatchIDs), nil
 }
 
 func (s *PubSub) loadLiveMatchesView(matchIDs nscol.MatchIDs) (*nspb.LiveMatches, error) {
@@ -218,56 +212,26 @@ func (s *PubSub) loadLiveMatchesView(matchIDs nscol.MatchIDs) (*nspb.LiveMatches
 	return view, nil
 }
 
-func (s *PubSub) busPubWebLiveMatchesAdd(view *nspb.LiveMatches) error {
+func (s *PubSub) busPubWebLiveMatchesChange(view *nspb.LiveMatchesChange) error {
+	var topic string
+
+	switch view.Op {
+	case nspb.CollectionOp_COLLECTION_OP_ADD:
+		topic = nsbus.TopicWebLiveMatchesAdd
+	case nspb.CollectionOp_COLLECTION_OP_UPDATE:
+		topic = nsbus.TopicWebLiveMatchesUpdate
+	case nspb.CollectionOp_COLLECTION_OP_REMOVE:
+		topic = nsbus.TopicWebLiveMatchesRemove
+	}
+
 	err := s.bus.Pub(nsbus.Message{
-		Topic: nsbus.TopicWebLiveMatchesAdd,
-		Payload: &nspb.LiveMatchesChange{
-			Op:     nspb.CollectionOp_COLLECTION_OP_ADD,
-			Change: view,
-		},
+		Topic:   topic,
+		Payload: view,
 	})
 
 	if err != nil {
-		return xerrors.Errorf("error publishing live matches add: %w", err)
+		return xerrors.Errorf("error publishing live matches change: %w", err)
 	}
-
-	s.log.WithOFields().Trace("published live matches add")
-
-	return nil
-}
-
-func (s *PubSub) busPubWebLiveMatchesRemove(view *nspb.LiveMatches) error {
-	err := s.bus.Pub(nsbus.Message{
-		Topic: nsbus.TopicWebLiveMatchesRemove,
-		Payload: &nspb.LiveMatchesChange{
-			Op:     nspb.CollectionOp_COLLECTION_OP_REMOVE,
-			Change: view,
-		},
-	})
-
-	if err != nil {
-		return xerrors.Errorf("error publishing live matches remove: %w", err)
-	}
-
-	s.log.WithOFields().Trace("published live matches remove")
-
-	return nil
-}
-
-func (s *PubSub) busPubWebLiveMatchesUpdate(view *nspb.LiveMatches) error {
-	err := s.bus.Pub(nsbus.Message{
-		Topic: nsbus.TopicWebLiveMatchesUpdate,
-		Payload: &nspb.LiveMatchesChange{
-			Op:     nspb.CollectionOp_COLLECTION_OP_UPDATE,
-			Change: view,
-		},
-	})
-
-	if err != nil {
-		return xerrors.Errorf("error publishing live matches update: %w", err)
-	}
-
-	s.log.WithOFields().Trace("published live matches update")
 
 	return nil
 }
