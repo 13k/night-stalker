@@ -291,6 +291,68 @@ func TestMatchIDs_Join(t *testing.T) {
 	}
 }
 
+func TestMatchIDs_Unique(t *testing.T) {
+	testCases := []struct {
+		Subject  nscol.MatchIDs
+		Expected nscol.MatchIDs
+	}{
+		{
+			Subject:  nil,
+			Expected: nil,
+		},
+		{
+			Subject:  nscol.MatchIDs{},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{1},
+			Expected: nscol.MatchIDs{1},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 1, 1},
+			Expected: nscol.MatchIDs{1},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 1, 2, 2, 3, 3},
+			Expected: nscol.MatchIDs{1, 2, 3},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 2, 1, 2, 3, 4, 3, 4, 4, 5, 6, 5, 6},
+			Expected: nscol.MatchIDs{1, 2, 3, 4, 5, 6},
+		},
+	}
+
+	for testCaseIdx, testCase := range testCases {
+		subject := testCase.Subject
+		actual := subject.Unique()
+
+		if testCase.Expected == nil {
+			if actual != nil {
+				t.Fatalf("case %d: expected nil", testCaseIdx)
+			}
+		} else {
+			if actual == nil {
+				t.Fatalf("case %d: expected non-nil", testCaseIdx)
+			}
+		}
+
+		expectedLen := len(testCase.Expected)
+		actualLen := len(actual)
+
+		if actualLen != expectedLen {
+			t.Fatalf("case %d: expected len %d, got %d", testCaseIdx, expectedLen, actualLen)
+		}
+
+		for i, expectedID := range testCase.Expected {
+			actualID := actual[i]
+
+			if actualID != expectedID {
+				t.Fatalf("case %d: index %d: expected %d, got %d", testCaseIdx, i, expectedID, actualID)
+			}
+		}
+	}
+}
+
 func TestMatchIDs_AddUnique(t *testing.T) {
 	testCases := []struct {
 		Subject  nscol.MatchIDs
@@ -347,6 +409,95 @@ func TestMatchIDs_AddUnique(t *testing.T) {
 	for testCaseIdx, testCase := range testCases {
 		subject := testCase.Subject
 		actual := subject.AddUnique(testCase.Add...)
+
+		if testCase.Expected == nil {
+			if actual != nil {
+				t.Fatalf("case %d: expected nil", testCaseIdx)
+			}
+		} else {
+			if actual == nil {
+				t.Fatalf("case %d: expected non-nil", testCaseIdx)
+			}
+		}
+
+		expectedLen := len(testCase.Expected)
+		actualLen := len(actual)
+
+		if actualLen != expectedLen {
+			t.Fatalf("case %d: expected len %d, got %d", testCaseIdx, expectedLen, actualLen)
+		}
+
+		for i, expectedID := range testCase.Expected {
+			actualID := actual[i]
+
+			if actualID != expectedID {
+				t.Fatalf("case %d: index %d: expected %d, got %d", testCaseIdx, i, expectedID, actualID)
+			}
+		}
+	}
+}
+
+func TestMatchIDs_Sub(t *testing.T) {
+	testCases := []struct {
+		Subject  nscol.MatchIDs
+		Sub      nscol.MatchIDs
+		Expected nscol.MatchIDs
+	}{
+		{
+			Subject:  nil,
+			Sub:      nil,
+			Expected: nil,
+		},
+		{
+			Subject:  nil,
+			Sub:      nscol.MatchIDs{},
+			Expected: nil,
+		},
+		{
+			Subject:  nscol.MatchIDs{},
+			Sub:      nil,
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{},
+			Sub:      nscol.MatchIDs{},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{},
+			Sub:      nscol.MatchIDs{1},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{1},
+			Sub:      nscol.MatchIDs{1},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 1, 1},
+			Sub:      nscol.MatchIDs{1, 1, 1},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 1, 1},
+			Sub:      nscol.MatchIDs{1},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 1, 2, 2, 3, 3},
+			Sub:      nscol.MatchIDs{1, 2, 3},
+			Expected: nscol.MatchIDs{},
+		},
+		{
+			Subject:  nscol.MatchIDs{1, 1, 3, 3, 5, 5, 2, 4, 6},
+			Sub:      nscol.MatchIDs{1, 4, 5},
+			Expected: nscol.MatchIDs{3, 3, 2, 6},
+		},
+	}
+
+	for testCaseIdx, testCase := range testCases {
+		subject := testCase.Subject
+		actual := subject.Sub(testCase.Sub)
 
 		if testCase.Expected == nil {
 			if actual != nil {

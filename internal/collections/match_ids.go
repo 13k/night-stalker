@@ -59,6 +59,24 @@ func NewMatchIDsStrings(s, sep string) (MatchIDs, error) {
 	return matchIDs, nil
 }
 
+func (s MatchIDs) Unique() MatchIDs {
+	if s == nil {
+		return nil
+	}
+
+	r := make(MatchIDs, 0, len(s))
+	m := make(map[nspb.MatchID]struct{})
+
+	for _, id := range s {
+		if _, ok := m[id]; !ok {
+			r = append(r, id)
+			m[id] = struct{}{}
+		}
+	}
+
+	return r
+}
+
 func (s MatchIDs) AddUnique(ids ...nspb.MatchID) MatchIDs {
 	if len(ids) == 0 {
 		return s
@@ -78,6 +96,31 @@ func (s MatchIDs) AddUnique(ids ...nspb.MatchID) MatchIDs {
 	}
 
 	return s
+}
+
+func (s MatchIDs) Sub(other MatchIDs) MatchIDs {
+	if s == nil {
+		return nil
+	}
+
+	r := make(MatchIDs, 0, len(s))
+
+	for _, sid := range s {
+		var found bool
+
+		for _, oid := range other {
+			if sid == oid {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			r = append(r, sid)
+		}
+	}
+
+	return r
 }
 
 func (s MatchIDs) Join(sep string) string {
