@@ -19,7 +19,10 @@ const actions = {
 
     rootState.ws.addEventListener("message", ev => {
       handleLiveMatchesChange(rootState, ev).then(msg => {
-        log.debug("<watch:message>", msg);
+        log.debug("<watch:message>", {
+          op: pb.ns.protocol.CollectionOp[msg.op],
+          matchIDs: _.map(msg.change.matches, m => m.match_id.toString()),
+        });
 
         let mutation;
 
@@ -56,8 +59,13 @@ const actions = {
   },
 };
 
+function findMatchIndex(matches, match) {
+  return _.findIndex(matches, m => m.match_id.equals(match.match_id));
+}
+
 function upsertLiveMatch(matches, match) {
-  let idx = _.findIndex(matches, { match_id: match.match_id });
+  const lenBefore = matches.length;
+  let idx = findMatchIndex(matches, match);
   let delCount = 1;
 
   if (idx < 0) {
@@ -66,6 +74,27 @@ function upsertLiveMatch(matches, match) {
   }
 
   matches.splice(idx, delCount, match);
+
+  log.debug("upsertLiveMatch", {
+    matchID: match.match_id.toString(),
+    before: lenBefore,
+    after: matches.length,
+  });
+}
+
+function removeLiveMatch(matches, match) {
+  const lenBefore = matches.length;
+  const idx = findMatchIndex(matches, match);
+
+  if (idx >= 0) {
+    matches.splice(idx, 1);
+  }
+
+  log.debug("removeLiveMatch", {
+    matchID: match.match_id.toString(),
+    before: lenBefore,
+    after: matches.length,
+  });
 }
 
 const mutations = {
@@ -73,23 +102,13 @@ const mutations = {
     state.all = matches;
   },
   addLiveMatches(state, { matches }) {
-    _.each(matches, match => {
-      upsertLiveMatch(state.all, match);
-    });
+    _.each(matches, match => upsertLiveMatch(state.all, match));
   },
   updateLiveMatches(state, { matches }) {
-    _.each(matches, match => {
-      upsertLiveMatch(state.all, match);
-    });
+    _.each(matches, match => upsertLiveMatch(state.all, match));
   },
   removeLiveMatches(state, { matches }) {
-    _.each(matches, match => {
-      let idx = _.findIndex(state.all, { match_id: match.match_id });
-
-      if (idx >= 0) {
-        state.all.splice(idx, 1);
-      }
-    });
+    _.each(matches, match => removeLiveMatch(state.all, match));
   },
 };
 
