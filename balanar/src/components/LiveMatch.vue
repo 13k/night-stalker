@@ -10,11 +10,16 @@
         min-height="148"
         height="148"
         max-height="148"
-        class="white--text align-end"
       >
-        <v-card-title>
-          <span class="title--shadow">{{ match.match_id }}</span>
-        </v-card-title>
+        <v-row
+          align="end"
+          class="lightbox white--text fill-height"
+          no-gutters
+        >
+          <v-col>
+            <v-card-title>{{ match.match_id }}</v-card-title>
+          </v-col>
+        </v-row>
       </v-img>
     </template>
 
@@ -226,7 +231,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.title--shadow {
-  text-shadow: 1px 3px 3px rgba(0, 0, 0, 0.8);
+.lightbox {
+  box-shadow: 0 0 20px inset rgba(0, 0, 0, 0.2);
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 72px);
 }
 </style>
