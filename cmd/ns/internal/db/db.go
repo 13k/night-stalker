@@ -55,6 +55,10 @@ func Connect(l *nslog.Logger) (*nsdb.DB, error) {
 		return nil, err
 	}
 
+	if err := sqldb.Ping(); err != nil {
+		return nil, err
+	}
+
 	if n := v.GetInt(v.KeyDbConnMaxTotal); n > 0 {
 		sqldb.SetMaxOpenConns(n)
 	}
