@@ -1,10 +1,18 @@
+*.o
+*.a
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-*.test
-*.out
+*.[568vq]
+[568vq].out
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+_testmain.go
 
 /bin
 /cmd/ns/pkged.go
@@ -13,7 +21,11 @@
 /tools/bin
 /tmp
 
-.direnv
+_obj
+_test
+_tmp
+node_modules
+
+.envrc
 .env.local
 .env.*.local
-node_modules
