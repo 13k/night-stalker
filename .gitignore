@@ -20,12 +20,12 @@ _testmain.go
 /log
 /tools/bin
 /tmp
+/.envrc
+/.env.local
+/.env.*.local
+/.go-version
 
 _obj
 _test
 _tmp
 node_modules
-
-.envrc
-.env.local
-.env.*.local
